@@ -3,43 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken League | Play & Win</title>
+    <title>Join the League | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .grid-board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: #f3f4f6; padding: 10px; border-radius: 12px; }
-        .cell { aspect-ratio: 1; background: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    </style>
 </head>
-<body class="bg-yellow-50 min-h-screen flex flex-col items-center p-4">
-    <header class="text-center mb-6">
-        <h1 class="text-4xl font-bold text-orange-600">CHICKEN LEAGUE</h1>
-        <p class="text-gray-600 font-medium">Match 3 to win your dinner!</p>
-    </header>
-
-    <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
-        <div class="flex justify-between mb-4 font-bold text-lg">
-            <span>Score: <span id="score">0</span></span>
-            <span class="text-green-600">Target: 500</span>
+<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-orange-600">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-black text-orange-600">CHICKEN LEAGUE</h1>
+            <p class="text-gray-500 font-medium">Create your player account to start winning</p>
         </div>
-        
-        <div id="board" class="grid-board"></div>
-        
-        <button onclick="location.reload()" class="w-full mt-6 bg-orange-500 text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition">RESTART GAME</button>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Username (Phone Number)</label>
+                <input type="tel" id="phone" placeholder="080XXXXXXXX" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-orange-500 outline-none transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Create Password</label>
+                <input type="password" id="password" placeholder="••••••••" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-orange-500 outline-none transition">
+            </div>
+            <button onclick="registerUser()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-700 active:scale-95 transition">
+                CREATE ACCOUNT & PLAY
+            </button>
+            <p class="text-center text-sm text-gray-500">Already have an account? <a href="#" class="text-orange-600 font-bold">Login</a></p>
+        </div>
     </div>
 
     <script>
-        const board = document.getElementById('board');
-        const items = ['🥚', '🪶', '🌽', '🐥', '🍶']; // Egg, Feather, Corn, Chick, Drinker
-        let cells = [];
-
-        for (let i = 0; i < 64; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.innerHTML = items[Math.floor(Math.random() * items.length)];
-            board.appendChild(cell);
-            cells.push(cell);
+        function registerUser() {
+            const phone = document.getElementById('phone').value;
+            const pass = document.getElementById('password').value;
+            if (phone.length >= 10 && pass.length >= 4) {
+                // Save to browser memory
+                localStorage.setItem('league_user', phone);
+                localStorage.setItem('league_pass', pass);
+                // Redirect to the game page
+                window.location.href = "game.html";
+            } else {
+                alert("Please enter a valid Phone and Password");
+            }
         }
-        // Logic for swapping and matching will be implemented in the next iteration
     </script>
 </body>
 </html>
