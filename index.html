@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken League | Play & Win</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .grid-board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: #f3f4f6; padding: 10px; border-radius: 12px; }
+        .cell { aspect-ratio: 1; background: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-yellow-50 min-h-screen flex flex-col items-center p-4">
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-bold text-orange-600">CHICKEN LEAGUE</h1>
+        <p class="text-gray-600 font-medium">Match 3 to win your dinner!</p>
+    </header>
+
+    <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="flex justify-between mb-4 font-bold text-lg">
+            <span>Score: <span id="score">0</span></span>
+            <span class="text-green-600">Target: 500</span>
+        </div>
+        
+        <div id="board" class="grid-board"></div>
+        
+        <button onclick="location.reload()" class="w-full mt-6 bg-orange-500 text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition">RESTART GAME</button>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const items = ['🥚', '🪶', '🌽', '🐥', '🍶']; // Egg, Feather, Corn, Chick, Drinker
+        let cells = [];
+
+        for (let i = 0; i < 64; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.innerHTML = items[Math.floor(Math.random() * items.length)];
+            board.appendChild(cell);
+            cells.push(cell);
+        }
+        // Logic for swapping and matching will be implemented in the next iteration
+    </script>
+</body>
+</html>
