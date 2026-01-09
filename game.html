@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken League | Arena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .grid-board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: #e5e7eb; padding: 10px; border-radius: 12px; }
+        .cell { aspect-ratio: 1; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; border-radius: 8px; }
+    </style>
+</head>
+<body class="bg-orange-50 min-h-screen flex flex-col items-center p-4">
+    <script>
+        // Check if user is logged in
+        if(!localStorage.getItem('league_user')) { window.location.href = "index.html"; }
+    </script>
 
+    <div class="w-full max-w-md">
+        <div class="bg-white p-4 rounded-2xl shadow-xl mb-4 flex justify-between items-center border-l-4 border-orange-500">
+            <div>
+                <p class="text-xs text-gray-400 font-bold">LEAGUE PLAYER</p>
+                <p id="user-display" class="font-bold text-orange-600"></p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400 font-bold">SCORE</p>
+                <p id="score" class="text-2xl font-black">0</p>
+            </div>
+        </div>
+        <div id="board" class="grid-board shadow-2xl"></div>
+    </div>
+
+    <script>
+        document.getElementById('user-display').innerText = localStorage.getItem('league_user');
+        const board = document.getElementById('board');
+        const items = ['🥚', '🪶', '🌽', '🐥', '🍶'];
+        let score = 0;
+
+        for (let i = 0; i < 64; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell shadow-sm';
+            cell.innerHTML = items[Math.floor(Math.random() * items.length)];
+            cell.onclick = function() {
+                score += 10;
+                document.getElementById('score').innerText = score;
+                this.innerHTML = items[Math.floor(Math.random() * items.length)];
+            };
+            board.appendChild(cell);
+        }
+    </script>
+</body>
+</html>
