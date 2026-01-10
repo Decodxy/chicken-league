@@ -7,88 +7,73 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-orange-600">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-black text-orange-600 uppercase">Chicken League</h1>
-            <p class="text-gray-500 font-bold italic text-sm">Join the Poultry Revolution</p>
-        </div>
-
+        <h1 class="text-3xl font-black text-orange-600 text-center mb-6 uppercase tracking-tighter">Chicken League</h1>
+        
         <div class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Public Username</label>
-                <input type="text" id="user_field" placeholder="ChickenKing" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">WhatsApp Number</label>
-                <input type="tel" id="phone_field" placeholder="080XXXXXXXX" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Password</label>
-                <input type="password" id="pass_field" placeholder="••••••••" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none">
-            </div>
-
-            <button type="button" id="regBtn" onclick="registerUser()" class="w-full bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-orange-700 active:scale-95 transition-all">
+            <input type="text" id="user_field" placeholder="Public Username" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+            <input type="tel" id="phone_field" placeholder="WhatsApp Number" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+            <input type="password" id="pass_field" placeholder="Password" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+            
+            <button type="button" id="regBtn" onclick="registerUser()" class="w-full bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-transform">
                 CREATE ACCOUNT & PLAY
             </button>
-
-            <p class="text-center text-sm text-gray-500 font-medium">
-                Already have an account? 
-                <a href="login.html" class="text-orange-600 font-bold underline">Login here</a>
-            </p>
         </div>
     </div>
 
     <script>
-        // 1. Initialize Supabase
-        const supabaseUrl = 'https://tbvmgcknkwsucstedigd.supabase.co'; 
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        
+        // Use window.supabase to ensure we grab the library from the CDN correctly
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+        // IMMEDIATE TEST: See if the bridge is open
+        console.log("Supabase initialized for table: Profiles");
 
         async function registerUser() {
             const btn = document.getElementById('regBtn');
-            const user = document.getElementById('user_field').value.trim();
-            const phone = document.getElementById('phone_field').value.trim();
-            const pass = document.getElementById('pass_field').value.trim();
+            const u = document.getElementById('user_field').value.trim();
+            const ph = document.getElementById('phone_field').value.trim();
+            const ps = document.getElementById('pass_field').value.trim();
 
-            // 2. Client-side Validation
-            if (!user || !phone || !pass) {
-                alert("Please fill in all fields to join the arena!");
+            if (!u || !ph || !ps) {
+                alert("Please complete all fields!");
                 return;
             }
 
-            // UI Feedback
-            btn.innerText = "Sourcing Your Chickens...";
+            btn.innerText = "Verifying Entry...";
             btn.disabled = true;
 
             try {
-                // 3. Database Interaction
+                // THE FIX: Changed from 'profiles' to 'Profiles'
                 const { data, error } = await supabase
-                    .from('profiles')
-                    .insert([
-                        { 
-                            public_username: user, 
-                            phone_number: phone, 
-                            password: pass, 
-                            total_score: 0 
-                        }
-                    ]);
+                    .from('Profiles') 
+                    .insert([{ 
+                        public_username: u, 
+                        phone_number: ph, 
+                        password: ps, 
+                        total_score: 0 
+                    }]);
 
-                if (error) throw error;
-
-                // 4. Persistence & Success
-                localStorage.setItem('league_user', user);
-                localStorage.setItem('league_phone', phone);
-                
-                alert("Registration Successful! Entering the Arena...");
-                window.location.href = "game.html";
-
+                if (error) {
+                    alert("Database Error: " + error.message);
+                    btn.innerText = "CREATE ACCOUNT & PLAY";
+                    btn.disabled = false;
+                } else {
+                    btn.style.backgroundColor = "#22c55e";
+                    btn.innerText = "Success! ✅";
+                    
+                    localStorage.setItem('league_user', u);
+                    
+                    setTimeout(() => {
+                        window.location.href = "dashboard.html";
+                    }, 1200);
+                }
             } catch (err) {
-                console.error("Signup Error:", err.message);
-                alert("Error: " + err.message);
+                alert("System Error: " + err.message);
                 btn.innerText = "CREATE ACCOUNT & PLAY";
                 btn.disabled = false;
             }
