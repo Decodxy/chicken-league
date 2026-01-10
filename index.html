@@ -1,93 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken League | Join the Arena</title>
+    <title>Chicken League | Signup</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
 
     <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-orange-600">
         <div class="text-center mb-6">
-            <h1 class="text-3xl font-black text-orange-600">CHICKEN LEAGUE</h1>
-            <p class="text-gray-500 font-medium">Create your profile to start winning</p>
+            <h1 class="text-3xl font-black text-orange-600 uppercase">Chicken League</h1>
+            <p class="text-gray-500 font-bold italic text-sm">Join the Poultry Revolution</p>
         </div>
 
         <div class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Public Username</label>
-                <input type="text" id="public_username" placeholder="ChickenMaster99" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-orange-500 outline-none transition">
+                <input type="text" id="user_field" placeholder="ChickenKing" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-400 uppercase mb-1">WhatsApp Number</label>
-                <input type="tel" id="phone_number" placeholder="080XXXXXXXX" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-orange-500 outline-none transition">
+                <input type="tel" id="phone_field" placeholder="080XXXXXXXX" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Password</label>
-                <input type="password" id="password" placeholder="••••••••" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-orange-500 outline-none transition">
+                <input type="password" id="pass_field" placeholder="••••••••" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none">
             </div>
 
-            <button id="regBtn" onclick="registerUser()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-700 active:scale-95 transition">
+            <button type="button" id="regBtn" onclick="registerUser()" class="w-full bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-orange-700 active:scale-95 transition-all">
                 CREATE ACCOUNT & PLAY
             </button>
 
-         <p class="text-center text-sm text-gray-500">
-    Already have an account? 
-    <a href="login.html" class="text-orange-600 font-bold hover:underline">Login here</a>
-</p>
-
+            <p class="text-center text-sm text-gray-500 font-medium">
+                Already have an account? 
+                <a href="login.html" class="text-orange-600 font-bold underline">Login here</a>
+            </p>
         </div>
     </div>
 
     <script>
-        // Initialize Supabase
+        // 1. Initialize Supabase
         const supabaseUrl = 'https://tbvmgcknkwsucstedigd.supabase.co'; 
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         async function registerUser() {
             const btn = document.getElementById('regBtn');
-            const user = document.getElementById('public_username').value;
-            const phone = document.getElementById('phone_number').value;
-            const pass = document.getElementById('password').value;
+            const user = document.getElementById('user_field').value.trim();
+            const phone = document.getElementById('phone_field').value.trim();
+            const pass = document.getElementById('pass_field').value.trim();
 
+            // 2. Client-side Validation
             if (!user || !phone || !pass) {
-                alert("Please fill all fields!");
+                alert("Please fill in all fields to join the arena!");
                 return;
             }
 
-            btn.innerText = "Processing...";
+            // UI Feedback
+            btn.innerText = "Sourcing Your Chickens...";
             btn.disabled = true;
 
-            const { data, error } = await supabase
-                .from('profiles')
-                .insert([
-                    { 
-                        public_username: user, 
-                        phone_number: phone, 
-                        password: pass, 
-                        total_score: 0 
-                    }
-                ]);
+            try {
+                // 3. Database Interaction
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([
+                        { 
+                            public_username: user, 
+                            phone_number: phone, 
+                            password: pass, 
+                            total_score: 0 
+                        }
+                    ]);
 
-            if (error) {
-                alert("Error: " + error.message);
+                if (error) throw error;
+
+                // 4. Persistence & Success
+                localStorage.setItem('league_user', user);
+                localStorage.setItem('league_phone', phone);
+                
+                alert("Registration Successful! Entering the Arena...");
+                window.location.href = "game.html";
+
+            } catch (err) {
+                console.error("Signup Error:", err.message);
+                alert("Error: " + err.message);
                 btn.innerText = "CREATE ACCOUNT & PLAY";
                 btn.disabled = false;
-            } else {
-                localStorage.setItem('league_user', user);
-                window.location.href = "game.html";
             }
-        }
-
-        function toggleLogin() {
-            alert("Login feature coming in the next hour! For now, please register a new account to test.");
         }
     </script>
 </body>
