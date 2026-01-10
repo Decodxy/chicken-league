@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-orange-600">
+        <h1 class="text-2xl font-black text-orange-600 text-center mb-6">WELCOME BACK</h1>
+        <div class="space-y-4">
+            <input type="tel" id="login_phone" placeholder="WhatsApp Number" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none">
+            <input type="password" id="login_pass" placeholder="Password" class="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none">
+            <button onclick="handleLogin()" id="loginBtn" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-700 transition">LOGIN TO ARENA</button>
+            <p class="text-center text-sm"><a href="index.html" class="text-orange-600 font-bold">Need an account? Sign up</a></p>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://tbvmgcknkwsucstedigd.supabase.co'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function handleLogin() {
+            const phone = document.getElementById('login_phone').value;
+            const pass = document.getElementById('login_pass').value;
+
+            // Search database for this user
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('phone_number', phone)
+                .eq('password', pass)
+                .single();
+
+            if (data) {
+                localStorage.setItem('league_user', data.public_username);
+                window.location.href = "game.html";
+            } else {
+                alert("Invalid Phone Number or Password. Please try again.");
+            }
+        }
+    </script>
+</body>
+</html>
