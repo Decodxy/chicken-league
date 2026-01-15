@@ -101,30 +101,46 @@
         }
 
         async function syncLobby() {
-            const { data, count } = await sb.from('Battle_Royale_1').select('*', { count: 'exact' });
-            if(data) {
-                const total = data.length;
-                document.getElementById('room_stats').innerHTML = `${total.toString().padStart(2, '0')} <span class="text-gray-600 text-lg">/ 100</span>`;
-                document.getElementById('slots_left').innerText = `${100 - total} SLOTS LEFT`;
-                
-                // Reset all first
-                document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('neon-active'));
-                
-                // Light up based on entries
-                data.forEach((entry, i) => {
-                    const slot = document.getElementById(`slot-${i}`);
-                    if(slot) slot.classList.add('neon-active');
-                });
+    const { data, count } = await sb.from('Battle_Royale_1').select('*', { count: 'exact' });
+    
+    if (data) {
+        const total = data.length;
+        
+        // 1. Update the Counter Text
+        document.getElementById('room_stats').innerHTML = `${total.toString().padStart(2, '0')} <span class="text-gray-600 text-lg">/ 100</span>`;
+        document.getElementById('slots_left').innerText = `${100 - total} SLOTS LEFT`;
+        
+        // 2. Clear and Re-light Neon Circles
+        document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('neon-active'));
+        data.forEach((entry, i) => {
+            const slot = document.getElementById(`slot-${i}`);
+            if (slot) slot.classList.add('neon-active');
+        });
 
-                // Check if current user is already in
-                if(data.some(p => p.player_username === user)) {
-                    const btn = document.getElementById('joinBtn');
-                    btn.innerText = "LOCKED IN ARENA ✅";
-                    btn.disabled = true;
-                    btn.classList.replace('bg-orange-600', 'bg-green-600');
-                }
-            }
+        // 3. SCALING GUARD: Handle Room Full State
+        if (total >= 100) {
+            // Show the alert we added in the HTML
+            document.getElementById('battle_alert').classList.remove('hidden');
+            
+            // Disable the join button and change appearance
+            const btn = document.getElementById('joinBtn');
+            btn.innerText = "LOBBY FULL - STANDBY";
+            btn.disabled = true;
+            btn.classList.remove('bg-orange-600');
+            btn.classList.add('bg-gray-800', 'cursor-not-allowed');
         }
+
+        // 4. PERSISTENCE GUARD: Check if user is already registered
+        const isJoined = data.some(p => p.player_username === user);
+        if (isJoined && total < 100) {
+            const btn = document.getElementById('joinBtn');
+            btn.innerText = "LOCKED IN ARENA ✅";
+            btn.disabled = true;
+            btn.classList.replace('bg-orange-600', 'bg-green-600');
+        }
+    }
+}
+
 
         async function joinLeague() {
             const btn = document.getElementById('joinBtn');
