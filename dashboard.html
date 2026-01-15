@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #050505; color: white; }
+        /* Neon Green Beaming Effect */
+        .neon-active { 
+            background: #4ade80 !important; 
+            box-shadow: 0 0 15px #4ade80, 0 0 30px #22c55e; 
+            border-color: #ffffff !important;
+            transform: scale(1.1);
+        }
+        .slot-circle { 
+            width: 14px; height: 14px; 
+            border: 1px solid #333; 
+            border-radius: 50%; 
+            background: #1a1a1a;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+
+    <div class="max-w-md mx-auto flex justify-between items-center mb-6">
+        <div>
+            <h2 id="user_display" class="text-orange-500 font-black tracking-tighter uppercase text-xl">CHAMPION</h2>
+            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Status: In Lobby</p>
+        </div>
+        <button onclick="shareInvite()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-[10px] font-black border border-white/20 uppercase">Invite +</button>
+    </div>
+
+    <div class="max-w-md mx-auto glass-panel rounded-[2rem] overflow-hidden mb-6 relative border-b-4 border-orange-600">
+        <div class="h-56 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&q=80&w=1000');">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+            <div class="absolute bottom-4 left-6">
+                <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 inline-block">GRAND PRIZE</span>
+                <h1 class="text-3xl font-black italic uppercase leading-none">The Golden<br>Chicken</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto flex justify-between items-end mb-4 px-2">
+        <div>
+            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Current Queue</p>
+            <h3 id="room_stats" class="text-2xl font-black text-white">00 <span class="text-gray-600 text-lg">/ 100</span></h3>
+        </div>
+        <div class="text-right">
+            <p id="slots_left" class="text-orange-500 font-black text-sm">100 SLOTS LEFT</p>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto glass-panel p-6 rounded-[2rem] mb-6">
+        <div id="grid_container" class="grid grid-cols-10 gap-2 mb-8 justify-items-center">
+            </div>
+
+        <button id="joinBtn" onclick="joinLeague()" class="w-full bg-orange-600 hover:bg-orange-500 py-5 rounded-2xl font-black text-lg shadow-[0_20px_40px_rgba(234,88,12,0.3)] transition-all active:scale-95 uppercase tracking-tighter">
+            Join League: Top 1 in 100
+        </button>
+    </div>
+
+    <script>
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        const user = localStorage.getItem('league_user');
+
+        window.onload = () => {
+            if(!user) window.location.href = 'index.html';
+            document.getElementById('user_display').innerText = user;
+            initGrid();
+            syncLobby();
+            setInterval(syncLobby, 3000); // 3-second heartbeat for real-time feel
+        };
+
+        function initGrid() {
+            const container = document.getElementById('grid_container');
+            container.innerHTML = '';
+            for(let i=0; i<100; i++) {
+                const div = document.createElement('div');
+                div.className = 'slot-circle';
+                div.id = `slot-${i}`;
+                container.appendChild(div);
+            }
+        }
+
+        async function syncLobby() {
+            const { data, count } = await sb.from('Battle_Royale_1').select('*', { count: 'exact' });
+            if(data) {
+                const total = data.length;
+                document.getElementById('room_stats').innerHTML = `${total.toString().padStart(2, '0')} <span class="text-gray-600 text-lg">/ 100</span>`;
+                document.getElementById('slots_left').innerText = `${100 - total} SLOTS LEFT`;
+                
+                // Reset all first
+                document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('neon-active'));
+                
+                // Light up based on entries
+                data.forEach((entry, i) => {
+                    const slot = document.getElementById(`slot-${i}`);
+                    if(slot) slot.classList.add('neon-active');
+                });
+
+                // Check if current user is already in
+                if(data.some(p => p.player_username === user)) {
+                    const btn = document.getElementById('joinBtn');
+                    btn.innerText = "LOCKED IN ARENA ✅";
+                    btn.disabled = true;
+                    btn.classList.replace('bg-orange-600', 'bg-green-600');
+                }
+            }
+        }
+
+        async function joinLeague() {
+            const btn = document.getElementById('joinBtn');
+            btn.innerText = "REQUESTING ENTRY...";
+            const { error } = await sb.from('Battle_Royale_1').insert([{ player_username: user }]);
+            if(error) alert("Already registered or Lobby full!");
+            syncLobby();
+        }
+
+        function shareInvite() {
+            const text = `Join me in the Chicken League Battle Royale! Only 100 slots. Join now: ${window.location.href}`;
+            if(navigator.share) {
+                navigator.share({ title: 'Chicken League Invite', text: text, url: window.location.href });
+            } else {
+                prompt("Copy invite link:", text);
+            }
+        }
+    </script>
+</body>
+</html>
