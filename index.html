@@ -3,81 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken League | Signup</title>
+    <title>CL Arena | Signup</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-orange-600">
-        <h1 class="text-3xl font-black text-orange-600 text-center mb-6 uppercase tracking-tighter">Chicken League</h1>
+        <h1 class="text-3xl font-black text-orange-600 text-center mb-6">CHICKEN LEAGUE</h1>
         
         <div class="space-y-4">
-            <input type="text" id="user_field" placeholder="Public Username" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
-            <input type="tel" id="phone_field" placeholder="WhatsApp Number" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
-            <input type="password" id="pass_field" placeholder="Password" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+            <input type="text" id="u_f" placeholder="Username" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl">
+            <input type="tel" id="ph_f" placeholder="Phone" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl">
+            <input type="password" id="ps_f" placeholder="Password" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl">
             
-            <button type="button" id="regBtn" onclick="registerUser()" class="w-full bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-transform">
+            <button type="button" id="mainBtn" class="w-full bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl">
                 CREATE ACCOUNT & PLAY
             </button>
         </div>
     </div>
 
     <script>
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-        
-        // Use window.supabase to ensure we grab the library from the CDN correctly
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        // Force wait for full page load
+        window.onload = function() {
+            const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+            const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+            
+            const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+            const btn = document.getElementById('mainBtn');
 
-        // IMMEDIATE TEST: See if the bridge is open
-        console.log("Supabase initialized for table: Profiles");
+            // Listen for the click directly on the element
+            btn.addEventListener('click', async () => {
+                const u = document.getElementById('u_f').value.trim();
+                const ph = document.getElementById('ph_f').value.trim();
+                const ps = document.getElementById('ps_f').value.trim();
 
-        async function registerUser() {
-            const btn = document.getElementById('regBtn');
-            const u = document.getElementById('user_field').value.trim();
-            const ph = document.getElementById('phone_field').value.trim();
-            const ps = document.getElementById('pass_field').value.trim();
-
-            if (!u || !ph || !ps) {
-                alert("Please complete all fields!");
-                return;
-            }
-
-            btn.innerText = "Verifying Entry...";
-            btn.disabled = true;
-
-            try {
-                // THE FIX: Changed from 'profiles' to 'Profiles'
-                const { data, error } = await supabase
-                    .from('Profiles') 
-                    .insert([{ 
-                        public_username: u, 
-                        phone_number: ph, 
-                        password: ps, 
-                        total_score: 0 
-                    }]);
-
-                if (error) {
-                    alert("Database Error: " + error.message);
-                    btn.innerText = "CREATE ACCOUNT & PLAY";
-                    btn.disabled = false;
-                } else {
-                    btn.style.backgroundColor = "#22c55e";
-                    btn.innerText = "Success! ✅";
-                    
-                    localStorage.setItem('league_user', u);
-                    
-                    setTimeout(() => {
-                        window.location.href = "dashboard.html";
-                    }, 1200);
+                if (!u || !ph || !ps) {
+                    alert("Please fill all fields!");
+                    return;
                 }
-            } catch (err) {
-                alert("System Error: " + err.message);
-                btn.innerText = "CREATE ACCOUNT & PLAY";
-                btn.disabled = false;
-            }
-        }
+
+                btn.innerText = "SENDING TO CL CLOUD...";
+                btn.disabled = true;
+
+                try {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .insert([{ public_username: u, phone_number: ph, password: ps, total_score: 0 }]);
+
+                    if (error) {
+                        alert("Database said: " + error.message);
+                        btn.innerText = "TRY AGAIN";
+                        btn.disabled = false;
+                    } else {
+                        alert("WELCOME TO THE LEAGUE!");
+                        localStorage.setItem('league_user', u);
+                        window.location.href = "dashboard.html";
+                    }
+                } catch (err) {
+                    alert("App Error: " + err.message);
+                    btn.innerText = "ERROR - TRY AGAIN";
+                    btn.disabled = false;
+                }
+            });
+        };
     </script>
 </body>
 </html>
