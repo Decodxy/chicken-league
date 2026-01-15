@@ -47,7 +47,10 @@
 
 
     <div class="max-w-md mx-auto glass-panel rounded-[2rem] overflow-hidden mb-6 relative border-b-4 border-orange-600">
-        <div class="h-56 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1587334274328-64186a80aeee?auto=format&fit=crop&q=80&w=1000');">
+<div class="h-56 bg-cover bg-center" style="background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9-N0p-x0E_A8xH0O9X6Z6XqS0qV6XqS0qVw&usqp=CAU');"> 
+    
+
+
             <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
             <div class="absolute bottom-4 left-6">
                 <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 inline-block">GRAND PRIZE</span>
@@ -101,46 +104,30 @@
         }
 
         async function syncLobby() {
-    const { data, count } = await sb.from('Battle_Royale_1').select('*', { count: 'exact' });
-    
-    if (data) {
-        const total = data.length;
-        
-        // 1. Update the Counter Text
-        document.getElementById('room_stats').innerHTML = `${total.toString().padStart(2, '0')} <span class="text-gray-600 text-lg">/ 100</span>`;
-        document.getElementById('slots_left').innerText = `${100 - total} SLOTS LEFT`;
-        
-        // 2. Clear and Re-light Neon Circles
-        document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('neon-active'));
-        data.forEach((entry, i) => {
-            const slot = document.getElementById(`slot-${i}`);
-            if (slot) slot.classList.add('neon-active');
-        });
+            const { data, count } = await sb.from('Battle_Royale_1').select('*', { count: 'exact' });
+            if(data) {
+                const total = data.length;
+                document.getElementById('room_stats').innerHTML = `${total.toString().padStart(2, '0')} <span class="text-gray-600 text-lg">/ 100</span>`;
+                document.getElementById('slots_left').innerText = `${100 - total} SLOTS LEFT`;
+                
+                // Reset all first
+                document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('neon-active'));
+                
+                // Light up based on entries
+                data.forEach((entry, i) => {
+                    const slot = document.getElementById(`slot-${i}`);
+                    if(slot) slot.classList.add('neon-active');
+                });
 
-        // 3. SCALING GUARD: Handle Room Full State
-        if (total >= 100) {
-            // Show the alert we added in the HTML
-            document.getElementById('battle_alert').classList.remove('hidden');
-            
-            // Disable the join button and change appearance
-            const btn = document.getElementById('joinBtn');
-            btn.innerText = "LOBBY FULL - STANDBY";
-            btn.disabled = true;
-            btn.classList.remove('bg-orange-600');
-            btn.classList.add('bg-gray-800', 'cursor-not-allowed');
+                // Check if current user is already in
+                if(data.some(p => p.player_username === user)) {
+                    const btn = document.getElementById('joinBtn');
+                    btn.innerText = "LOCKED IN ARENA ✅";
+                    btn.disabled = true;
+                    btn.classList.replace('bg-orange-600', 'bg-green-600');
+                }
+            }
         }
-
-        // 4. PERSISTENCE GUARD: Check if user is already registered
-        const isJoined = data.some(p => p.player_username === user);
-        if (isJoined && total < 100) {
-            const btn = document.getElementById('joinBtn');
-            btn.innerText = "LOCKED IN ARENA ✅";
-            btn.disabled = true;
-            btn.classList.replace('bg-orange-600', 'bg-green-600');
-        }
-    }
-}
-
 
         async function joinLeague() {
             const btn = document.getElementById('joinBtn');
