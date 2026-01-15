@@ -1,20 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken League | Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-orange-50 p-6">
-    <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-bold mb-4">CHICKEN LEAGUE SIGNUP</h1>
-        <input type="text" id="u" placeholder="Username" class="w-full mb-2 p-3 border">
-        <input type="tel" id="ph" placeholder="Phone" class="w-full mb-2 p-3 border">
-        <input type="password" id="ps" placeholder="Password" class="w-full mb-4 p-3 border">
-        
-        <button id="runBtn" onclick="doSignup()" class="w-full bg-orange-600 text-white p-4 font-bold rounded">
-            CREATE ACCOUNT & PLAY
-        </button>
+<body class="bg-orange-50 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-orange-600">
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-black text-orange-600 uppercase tracking-tighter">Chicken League</h1>
+            <p class="text-gray-500 font-bold text-sm italic">Join the Poultry Revolution</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="space-y-2">
+                <input type="text" id="u" placeholder="Username" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+                <input type="tel" id="ph" placeholder="WhatsApp Number" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+                <input type="password" id="ps" placeholder="Create Password" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-orange-500">
+            </div>
+            
+            <button type="button" id="runBtn" onclick="doSignup()" class="w-full bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all">
+                CREATE ACCOUNT & PLAY
+            </button>
+
+            <div class="pt-6 border-t border-gray-100 text-center">
+                <p class="text-sm text-gray-400 font-bold uppercase mb-2">Already a Member?</p>
+                <a href="login.html" class="inline-block bg-white text-orange-600 border-2 border-orange-600 font-black py-3 px-8 rounded-xl hover:bg-orange-50 transition-all">
+                    LOG IN HERE
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -23,24 +41,40 @@
         const sb = window.supabase.createClient(_URL, _KEY);
 
         async function doSignup() {
-            alert("Button Clicked!"); // If you don't see this, your code didn't update on Vercel
-            const u = document.getElementById('u').value;
-            const ph = document.getElementById('ph').value;
-            const ps = document.getElementById('ps').value;
+            const u = document.getElementById('u').value.trim();
+            const ph = document.getElementById('ph').value.trim();
+            const ps = document.getElementById('ps').value.trim();
 
-            const { error } = await sb.from('Profiles').insert([{ 
-                public_username: u, 
-                phone_number: ph, 
-                password: ps, 
-                total_score: 0 
-            }]);
+            if(!u || !ph || !ps) {
+                alert("Please fill all fields!");
+                return;
+            }
 
-            if (error) {
-                alert("Database Error: " + error.message);
-            } else {
-                alert("SUCCESS! REDIRECTING...");
-                localStorage.setItem('league_user', u);
-                window.location.href = "dashboard.html";
+            const btn = document.getElementById('runBtn');
+            btn.innerText = "AUTHENTICATING...";
+            btn.disabled = true;
+
+            try {
+                const { error } = await sb.from('Profiles').insert([{ 
+                    public_username: u, 
+                    phone_number: ph, 
+                    password: ps, 
+                    total_score: 0 
+                }]);
+
+                if (error) {
+                    alert("Database Error: " + error.message);
+                    btn.innerText = "CREATE ACCOUNT & PLAY";
+                    btn.disabled = false;
+                } else {
+                    alert("SUCCESS! WELCOME TO THE ARENA.");
+                    localStorage.setItem('league_user', u);
+                    window.location.href = "dashboard.html";
+                }
+            } catch (err) {
+                alert("System Error: " + err.message);
+                btn.innerText = "RETRY";
+                btn.disabled = false;
             }
         }
     </script>
