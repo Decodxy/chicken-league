@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-black text-white p-6 font-mono">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-black text-orange-600 mb-2 underline decoration-4">COMMAND CENTER</h1>
+        <p class="text-gray-500 mb-8">Live Battle Royale Oversight</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-900 p-6 rounded-2xl border border-orange-600/30">
+                <p class="text-xs text-gray-400 uppercase">Active Recruits</p>
+                <p id="total_count" class="text-5xl font-black text-orange-500">0</p>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-2xl border border-gray-700">
+                <button onclick="clearLobby()" class="w-full h-full bg-red-900/20 text-red-500 border border-red-500 font-bold rounded-xl hover:bg-red-500 hover:text-white transition">
+                    RESET LOBBY FOR NEW MATCH
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 rounded-3xl overflow-hidden border border-gray-800">
+            <table class="w-full text-left">
+                <thead class="bg-gray-800 text-gray-400 text-xs uppercase">
+                    <tr>
+                        <th class="p-4">Username</th>
+                        <th class="p-4">Joined At</th>
+                    </tr>
+                </thead>
+                <tbody id="player_list">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+        async function loadPlayers() {
+            const { data, error } = await sb
+                .from('Battle_Royale_1')
+                .select('*')
+                .order('joined_at', { ascending: false });
+
+            if (data) {
+                document.getElementById('total_count').innerText = data.length;
+                const list = document.getElementById('player_list');
+                list.innerHTML = data.map(p => `
+                    <tr class="border-t border-gray-800">
+                        <td class="p-4 font-bold text-orange-400">${p.player_username}</td>
+                        <td class="p-4 text-gray-500 text-sm">${new Date(p.joined_at).toLocaleTimeString()}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function clearLobby() {
+            if(confirm("DANGER: This will kick everyone out of the lobby. Proceed?")) {
+                const { error } = await sb.from('Battle_Royale_1').delete().neq('player_username', '0');
+                if (!error) location.reload();
+            }
+        }
+
+        setInterval(loadPlayers, 3000);
+        loadPlayers();
+    </script>
+</body>
+</html>
