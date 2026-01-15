@@ -48,7 +48,8 @@
 
                 try {
                     const { data, error } = await supabase
-                        .from('profiles')
+                       .from('Profiles')
+
                         .insert([{ public_username: u, phone_number: ph, password: ps, total_score: 0 }]);
 
                     if (error) {
