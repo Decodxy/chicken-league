@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>1v1 Duel Arena | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #050505; color: white; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
+        .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .grid-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 92vw; max-width: 380px; margin: 0 auto; }
+        .cell { aspect-ratio: 1/1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; background: rgba(255,255,255,0.05); transition: 0.2s; border: 1px solid rgba(255,255,255,0.05); }
+        .selected { border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); transform: scale(1.05); }
+    </style>
+</head>
+<body class="flex flex-col items-center py-8">
+
+    <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
+        <div class="glass-ui p-4 rounded-2xl border-l-4 border-orange-500">
+            <p class="text-[9px] text-gray-500 font-black uppercase">Your Broiler Weight</p>
+            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-sm text-orange-500">kg</span></h2>
+        </div>
+        <div class="text-center">
+            <div id="timer" class="text-4xl font-black italic text-orange-600">60</div>
+            <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds left</p>
+        </div>
+    </div>
+
+    <div id="grid" class="grid-container glass-ui p-3 rounded-[2.5rem]"></div>
+
+    <div class="mt-10 glass-ui px-6 py-3 rounded-full flex items-center gap-3">
+        <div class="h-2 w-2 bg-green-500 rounded-full animate-ping"></div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-gray-300">1v1 Duel Mode Active</span>
+    </div>
+
+    <script>
+        const user = localStorage.getItem('league_user');
+        const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
+        let score = 0;
+        let timeLeft = 60;
+        let selectedCell = null;
+
+        function initArena() {
+            const gridEl = document.getElementById('grid');
+            for (let i = 0; i < 36; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.innerHTML = items[Math.floor(Math.random() * items.length)];
+                cell.onclick = () => handleSwap(cell);
+                gridEl.appendChild(cell);
+            }
+            startCountdown();
+        }
+
+        function handleSwap(cell) {
+            if (!selectedCell) {
+                selectedCell = cell;
+                cell.classList.add('selected');
+            } else {
+                let temp = selectedCell.innerHTML;
+                selectedCell.innerHTML = cell.innerHTML;
+                cell.innerHTML = temp;
+                selectedCell.classList.remove('selected');
+                selectedCell = null;
+                // Simplified Score Logic
+                score += 0.5;
+                document.getElementById('score').innerText = score.toFixed(1) + 'kg';
+            }
+        }
+
+        function startCountdown() {
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    alert(`DUEL ENDED! Final weight: ${score}kg`);
+                    window.location.href = 'dashboard.html';
+                }
+            }, 1000);
+        }
+
+        if(!user) window.location.href = 'index.html';
+        else initArena();
+    </script>
+</body>
+</html>
