@@ -7,10 +7,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; pb-32 }
-        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .slot-circle { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); transition: 0.5s; }
-        .slot-filled { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 15px #fbbf24; }
+       body { 
+        background: #050505; 
+        color: white; 
+        font-family: 'Inter', sans-serif; 
+        min-height: 100vh; 
+        /* GUARD: Added padding to ensure no content is hidden by the sticky nav */
+        padding-bottom: 120px; 
+    }
+    
+    /* Ensure the main container doesn't collapse */
+    main {
+        position: relative;
+        z-index: 1;
+    }
         
         /* Sticky Nav copied from Dashboard for Consistency */
         .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
