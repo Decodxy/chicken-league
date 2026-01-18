@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Broiler Arena | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #050505; color: white; overflow: hidden; touch-action: none; }
+        .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 4px; 
+            width: 95vw; 
+            max-width: 400px; 
+            margin: 0 auto;
+        }
+        .cell { 
+            aspect-ratio: 1/1; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.5rem; 
+            background: rgba(255,255,255,0.05);
+            transition: transform 0.2s;
+        }
+        .cell:active { transform: scale(0.9); }
+        .selected { border: 2px solid #fbbf24; box-shadow: 0 0 15px #fbbf24; }
+    </style>
+</head>
+<body class="flex flex-col items-center py-6">
+
+    <div class="w-full max-w-md px-6 flex justify-between items-center mb-6">
+        <div class="glass-ui p-3 rounded-2xl">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Weight Gain</p>
+            <h2 id="score" class="text-2xl font-black text-orange-500">0kg</h2>
+        </div>
+        <div class="glass-ui p-3 rounded-2xl text-right">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Time Left</p>
+            <h2 id="timer" class="text-2xl font-black text-white">60s</h2>
+        </div>
+    </div>
+
+    <div id="grid" class="grid-container glass-ui p-2 rounded-3xl"></div>
+
+    <div class="mt-8 w-full max-w-md px-6">
+        <div class="flex gap-4">
+            <div class="flex-1 glass-ui p-4 rounded-2xl text-center">
+                <span class="block text-[10px] text-gray-500 uppercase font-black">Target</span>
+                <span class="text-sm font-bold">100kg Mature Broiler</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gridElement = document.getElementById('grid');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const items = ['🍗', '🥚', '🌽', '🐔', '🐥']; // Broiler, Egg, Feed, Hen, Chick
+        let grid = [];
+        let score = 0;
+        let timeLeft = 60;
+        let selectedCell = null;
+
+        // Initialize Game
+        function initGame() {
+            for (let i = 0; i < 49; i++) {
+                const item = items[Math.floor(Math.random() * items.length)];
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.innerHTML = item;
+                cell.dataset.index = i;
+                cell.onclick = () => handleCellClick(cell);
+                gridElement.appendChild(cell);
+                grid.push(cell);
+            }
+            startTimer();
+        }
+
+        function handleCellClick(cell) {
+            if (!selectedCell) {
+                selectedCell = cell;
+                cell.classList.add('selected');
+            } else {
+                const idx1 = parseInt(selectedCell.dataset.index);
+                const idx2 = parseInt(cell.dataset.index);
+                
+                if (isAdjacent(idx1, idx2)) {
+                    swapItems(selectedCell, cell);
+                    checkMatches();
+                }
+                
+                selectedCell.classList.remove('selected');
+                selectedCell = null;
+            }
+        }
+
+        function isAdjacent(id1, id2) {
+            const diff = Math.abs(id1 - id2);
+            return diff === 1 || diff === 7;
+        }
+
+        function swapItems(c1, c2) {
+            const temp = c1.innerHTML;
+            c1.innerHTML = c2.innerHTML;
+            c2.innerHTML = temp;
+        }
+
+        function checkMatches() {
+            // Basic horizontal match-3 logic
+            for (let i = 0; i < 49; i++) {
+                if (i % 7 < 5) {
+                    if (grid[i].innerHTML === grid[i+1].innerHTML && grid[i].innerHTML === grid[i+2].innerHTML) {
+                        handleMatch([i, i+1, i+2]);
+                    }
+                }
+            }
+        }
+
+        function handleMatch(indices) {
+            score += 5;
+            scoreElement.innerText = score + 'kg';
+            indices.forEach(i => {
+                grid[i].style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    grid[i].innerHTML = items[Math.floor(Math.random() * items.length)];
+                    grid[i].style.transform = 'scale(1)';
+                }, 200);
+            });
+        }
+
+        function startTimer() {
+            const interval = setInterval(() => {
+                timeLeft--;
+                timerElement.innerText = timeLeft + 's';
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    alert("Match Finished! Final Weight: " + score + "kg");
+                    // Here we will add the Supabase Score Submission
+                }
+            }, 1000);
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
