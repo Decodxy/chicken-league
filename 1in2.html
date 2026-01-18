@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>1 IN 2 Duel | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; pb-32 }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .slot-circle { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); transition: 0.5s; }
+        .slot-filled { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 15px #fbbf24; }
+        
+        /* Sticky Nav copied from Dashboard for Consistency */
+        .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
+        .nav-item.active { color: #fbbf24; }
+        .nav-item i { font-style: normal; font-size: 1.2rem; }
+        .nav-item span { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div id="battle_alert" class="hidden sticky top-0 z-50 w-full p-4 bg-green-600 text-center animate-pulse">
+        <span class="text-xs font-black uppercase">🚨 DUEL READY: ALL SLOTS FILLED!</span>
+    </div>
+
+    <main class="p-6">
+        <div class="mb-6 flex items-center justify-between">
+            <a href="dashboard.html" class="text-gray-400 text-sm">← Back</a>
+            <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">1 IN 2 Mode</span>
+        </div>
+
+        <div class="glass-panel rounded-[2rem] overflow-hidden mb-8 border-b-4 border-orange-600">
+            <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+            </div>
+            <div class="p-5">
+                <h1 class="text-2xl font-black italic uppercase italic">The Trial Broiler</h1>
+                <p class="text-gray-400 text-xs">Winner takes the full bird.</p>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-[2rem] mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xs font-black uppercase tracking-widest text-orange-500">Lobby Slots</h3>
+                <span id="count_display" class="text-xs font-bold">0 / 2</span>
+            </div>
+            <div id="grid_container" class="flex gap-4 justify-center">
+                </div>
+        </div>
+
+        <button id="joinBtn" onclick="joinLobby()" class="w-full py-5 bg-orange-600 rounded-2xl font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all">
+            Join Duel
+        </button>
+    </main>
+
+    <nav class="bottom-nav glass-panel">
+        <a href="dashboard.html" class="nav-item"><i>🏠</i><span>Home</span></a>
+        <a href="#" class="nav-item"><i>🏆</i><span>Ranks</span></a>
+        <a href="#" class="nav-item"><i>🏦</i><span>Wallet</span></a>
+        <a href="#" class="nav-item"><i>👤</i><span>Profile</span></a>
+    </nav>
+
+    <script>
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'YOUR_SUPABASE_KEY'; // MUST USE YOUR ACTUAL KEY
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        const user = localStorage.getItem('league_user');
+
+        async function initLobby() {
+            const container = document.getElementById('grid_container');
+            container.innerHTML = '';
+            for(let i=0; i<2; i++) {
+                const div = document.createElement('div');
+                div.className = 'slot-circle';
+                div.id = `slot-${i}`;
+                container.appendChild(div);
+            }
+            syncLobby();
+            // Real-time subscription
+            sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_1' }, syncLobby).subscribe();
+        }
+
+        async function syncLobby() {
+            const { data } = await sb.from('Battle_Royale_1').select('*');
+            const total = data.length;
+            document.getElementById('count_display').innerText = `${total} / 2`;
+
+            data.forEach((player, index) => {
+                if(index < 2) document.getElementById(`slot-${index}`).classList.add('slot-filled');
+            });
+
+            if (total >= 2) {
+                document.getElementById('battle_alert').classList.remove('hidden');
+                const btn = document.getElementById('joinBtn');
+                if (data.some(p => p.player_username === user)) {
+                    btn.innerText = "Enter Arena ⚔️";
+                    btn.classList.replace('bg-orange-600', 'bg-green-600');
+                    btn.onclick = () => window.location.href = 'arena.html';
+                } else {
+                    btn.innerText = "Lobby Full";
+                    btn.disabled = true;
+                }
+            }
+        }
+
+        async function joinLobby() {
+            const { error } = await sb.from('Battle_Royale_1').insert([{ player_username: user }]);
+            if (error) alert("You are already in or Lobby error");
+        }
+
+        if(!user) window.location.href = 'index.html';
+        else initLobby();
+    </script>
+</body>
+</html>
