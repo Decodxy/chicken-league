@@ -120,7 +120,8 @@ sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale
         }
 
         async function joinLobby() {
-            const { error } = await sb.from('Battle_Royale_1').insert([{ player_username: user }]);
+            const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
+
             if (error) alert("You are already in or Lobby error");
         }
 
