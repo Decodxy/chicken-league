@@ -12,22 +12,22 @@
         color: white; 
         font-family: 'Inter', sans-serif; 
         min-height: 100vh; 
-        /* GUARD: Added padding to ensure no content is hidden by the sticky nav */
-        padding-bottom: 120px; 
+        /* UI FIX: Increased padding to clear the black slate menu */
+        padding-bottom: 160px; 
     }
     
-    /* Ensure the main container doesn't collapse */
-    main {
-        position: relative;
-        z-index: 1;
-    }
+    main { position: relative; z-index: 1; }
+    
+    .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    
+    .slot-circle { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); transition: 0.5s; }
+    .slot-filled { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 15px #fbbf24; }
         
-        /* Sticky Nav copied from Dashboard for Consistency */
-        .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
-        .nav-item.active { color: #fbbf24; }
-        .nav-item i { font-style: normal; font-size: 1.2rem; }
-        .nav-item span { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
+    .nav-item.active { color: #fbbf24; }
+    .nav-item i { font-style: normal; font-size: 1.2rem; }
+    .nav-item span { font-size: 9px; font-weight: 800; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -47,7 +47,7 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
             </div>
             <div class="p-5">
-                <h1 class="text-2xl font-black italic uppercase italic">The Trial Broiler</h1>
+                <h1 class="text-2xl font-black italic uppercase">The Trial Broiler</h1>
                 <p class="text-gray-400 text-xs">Winner takes the full bird.</p>
             </div>
         </div>
@@ -57,8 +57,7 @@
                 <h3 class="text-xs font-black uppercase tracking-widest text-orange-500">Lobby Slots</h3>
                 <span id="count_display" class="text-xs font-bold">0 / 2</span>
             </div>
-            <div id="grid_container" class="flex gap-4 justify-center">
-                </div>
+            <div id="grid_container" class="flex gap-4 justify-center"></div>
         </div>
 
         <button id="joinBtn" onclick="joinLobby()" class="w-full py-5 bg-orange-600 rounded-2xl font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all">
@@ -75,7 +74,7 @@
 
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_SUPABASE_KEY'; // MUST USE YOUR ACTUAL KEY
+        const SB_KEY = 'YOUR_ACTUAL_KEY_HERE'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
         const user = localStorage.getItem('league_user');
 
@@ -89,17 +88,20 @@
                 container.appendChild(div);
             }
             syncLobby();
-            // Real-time subscription
-            sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_1' }, syncLobby).subscribe();
+            // REAL-TIME GUARD: Listen specifically to the 2-player table
+            sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
         }
 
         async function syncLobby() {
-      
-sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
-
+            // DATA FETCH GUARD: Retrieve players from the 2-player silo
+            const { data, error } = await sb.from('Battle_Royale_2').select('*');
+            if (error) return console.error(error);
 
             const total = data.length;
             document.getElementById('count_display').innerText = `${total} / 2`;
+
+            // Reset circles visually before updating
+            document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('slot-filled'));
 
             data.forEach((player, index) => {
                 if(index < 2) document.getElementById(`slot-${index}`).classList.add('slot-filled');
@@ -111,18 +113,18 @@ sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale
                 if (data.some(p => p.player_username === user)) {
                     btn.innerText = "Enter Arena ⚔️";
                     btn.classList.replace('bg-orange-600', 'bg-green-600');
-                    btn.onclick = () => window.location.href = 'arena.html';
+                    btn.onclick = () => window.location.href = '1in2arena.html';
                 } else {
                     btn.innerText = "Lobby Full";
                     btn.disabled = true;
+                    btn.classList.add('opacity-50');
                 }
             }
         }
 
         async function joinLobby() {
             const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
-
-            if (error) alert("You are already in or Lobby error");
+            if (error) alert("Slot occupied or connection error.");
         }
 
         if(!user) window.location.href = 'index.html';
