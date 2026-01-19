@@ -94,7 +94,8 @@
         }
 
         async function syncLobby() {
-            sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
+      
+sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
 
 
             const total = data.length;
