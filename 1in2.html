@@ -74,61 +74,105 @@
 
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_ACTUAL_KEY_HERE'; 
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
-        const user = localStorage.getItem('league_user');
+const SB_KEY = 'YOUR_ACTUAL_KEY_HERE'; 
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const user = localStorage.getItem('league_user');
 
-        async function initLobby() {
-            const container = document.getElementById('grid_container');
-            container.innerHTML = '';
-            for(let i=0; i<2; i++) {
-                const div = document.createElement('div');
-                div.className = 'slot-circle';
-                div.id = `slot-${i}`;
-                container.appendChild(div);
-            }
-            syncLobby();
-            // REAL-TIME GUARD: Listen specifically to the 2-player table
-            sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
+// 1. Force Clean Initialization
+async function initLobby() {
+    const container = document.getElementById('grid_container');
+    container.innerHTML = '';
+    
+    // Generate only 2 slots for a clean 1in2 UI
+    for(let i=0; i<2; i++) {
+        const div = document.createElement('div');
+        div.className = 'slot-circle';
+        div.id = `slot-${i}`;
+        container.appendChild(div);
+    }
+    
+    syncLobby();
+    
+    // CLEAN SLATE GUARD: Listen ONLY to the new 1in2 table
+    sb.channel('lobby_2')
+      .on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, () => syncLobby())
+      .subscribe();
+}
+
+// 2. Optimized Sync Logic
+async function syncLobby() {
+    // Target the specific 1in2 table
+    const { data, error } = await sb.from('Battle_Royale_2').select('player_username');
+    
+    if (error) {
+        console.error("Sync Error:", error.message);
+        return;
+    }
+
+    const total = data.length;
+    document.getElementById('count_display').innerText = `${total} / 2`;
+
+    // Reset all circles to empty first
+    document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('slot-filled'));
+
+    // Fill circles based on current players in Battle_Royale_2
+    data.forEach((player, index) => {
+        if(index < 2) {
+            document.getElementById(`slot-${index}`).classList.add('slot-filled');
         }
+    });
 
-        async function syncLobby() {
-            // DATA FETCH GUARD: Retrieve players from the 2-player silo
-            const { data, error } = await sb.from('Battle_Royale_2').select('*');
-            if (error) return console.error(error);
-
-            const total = data.length;
-            document.getElementById('count_display').innerText = `${total} / 2`;
-
-            // Reset circles visually before updating
-            document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('slot-filled'));
-
-            data.forEach((player, index) => {
-                if(index < 2) document.getElementById(`slot-${index}`).classList.add('slot-filled');
-            });
-
-            if (total >= 2) {
-                document.getElementById('battle_alert').classList.remove('hidden');
-                const btn = document.getElementById('joinBtn');
-                if (data.some(p => p.player_username === user)) {
-                    btn.innerText = "Enter Arena ⚔️";
-                    btn.classList.replace('bg-orange-600', 'bg-green-600');
-                    btn.onclick = () => window.location.href = '1in2arena.html';
-                } else {
-                    btn.innerText = "Lobby Full";
-                    btn.disabled = true;
-                    btn.classList.add('opacity-50');
-                }
-            }
+    const btn = document.getElementById('joinBtn');
+    
+    // CHECKPOINT: Is the lobby full?
+    if (total >= 2) {
+        document.getElementById('battle_alert').classList.remove('hidden');
+        
+        // If current user is in the list, enable Arena entry
+        if (data.some(p => p.player_username === user)) {
+            btn.innerText = "Enter Arena ⚔️";
+            btn.disabled = false;
+            btn.classList.replace('bg-orange-600', 'bg-green-600');
+            btn.onclick = () => window.location.href = '1in2arena.html';
+        } else {
+            btn.innerText = "Lobby Full";
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
         }
-
-        async function joinLobby() {
-            const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
-            if (error) alert("Slot occupied or connection error.");
+    } else {
+        // Lobby not full logic
+        document.getElementById('battle_alert').classList.add('hidden');
+        
+        // Check if user is already in to prevent double-join button state
+        if (data.some(p => p.player_username === user)) {
+            btn.innerText = "Waiting for Rival...";
+            btn.disabled = true;
+            btn.classList.add('opacity-70');
+        } else {
+            btn.innerText = "Join Duel";
+            btn.disabled = false;
+            btn.classList.add('bg-orange-600');
+            btn.classList.remove('bg-green-600', 'opacity-70', 'opacity-50');
+            btn.onclick = joinLobby;
         }
+    }
+}
 
-        if(!user) window.location.href = 'index.html';
-        else initLobby();
+// 3. Simple Join Function
+async function joinLobby() {
+    const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
+    if (error) {
+        alert("You have already joined or the slot was just taken.");
+    }
+}
+
+// Start sequence
+if(!user) {
+    window.location.href = 'index.html';
+} else {
+    initLobby();
+}
+
     </script>
 </body>
 </html>
