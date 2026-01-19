@@ -7,172 +7,148 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-       body { 
-        background: #050505; 
-        color: white; 
-        font-family: 'Inter', sans-serif; 
-        min-height: 100vh; 
-        /* UI FIX: Increased padding to clear the black slate menu */
-        padding-bottom: 160px; 
-    }
-    
-    main { position: relative; z-index: 1; }
-    
-    .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    
-    .slot-circle { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); transition: 0.5s; }
-    .slot-filled { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 15px #fbbf24; }
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 160px; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         
-    .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
-    .nav-item.active { color: #fbbf24; }
-    .nav-item i { font-style: normal; font-size: 1.2rem; }
-    .nav-item span { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        /* THE GLOWING SLOT LOGIC */
+        .slot-circle { width: 60px; height: 60px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .slot-filled { 
+            background: #fbbf24; 
+            border: 2px solid #fbbf24; 
+            box-shadow: 0 0 25px #fbbf24; 
+            transform: scale(1.1);
+            color: black;
+        }
+
+        .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
+        .nav-item.active { color: #fbbf24; }
     </style>
 </head>
 <body>
 
-    <div id="battle_alert" class="hidden sticky top-0 z-50 w-full p-4 bg-green-600 text-center animate-pulse">
-        <span class="text-xs font-black uppercase">🚨 DUEL READY: ALL SLOTS FILLED!</span>
+    <div id="battle_alert" class="hidden sticky top-0 z-50 w-full p-4 bg-green-600 text-center animate-bounce">
+        <span class="text-xs font-black uppercase tracking-tighter">🔥 ARENA UNLOCKED: START THE DUEL NOW!</span>
     </div>
 
     <main class="p-6">
         <div class="mb-6 flex items-center justify-between">
-            <a href="dashboard.html" class="text-gray-400 text-sm">← Back</a>
-            <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">1 IN 2 Mode</span>
+            <a href="dashboard.html" class="text-gray-400 text-xs font-bold uppercase tracking-widest">← Exit Lobby</a>
+            <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">1v1 High Stakes</span>
         </div>
 
-        <div class="glass-panel rounded-[2rem] overflow-hidden mb-8 border-b-4 border-orange-600">
-            <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-            </div>
-            <div class="p-5">
-                <h1 class="text-2xl font-black italic uppercase">The Trial Broiler</h1>
-                <p class="text-gray-400 text-xs">Winner takes the full bird.</p>
+        <div class="glass-panel rounded-[2.5rem] overflow-hidden mb-8 border-b-4 border-orange-600">
+            <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');"></div>
+            <div class="p-5 text-center">
+                <h1 class="text-2xl font-black italic uppercase italic tracking-tighter text-orange-500">The Trial Broiler</h1>
+                <p class="text-gray-400 text-[10px] font-bold uppercase">Winner Takes All • 2.5kg Target</p>
             </div>
         </div>
 
-        <div class="glass-panel p-6 rounded-[2rem] mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xs font-black uppercase tracking-widest text-orange-500">Lobby Slots</h3>
-                <span id="count_display" class="text-xs font-bold">0 / 2</span>
+        <div class="glass-panel p-8 rounded-[2.5rem] mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500">Lobby Status</h3>
+                <span id="count_display" class="text-xs font-black text-orange-500">0 / 2 READY</span>
             </div>
-            <div id="grid_container" class="flex gap-4 justify-center"></div>
+            <div id="grid_container" class="flex gap-8 justify-center">
+                </div>
         </div>
 
-        <button id="joinBtn" onclick="joinLobby()" class="w-full py-5 bg-orange-600 rounded-2xl font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all">
+        <button id="joinBtn" onclick="joinLobby()" class="w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl transition-all duration-300">
             Join Duel
         </button>
     </main>
 
     <nav class="bottom-nav glass-panel">
-        <a href="dashboard.html" class="nav-item"><i>🏠</i><span>Home</span></a>
-        <a href="#" class="nav-item"><i>🏆</i><span>Ranks</span></a>
-        <a href="#" class="nav-item"><i>🏦</i><span>Wallet</span></a>
-        <a href="#" class="nav-item"><i>👤</i><span>Profile</span></a>
+        <a href="dashboard.html" class="nav-item"><i>🏠</i><span class="text-[9px] font-black uppercase mt-1">Home</span></a>
+        <a href="#" class="nav-item"><i>🏆</i><span class="text-[9px] font-black uppercase mt-1">Ranks</span></a>
+        <a href="#" class="nav-item"><i>👤</i><span class="text-[9px] font-black uppercase mt-1">Profile</span></a>
     </nav>
 
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-const SB_KEY = 'YOUR_ACTUAL_KEY_HERE'; 
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
-const user = localStorage.getItem('league_user');
+        const SB_KEY = 'YOUR_ACTUAL_KEY'; 
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        const user = localStorage.getItem('league_user');
 
-// 1. Force Clean Initialization
-async function initLobby() {
-    const container = document.getElementById('grid_container');
-    container.innerHTML = '';
-    
-    // Generate only 2 slots for a clean 1in2 UI
-    for(let i=0; i<2; i++) {
-        const div = document.createElement('div');
-        div.className = 'slot-circle';
-        div.id = `slot-${i}`;
-        container.appendChild(div);
-    }
-    
-    syncLobby();
-    
-    // CLEAN SLATE GUARD: Listen ONLY to the new 1in2 table
-    sb.channel('lobby_2')
-      .on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, () => syncLobby())
-      .subscribe();
-}
-
-// 2. Optimized Sync Logic
-async function syncLobby() {
-    // Target the specific 1in2 table
-    const { data, error } = await sb.from('Battle_Royale_2').select('player_username');
-    
-    if (error) {
-        console.error("Sync Error:", error.message);
-        return;
-    }
-
-    const total = data.length;
-    document.getElementById('count_display').innerText = `${total} / 2`;
-
-    // Reset all circles to empty first
-    document.querySelectorAll('.slot-circle').forEach(el => el.classList.remove('slot-filled'));
-
-    // Fill circles based on current players in Battle_Royale_2
-    data.forEach((player, index) => {
-        if(index < 2) {
-            document.getElementById(`slot-${index}`).classList.add('slot-filled');
+        // 1. Initialize the 2 slots visually
+        function initGrid() {
+            const container = document.getElementById('grid_container');
+            container.innerHTML = '';
+            for(let i=0; i<2; i++) {
+                const div = document.createElement('div');
+                div.className = 'slot-circle';
+                div.id = `slot-${i}`;
+                div.innerHTML = '🥚'; // Unhatched state
+                container.appendChild(div);
+            }
+            syncLobby();
         }
-    });
 
-    const btn = document.getElementById('joinBtn');
-    
-    // CHECKPOINT: Is the lobby full?
-    if (total >= 2) {
-        document.getElementById('battle_alert').classList.remove('hidden');
-        
-        // If current user is in the list, enable Arena entry
-        if (data.some(p => p.player_username === user)) {
-            btn.innerText = "Enter Arena ⚔️";
-            btn.disabled = false;
-            btn.classList.replace('bg-orange-600', 'bg-green-600');
-            btn.onclick = () => window.location.href = '1in2arena.html';
-        } else {
-            btn.innerText = "Lobby Full";
-            btn.disabled = true;
-            btn.classList.add('opacity-50');
+        // 2. The Heartbeat: Syncing with Supabase
+        async function syncLobby() {
+            const { data, error } = await sb.from('Battle_Royale_2').select('*');
+            if (error) return;
+
+            const total = data.length;
+            document.getElementById('count_display').innerText = `${total} / 2 READY`;
+
+            // Reset circles
+            for(let i=0; i<2; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                slot.classList.remove('slot-filled');
+                slot.innerHTML = '🥚';
+            }
+
+            // Fill circles with Glow
+            data.forEach((player, index) => {
+                if(index < 2) {
+                    const slot = document.getElementById(`slot-${index}`);
+                    slot.classList.add('slot-filled');
+                    slot.innerHTML = '🐔'; // Hatched/Joined state
+                }
+            });
+
+            const btn = document.getElementById('joinBtn');
+            const isUserIn = data.some(p => p.player_username === user);
+
+            if (total >= 2) {
+                document.getElementById('battle_alert').classList.remove('hidden');
+                if (isUserIn) {
+                    btn.innerText = "Enter Arena ⚔️";
+                    btn.className = "w-full py-6 bg-green-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl";
+                    btn.onclick = () => window.location.href = '1in2arena.html';
+                    btn.disabled = false;
+                } else {
+                    btn.innerText = "Lobby Full";
+                    btn.disabled = true;
+                    btn.className = "w-full py-6 bg-gray-800 rounded-3xl font-black uppercase italic opacity-50";
+                }
+            } else if (isUserIn) {
+                btn.innerText = "Waiting for Rival...";
+                btn.disabled = true;
+                btn.className = "w-full py-6 bg-orange-900 rounded-3xl font-black uppercase italic opacity-70";
+            } else {
+                btn.innerText = "Join Duel";
+                btn.disabled = false;
+                btn.className = "w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic";
+                btn.onclick = joinLobby;
+            }
         }
-    } else {
-        // Lobby not full logic
-        document.getElementById('battle_alert').classList.add('hidden');
-        
-        // Check if user is already in to prevent double-join button state
-        if (data.some(p => p.player_username === user)) {
-            btn.innerText = "Waiting for Rival...";
-            btn.disabled = true;
-            btn.classList.add('opacity-70');
-        } else {
-            btn.innerText = "Join Duel";
-            btn.disabled = false;
-            btn.classList.add('bg-orange-600');
-            btn.classList.remove('bg-green-600', 'opacity-70', 'opacity-50');
-            btn.onclick = joinLobby;
+
+        async function joinLobby() {
+            const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
+            if (error) {
+                alert("You are already in this lobby!");
+            }
+            syncLobby();
         }
-    }
-}
 
-// 3. Simple Join Function
-async function joinLobby() {
-    const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
-    if (error) {
-        alert("You have already joined or the slot was just taken.");
-    }
-}
+        // Real-time Sub
+        sb.channel('any').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
 
-// Start sequence
-if(!user) {
-    window.location.href = 'index.html';
-} else {
-    initLobby();
-}
-
+        if(!user) window.location.href = 'index.html';
+        else initGrid();
     </script>
 </body>
 </html>
