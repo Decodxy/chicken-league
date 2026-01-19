@@ -94,7 +94,8 @@
         }
 
         async function syncLobby() {
-            const { data } = await sb.from('Battle_Royale_1').select('*');
+            const { data } = await sb.from('Battle_Royale_2').select('*');
+
             const total = data.length;
             document.getElementById('count_display').innerText = `${total} / 2`;
 
