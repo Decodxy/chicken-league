@@ -94,7 +94,8 @@
         }
 
         async function syncLobby() {
-            const { data } = await sb.from('Battle_Royale_2').select('*');
+            sb.channel('lobby_2').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
+
 
             const total = data.length;
             document.getElementById('count_display').innerText = `${total} / 2`;
