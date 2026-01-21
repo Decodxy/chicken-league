@@ -9,20 +9,13 @@
     <style>
         body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 160px; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        
-        /* THE GLOWING SLOT LOGIC */
         .slot-circle { width: 60px; height: 60px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .slot-filled { 
-            background: #fbbf24; 
-            border: 2px solid #fbbf24; 
-            box-shadow: 0 0 25px #fbbf24; 
-            transform: scale(1.1);
-            color: black;
-        }
-
+        .slot-filled { background: #fbbf24; border: 2px solid #fbbf24; box-shadow: 0 0 25px #fbbf24; transform: scale(1.1); color: black; }
         .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
         .nav-item.active { color: #fbbf24; }
+        .pulse-green { animation: pulseG 1.5s infinite; }
+        @keyframes pulseG { 0% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); } }
     </style>
 </head>
 <body>
@@ -40,7 +33,7 @@
         <div class="glass-panel rounded-[2.5rem] overflow-hidden mb-8 border-b-4 border-orange-600">
             <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');"></div>
             <div class="p-5 text-center">
-                <h1 class="text-2xl font-black italic uppercase italic tracking-tighter text-orange-500">The Trial Broiler</h1>
+                <h1 class="text-2xl font-black italic uppercase tracking-tighter text-orange-500">The Trial Broiler</h1>
                 <p class="text-gray-400 text-[10px] font-bold uppercase">Winner Takes All • 2.5kg Target</p>
             </div>
         </div>
@@ -50,8 +43,7 @@
                 <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500">Lobby Status</h3>
                 <span id="count_display" class="text-xs font-black text-orange-500">0 / 2 READY</span>
             </div>
-            <div id="grid_container" class="flex gap-8 justify-center">
-                </div>
+            <div id="grid_container" class="flex gap-8 justify-center"></div>
         </div>
 
         <button id="joinBtn" onclick="joinLobby()" class="w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl transition-all duration-300">
@@ -70,8 +62,8 @@
         const SB_KEY = 'YOUR_ACTUAL_KEY'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
         const user = localStorage.getItem('league_user');
+        let countdownInterval = null;
 
-        // 1. Initialize the 2 slots visually
         function initGrid() {
             const container = document.getElementById('grid_container');
             container.innerHTML = '';
@@ -79,73 +71,104 @@
                 const div = document.createElement('div');
                 div.className = 'slot-circle';
                 div.id = `slot-${i}`;
-                div.innerHTML = '🥚'; // Unhatched state
+                div.innerHTML = '🥚';
                 container.appendChild(div);
             }
             syncLobby();
         }
 
-        // 2. The Heartbeat: Syncing with Supabase
         async function syncLobby() {
-            const { data, error } = await sb.from('Battle_Royale_2').select('*');
+            const { data: players, error } = await sb.from('Battle_Royale_2').select('*');
+            const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').single();
             if (error) return;
 
-            const total = data.length;
+            const total = players.length;
             document.getElementById('count_display').innerText = `${total} / 2 READY`;
 
-            // Reset circles
+            // Visual Reset/Fill
             for(let i=0; i<2; i++) {
                 const slot = document.getElementById(`slot-${i}`);
                 slot.classList.remove('slot-filled');
                 slot.innerHTML = '🥚';
             }
-
-            // Fill circles with Glow
-            data.forEach((player, index) => {
-                if(index < 2) {
-                    const slot = document.getElementById(`slot-${index}`);
+            players.forEach((p, i) => {
+                if(i < 2) {
+                    const slot = document.getElementById(`slot-${i}`);
                     slot.classList.add('slot-filled');
-                    slot.innerHTML = '🐔'; // Hatched/Joined state
+                    slot.innerHTML = '🐔';
                 }
             });
 
             const btn = document.getElementById('joinBtn');
-            const isUserIn = data.some(p => p.player_username === user);
+            const isUserIn = players.some(p => p.player_username === user);
 
             if (total >= 2) {
-                document.getElementById('battle_alert').classList.remove('hidden');
-                if (isUserIn) {
-                    btn.innerText = "Enter Arena ⚔️";
-                    btn.className = "w-full py-6 bg-green-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl";
-                    btn.onclick = () => window.location.href = '1in2arena.html';
-                    btn.disabled = false;
+                // TIMER & SIGNAL LOGIC
+                const now = new Date().getTime();
+                const target = signal?.target_time ? new Date(signal.target_time).getTime() : null;
+                const isLive = signal?.is_live;
+
+                if (isLive || (target && now >= target)) {
+                    // ARENA IS ACTIVE
+                    if(countdownInterval) clearInterval(countdownInterval);
+                    document.getElementById('battle_alert').classList.remove('hidden');
+                    if (isUserIn) {
+                        btn.innerText = "Enter Arena ⚔️";
+                        btn.className = "w-full py-6 bg-green-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl pulse-green";
+                        btn.disabled = false;
+                        btn.onclick = () => window.location.href = '1in2arena.html';
+                    } else {
+                        btn.innerText = "Lobby Full";
+                        btn.disabled = true;
+                        btn.className = "w-full py-6 bg-gray-800 rounded-3xl font-black uppercase italic opacity-50";
+                    }
+                } else if (target && now < target) {
+                    // COUNTDOWN IN PROGRESS
+                    if (isUserIn) {
+                        if(!countdownInterval) countdownInterval = setInterval(syncLobby, 1000);
+                        const diff = target - now;
+                        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                        btn.innerText = `STARTING IN ${mins}m ${secs}s`;
+                        btn.disabled = true;
+                        btn.className = "w-full py-6 bg-blue-900 rounded-3xl font-black uppercase italic opacity-80";
+                    }
                 } else {
-                    btn.innerText = "Lobby Full";
-                    btn.disabled = true;
-                    btn.className = "w-full py-6 bg-gray-800 rounded-3xl font-black uppercase italic opacity-50";
+                    // WAITING FOR ADMIN MANUAL PUSH
+                    if (isUserIn) {
+                        btn.innerText = "Awaiting Admin Start...";
+                        btn.disabled = true;
+                        btn.className = "w-full py-6 bg-orange-900 rounded-3xl font-black uppercase italic opacity-70";
+                    }
                 }
-            } else if (isUserIn) {
-                btn.innerText = "Waiting for Rival...";
-                btn.disabled = true;
-                btn.className = "w-full py-6 bg-orange-900 rounded-3xl font-black uppercase italic opacity-70";
             } else {
-                btn.innerText = "Join Duel";
-                btn.disabled = false;
-                btn.className = "w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic";
-                btn.onclick = joinLobby;
+                // LOBBY NOT FULL
+                if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+                document.getElementById('battle_alert').classList.add('hidden');
+                if (isUserIn) {
+                    btn.innerText = "Waiting for Rival...";
+                    btn.disabled = true;
+                    btn.className = "w-full py-6 bg-orange-900 rounded-3xl font-black uppercase italic opacity-70";
+                } else {
+                    btn.innerText = "Join Duel";
+                    btn.disabled = false;
+                    btn.className = "w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic";
+                    btn.onclick = joinLobby;
+                }
             }
         }
 
         async function joinLobby() {
             const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
-            if (error) {
-                alert("You are already in this lobby!");
-            }
+            if (error) alert("Sync Error or Already Joined");
             syncLobby();
         }
 
-        // Real-time Sub
-        sb.channel('any').on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby).subscribe();
+        // Real-time Subscriptions (Listen to both Table and Admin Signals)
+        sb.channel('lobby_updates')
+          .on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby)
+          .on('postgres_changes', { event: '*', table: 'Lobby_Signals' }, syncLobby)
+          .subscribe();
 
         if(!user) window.location.href = 'index.html';
         else initGrid();
