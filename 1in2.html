@@ -59,7 +59,7 @@
 
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_ACTUAL_KEY'; 
+        const SB_KEY = 'YOUR_ACTUAL_KEY'; // Ensure this matches your project API key
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
         const user = localStorage.getItem('league_user');
         let countdownInterval = null;
@@ -78,19 +78,24 @@
         }
 
         async function syncLobby() {
-            const { data: players, error } = await sb.from('Battle_Royale_2').select('*');
+            // Updated to point to "1in2" table
+            const { data: players, error } = await sb.from('1in2').select('*');
             const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').single();
-            if (error) return;
+            
+            if (error) {
+                console.error("Sync Error:", error.message);
+                return;
+            }
 
-            const total = players.length;
+            const total = players ? players.length : 0;
             document.getElementById('count_display').innerText = `${total} / 2 READY`;
 
-            // Visual Reset/Fill
             for(let i=0; i<2; i++) {
                 const slot = document.getElementById(`slot-${i}`);
                 slot.classList.remove('slot-filled');
                 slot.innerHTML = '🥚';
             }
+
             players.forEach((p, i) => {
                 if(i < 2) {
                     const slot = document.getElementById(`slot-${i}`);
@@ -103,13 +108,11 @@
             const isUserIn = players.some(p => p.player_username === user);
 
             if (total >= 2) {
-                // TIMER & SIGNAL LOGIC
                 const now = new Date().getTime();
                 const target = signal?.target_time ? new Date(signal.target_time).getTime() : null;
                 const isLive = signal?.is_live;
 
                 if (isLive || (target && now >= target)) {
-                    // ARENA IS ACTIVE
                     if(countdownInterval) clearInterval(countdownInterval);
                     document.getElementById('battle_alert').classList.remove('hidden');
                     if (isUserIn) {
@@ -123,7 +126,6 @@
                         btn.className = "w-full py-6 bg-gray-800 rounded-3xl font-black uppercase italic opacity-50";
                     }
                 } else if (target && now < target) {
-                    // COUNTDOWN IN PROGRESS
                     if (isUserIn) {
                         if(!countdownInterval) countdownInterval = setInterval(syncLobby, 1000);
                         const diff = target - now;
@@ -134,7 +136,6 @@
                         btn.className = "w-full py-6 bg-blue-900 rounded-3xl font-black uppercase italic opacity-80";
                     }
                 } else {
-                    // WAITING FOR ADMIN MANUAL PUSH
                     if (isUserIn) {
                         btn.innerText = "Awaiting Admin Start...";
                         btn.disabled = true;
@@ -142,7 +143,6 @@
                     }
                 }
             } else {
-                // LOBBY NOT FULL
                 if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
                 document.getElementById('battle_alert').classList.add('hidden');
                 if (isUserIn) {
@@ -159,14 +159,18 @@
         }
 
         async function joinLobby() {
-            const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
-            if (error) alert("Sync Error or Already Joined");
+            // Updated to point to "1in2" table
+            const { error } = await sb.from('1in2').insert([{ player_username: user }]);
+            if (error) {
+                console.error("Join Error:", error);
+                alert("You are already in or the lobby is full!");
+            }
             syncLobby();
         }
 
-        // Real-time Subscriptions (Listen to both Table and Admin Signals)
+        // Real-time Subscriptions updated for "1in2"
         sb.channel('lobby_updates')
-          .on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby)
+          .on('postgres_changes', { event: '*', table: '1in2' }, syncLobby)
           .on('postgres_changes', { event: '*', table: 'Lobby_Signals' }, syncLobby)
           .subscribe();
 
