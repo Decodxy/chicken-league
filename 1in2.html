@@ -7,100 +7,118 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
-        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 160px; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         
-        /* PREMIUM CIRCLE SLOTS */
-        .slot-ring { 
-            width: 80px; height: 80px; border-radius: 50%; 
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative; overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
+        /* SPECIFIED SLOT DESIGN */
+        .slot-circle { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            border: 2px dashed rgba(255,255,255,0.1); 
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            background: rgba(255,255,255,0.01);
         }
-        /* THE ACTIVATED GLOW */
-        .slot-active { 
-            border-color: #f97316; 
-            box-shadow: 0 0 30px rgba(249, 115, 22, 0.4), inset 0 0 15px rgba(249, 115, 22, 0.2);
-            background: rgba(249, 115, 22, 0.1);
-        }
-        .slot-active::after {
-            content: "READY";
-            font-size: 8px; font-weight: 900; color: #f97316;
-            letter-spacing: 1px;
+        
+        /* LIGHT UP STATE */
+        .slot-filled { 
+            background: #fbbf24; 
+            border: 2px solid #fbbf24; 
+            box-shadow: 0 0 35px rgba(251, 191, 36, 0.6); 
+            transform: scale(1.1);
         }
 
-        .pulse-arena { animation: arenaPulse 2s infinite; }
-        @keyframes arenaPulse {
-            0% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0); }
-        }
+        .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
+        .nav-item.active { color: #fbbf24; }
+        .pulse-green { animation: pulseG 1.5s infinite; }
+        @keyframes pulseG { 0% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); } }
     </style>
 </head>
-<body class="p-6">
+<body>
 
-    <div id="battle_alert" class="hidden sticky top-0 z-50 w-full p-4 bg-green-600 text-center font-black text-xs italic tracking-widest uppercase">
-        Arena Signal Detected • Proceed to Combat
+    <div id="battle_alert" class="hidden sticky top-0 z-50 w-full p-4 bg-green-600 text-center animate-bounce">
+        <span class="text-xs font-black uppercase tracking-tighter">🔥 ARENA UNLOCKED: START THE DUEL NOW!</span>
     </div>
 
-    <main class="max-w-md mx-auto">
-        <header class="flex justify-between items-center mb-10 pt-4">
-            <a href="dashboard.html" class="text-[10px] font-black text-gray-600 uppercase tracking-widest hover:text-white transition">← Abort</a>
-            <div class="text-right">
-                <p id="count_display" class="text-xs font-black text-orange-500 uppercase italic">0 / 2 JOINED</p>
-            </div>
-        </header>
+    <main class="p-6">
+        <div class="mb-6 flex items-center justify-between">
+            <a href="dashboard.html" class="text-gray-400 text-xs font-bold uppercase tracking-widest">← Exit Lobby</a>
+            <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">1v1 High Stakes</span>
+        </div>
 
-        <div class="glass-panel rounded-[2rem] overflow-hidden mb-10 border-b-2 border-orange-600/50">
-            <div class="h-32 bg-cover bg-center opacity-80" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');"></div>
-            <div class="p-4 bg-gradient-to-b from-transparent to-black">
-                <h1 class="text-xl font-black italic uppercase tracking-tighter">The Trial Broiler</h1>
+        <div class="glass-panel rounded-[2.5rem] overflow-hidden mb-8 border-b-4 border-orange-600">
+            <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');"></div>
+            <div class="p-5 text-center">
+                <h1 class="text-2xl font-black italic uppercase tracking-tighter text-orange-500">The Trial Broiler</h1>
+                <p class="text-gray-400 text-[10px] font-bold uppercase">Winner Takes All • 2.5kg Target</p>
             </div>
         </div>
 
-        <div class="glass-panel p-10 rounded-[3rem] mb-10 flex justify-center gap-10">
-            <div id="slot-0" class="slot-ring"></div>
-            <div id="slot-1" class="slot-ring"></div>
+        <div class="glass-panel p-10 rounded-[2.5rem] mb-8">
+            <div class="flex justify-between items-center mb-10">
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Duel Readiness</h3>
+                <span id="count_display" class="text-xs font-black text-orange-500">0 / 2 JOINED</span>
+            </div>
+            <div id="grid_container" class="flex gap-12 justify-center">
+                </div>
         </div>
 
-        <button id="joinBtn" onclick="joinLobby()" class="w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic tracking-widest text-sm shadow-2xl transition-all duration-500 active:scale-95">
+        <button id="joinBtn" onclick="joinLobby()" class="w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl transition-all duration-500">
             Join Duel
         </button>
     </main>
 
+    <nav class="bottom-nav glass-panel">
+        <a href="dashboard.html" class="nav-item"><i>🏠</i><span class="text-[9px] font-black uppercase mt-1">Home</span></a>
+        <a href="#" class="nav-item"><i>🏆</i><span class="text-[9px] font-black uppercase mt-1">Ranks</span></a>
+        <a href="#" class="nav-item"><i>👤</i><span class="text-[9px] font-black uppercase mt-1">Profile</span></a>
+    </nav>
+
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_ACTUAL_KEY'; 
+        const SB_KEY = 'YOUR_SUPABASE_KEY'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
         const user = localStorage.getItem('league_user');
         let countdownInterval = null;
 
+        function initGrid() {
+            const container = document.getElementById('grid_container');
+            container.innerHTML = '';
+            for(let i=0; i<2; i++) {
+                const div = document.createElement('div');
+                div.className = 'slot-circle';
+                div.id = `slot-${i}`;
+                container.appendChild(div);
+            }
+            syncLobby();
+        }
+
         async function syncLobby() {
+            // UPDATED TO POINT TO THE 1in2 TABLE
             const { data: players, error } = await sb.from('1in2').select('*');
             const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').single();
             
-            if (error) return;
+            if (error) return console.error("Sync Error:", error.message);
 
             const total = players ? players.length : 0;
-            const isUserIn = players.some(p => p.player_username === user);
-            
-            // 1. UPDATE UI TEXT
             document.getElementById('count_display').innerText = `${total} / 2 JOINED`;
 
-            // 2. LIGHT UP SLOTS
+            // LIGHT UP LOGIC
             for(let i=0; i<2; i++) {
                 const slot = document.getElementById(`slot-${i}`);
-                if (players[i]) {
-                    slot.classList.add('slot-active');
-                } else {
-                    slot.classList.remove('slot-active');
-                }
+                slot.classList.remove('slot-filled');
             }
+            players.forEach((p, i) => {
+                if(i < 2) document.getElementById(`slot-${i}`).classList.add('slot-filled');
+            });
 
             const btn = document.getElementById('joinBtn');
+            const isUserIn = players.some(p => p.player_username === user);
 
-            // 3. LOGIC FOR LOBBY FULL (2/2)
             if (total >= 2) {
                 const now = new Date().getTime();
                 const target = signal?.target_time ? new Date(signal.target_time).getTime() : null;
@@ -109,16 +127,15 @@
                 if (isLive || (target && now >= target)) {
                     if(countdownInterval) clearInterval(countdownInterval);
                     document.getElementById('battle_alert').classList.remove('hidden');
-                    
                     if (isUserIn) {
-                        btn.innerText = "Enter Arena";
+                        btn.innerText = "Enter Arena ⚔️";
+                        btn.className = "w-full py-6 bg-green-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl pulse-green opacity-100";
                         btn.disabled = false;
-                        btn.className = "w-full py-6 bg-green-600 rounded-3xl font-black uppercase italic tracking-widest pulse-arena";
                         btn.onclick = () => window.location.href = '1in2arena.html';
                     } else {
                         btn.innerText = "Lobby Full";
                         btn.disabled = true;
-                        btn.className = "w-full py-6 bg-gray-900 rounded-3xl font-black uppercase italic opacity-30 text-gray-600";
+                        btn.className = "w-full py-6 bg-gray-800 rounded-3xl font-black uppercase italic opacity-40";
                     }
                 } else if (target && now < target) {
                     if (isUserIn) {
@@ -126,50 +143,49 @@
                         const diff = target - now;
                         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                         const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                        btn.innerText = `LOCKED: ${mins}m ${secs}s`;
+                        btn.innerText = `STARTING IN ${mins}m ${secs}s`;
                         btn.disabled = true;
-                        btn.className = "w-full py-6 bg-blue-900/40 rounded-3xl font-black uppercase italic text-blue-400 border border-blue-500/30";
+                        btn.className = "w-full py-6 bg-blue-900 rounded-3xl font-black uppercase italic opacity-40";
                     }
                 } else {
                     if (isUserIn) {
-                        btn.innerText = "Awaiting Signal...";
+                        btn.innerText = "Awaiting Admin Start...";
                         btn.disabled = true;
-                        btn.className = "w-full py-6 bg-gray-900 rounded-3xl font-black uppercase italic text-gray-500 opacity-50";
+                        btn.className = "w-full py-6 bg-orange-900/40 rounded-3xl font-black uppercase italic opacity-40";
                     }
                 }
-            } 
-            // 4. LOGIC FOR USER ALREADY IN (1/2)
-            else if (isUserIn) {
-                btn.innerText = "Joined • Waiting...";
-                btn.disabled = true;
-                btn.className = "w-full py-6 bg-gray-900 rounded-3xl font-black uppercase italic text-gray-500 border border-white/5 opacity-50";
-            } 
-            // 5. DEFAULT JOIN STATE
-            else {
-                btn.innerText = "Join Duel";
-                btn.disabled = false;
-                btn.className = "w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic tracking-widest shadow-2xl hover:bg-orange-500";
-                btn.onclick = joinLobby;
+            } else {
+                if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+                document.getElementById('battle_alert').classList.add('hidden');
+                
+                if (isUserIn) {
+                    // DEAM THE BUTTON ONCE JOINED
+                    btn.innerText = "Waiting for Rival...";
+                    btn.disabled = true;
+                    btn.className = "w-full py-6 bg-orange-900/20 rounded-3xl font-black uppercase italic opacity-30 border border-white/5";
+                } else {
+                    btn.innerText = "Join Duel";
+                    btn.disabled = false;
+                    btn.className = "w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic opacity-100";
+                    btn.onclick = joinLobby;
+                }
             }
         }
 
         async function joinLobby() {
-            if(!user) return;
             const { error } = await sb.from('1in2').insert([{ player_username: user }]);
-            if (error) {
-                console.error("Join Error");
-            }
+            if (error) alert("Already in lobby!");
             syncLobby();
         }
 
-        // Real-time Subscriptions
-        sb.channel('1in2_sync')
+        // REAL-TIME HANDSHAKE FOR 1in2 TABLE
+        sb.channel('lobby_updates')
           .on('postgres_changes', { event: '*', table: '1in2' }, syncLobby)
           .on('postgres_changes', { event: '*', table: 'Lobby_Signals' }, syncLobby)
           .subscribe();
 
         if(!user) window.location.href = 'index.html';
-        else syncLobby();
+        else initGrid();
     </script>
 </body>
 </html>
