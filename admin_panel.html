@@ -3,71 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Chicken League</title>
+    <title>Empire Admin | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Inter', monospace; padding-bottom: 120px; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #666; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .nav-item.active { color: #ea580c; }
+    </style>
 </head>
-<body class="bg-black text-white p-6 font-mono">
+<body class="p-6">
 
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-black text-orange-600 mb-2 underline decoration-4">COMMAND CENTER</h1>
-        <p class="text-gray-500 mb-8">Live Battle Royale Oversight</p>
+    <div id="admin_content" class="max-w-4xl mx-auto">
+        <header class="mb-10">
+            <h1 class="text-3xl font-black text-orange-600 italic underline decoration-4">COMMAND CENTER</h1>
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Post-Deployment Oversight</p>
+        </header>
+
+        <section class="mb-12">
+            <h2 class="text-xs font-black text-gray-400 mb-4 uppercase tracking-tighter">Arena Signal Control</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div class="glass p-6 rounded-3xl border-l-4 border-orange-600">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-black italic">DUO DUEL (1in2)</h3>
+                            <p class="text-[10px] text-gray-500">MANUAL ARENA TRIGGER</p>
+                        </div>
+                        <span id="status_1in2" class="text-[10px] font-black px-2 py-1 rounded bg-red-900/30 text-red-500">OFFLINE</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="toggleArena('1in2', true)" class="flex-1 bg-green-600 hover:bg-green-500 py-3 rounded-xl font-black text-xs transition">ACTIVATE</button>
+                        <button onclick="toggleArena('1in2', false)" class="flex-1 bg-gray-800 hover:bg-red-900 py-3 rounded-xl font-black text-xs transition">KILL</button>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-3xl opacity-30 border-l-4 border-gray-600">
+                    <h3 class="font-black italic">PRO LEAGUE (1in100)</h3>
+                    <p class="text-[10px] text-gray-500">LOCKED UNTIL SCALE</p>
+                </div>
+            </div>
+        </section>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-gray-900 p-6 rounded-2xl border border-orange-600/30">
-                <p class="text-xs text-gray-400 uppercase">Active Recruits</p>
+            <div class="glass p-6 rounded-2xl">
+                <p class="text-xs text-gray-400 uppercase font-bold">1in2 Recruits</p>
                 <p id="total_count" class="text-5xl font-black text-orange-500">0</p>
             </div>
-            <div class="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <button onclick="clearLobby()" class="w-full h-full bg-red-900/20 text-red-500 border border-red-500 font-bold rounded-xl hover:bg-red-500 hover:text-white transition">
-                    RESET LOBBY FOR NEW MATCH
+            <div class="glass p-6 rounded-2xl flex items-center">
+                <button onclick="clearLobby('Battle_Royale_2')" class="w-full py-4 bg-red-900/20 text-red-500 border border-red-500/50 font-black rounded-xl hover:bg-red-500 hover:text-white transition uppercase text-xs">
+                    Wipe 1in2 Lobby Data
                 </button>
             </div>
         </div>
 
-        <div class="bg-gray-900 rounded-3xl overflow-hidden border border-gray-800">
-            <table class="w-full text-left">
-                <thead class="bg-gray-800 text-gray-400 text-xs uppercase">
+        <div class="glass rounded-3xl overflow-hidden">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-white/5 text-gray-500 uppercase">
                     <tr>
                         <th class="p-4">Username</th>
-                        <th class="p-4">Joined At</th>
+                        <th class="p-4">Status</th>
                     </tr>
                 </thead>
-                <tbody id="player_list">
+                <tbody id="player_list" class="font-bold">
                     </tbody>
             </table>
         </div>
     </div>
 
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md h-20 glass rounded-[2rem] flex justify-around items-center z-50">
+        <a href="admin_panel.html?key=CL_BOSS_2026" class="nav-item active"><i>🏠</i><span>Stats</span></a>
+        <button onclick="scrollToControl()" class="nav-item"><i>⚔️</i><span>Triggers</span></a>
+        <a href="dashboard.html" class="nav-item text-orange-500"><i>🚪</i><span>Exit</span></a>
+    </nav>
+
     <script>
-    // THE HANDSHAKE CONFIG
-    const ADMIN_SECRET = "CL_BOSS_2026"; // Change this to your preferred secret key
+        const ADMIN_SECRET = "CL_BOSS_2026";
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const enteredKey = urlParams.get('key');
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('key') !== ADMIN_SECRET) {
+                document.body.innerHTML = `<div class="h-screen flex items-center justify-center text-red-600 font-black">ACCESS DENIED</div>`;
+                return;
+            }
+            loadData();
+            // Real-time listener for Lobby Signal status
+            sb.channel('admin_sync').on('postgres_changes', { event: '*', table: 'Lobby_Signals' }, updateStatusUI).subscribe();
+            setInterval(loadData, 3000);
+        };
 
-        if (enteredKey !== ADMIN_SECRET) {
-            document.body.innerHTML = `
-                <div class="h-screen flex items-center justify-center bg-black text-red-600 font-mono p-10 text-center">
-                    <div>
-                        <h1 class="text-5xl mb-4">🚫 ACCESS DENIED</h1>
-                        <p>INVALID HANDSHAKE KEY. CLEARANCE REQUIRED.</p>
-                    </div>
-                </div>`;
-            return;
+        async function loadData() {
+            // Load Players
+            const { data: players } = await sb.from('Battle_Royale_2').select('*');
+            document.getElementById('total_count').innerText = players ? players.length : 0;
+            
+            const list = document.getElementById('player_list');
+            list.innerHTML = players.map(p => `
+                <tr class="border-t border-white/5">
+                    <td class="p-4">${p.player_username}</td>
+                    <td class="p-4 text-green-500 uppercase text-[10px]">Ready</td>
+                </tr>
+            `).join('');
+
+            updateStatusUI();
         }
-        // If key is correct, proceed to load the panel
-        loadPlayers();
-        setInterval(loadPlayers, 3000);
-    };
 
-    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-    const sb = window.supabase.createClient(SB_URL, SB_KEY);
-    
-    // ... rest of your loadPlayers and clearLobby functions ...
-</script>
+        async function updateStatusUI() {
+            const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').single();
+            const statusEl = document.getElementById('status_1in2');
+            if(signal && signal.is_live) {
+                statusEl.innerText = "LIVE";
+                statusEl.className = "text-[10px] font-black px-2 py-1 rounded bg-green-900 text-green-400 animate-pulse";
+            } else {
+                statusEl.innerText = "OFFLINE";
+                statusEl.className = "text-[10px] font-black px-2 py-1 rounded bg-red-900/30 text-red-500";
+            }
+        }
 
+        async function toggleArena(id, status) {
+            const { error } = await sb.from('Lobby_Signals').update({ is_live: status }).eq('lobby_id', id);
+            if(error) alert("Error sending signal");
+        }
+
+        async function clearLobby(tableName) {
+            if(confirm("Confirm Wipe? All players will be kicked from lobby.")) {
+                await sb.from(tableName).delete().neq('id', 0);
+                loadData();
+            }
+        }
+
+        function scrollToControl() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
 </body>
 </html>
