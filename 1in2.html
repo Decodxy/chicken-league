@@ -20,54 +20,49 @@
             font-family: 'Inter', sans-serif; 
             min-height: 100vh; 
             overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.03) 0%, transparent 70%);
+            background-image: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
         }
 
         .orbitron { font-family: 'Orbitron', sans-serif; }
 
         .glass-panel { 
             background: rgba(255, 255, 255, 0.02); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* The Empty Circles (Neural Links) */
         .slot-circle { 
-            width: 100px; height: 100px; 
+            width: 90px; height: 90px; 
             border-radius: 50%; 
-            border: 2px solid rgba(255,255,255,0.05); 
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); 
+            border: 2px dashed rgba(255,255,255,0.1); 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
             display: flex; align-items: center; justify-content: center; 
-            background: rgba(255,255,255,0.01);
+            background: rgba(255,255,255,0.02);
             position: relative;
         }
 
-        /* The Light Up Effect */
         .slot-filled { 
-            background: rgba(251, 191, 36, 0.1); 
+            background: rgba(251, 191, 36, 0.15); 
             border: 2px solid var(--arena-gold); 
-            box-shadow: 0 0 40px var(--arena-glow), inset 0 0 20px var(--arena-glow);
-            transform: scale(1.05);
+            box-shadow: 0 0 30px var(--arena-glow);
+            transform: scale(1.1);
+            border-style: solid;
         }
 
         .slot-filled::after {
             content: '';
             position: absolute;
-            width: 120%; height: 120%;
+            inset: -8px;
             border-radius: 50%;
-            border: 1px solid var(--arena-gold);
-            opacity: 0.3;
-            animation: pulse-ring 2s infinite;
+            border: 2px solid var(--arena-gold);
+            opacity: 0.4;
+            animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
         @keyframes pulse-ring {
-            0% { transform: scale(0.8); opacity: 0.5; }
-            100% { transform: scale(1.3); opacity: 0; }
-        }
-
-        .btn-glow {
-            box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+            0% { transform: scale(0.9); opacity: 0.6; }
+            100% { transform: scale(1.2); opacity: 0; }
         }
 
         .bottom-nav { 
@@ -76,199 +71,160 @@
             border-radius: 30px; display: flex; justify-content: space-around; align-items: center; 
         }
 
-        .nav-item { display: flex; flex-direction: column; align-items: center; opacity: 0.4; transition: 0.3s; }
-        .nav-item.active { opacity: 1; color: var(--arena-gold); }
+        #status-bar { transition: all 0.3s ease; }
     </style>
 </head>
 <body class="pb-32">
 
-    <!-- Arena Alert -->
-    <div id="battle_alert" class="hidden fixed top-0 left-0 w-full z-50 p-4 bg-yellow-500 text-black text-center font-black orbitron italic tracking-tighter">
-        <span class="animate-pulse">⚠️ SYSTEM READY: ENTER THE ARENA IMMEDIATELY</span>
+    <div id="battle_alert" class="hidden fixed top-0 left-0 w-full z-50 p-3 bg-yellow-500 text-black text-center font-black orbitron text-xs">
+        LOBBY SYNCHRONIZED • ARENA ACCESS GRANTED
     </div>
 
-    <main class="max-w-lg mx-auto p-6">
-        <!-- Header -->
+    <main class="max-w-md mx-auto p-6">
         <div class="mt-4 mb-8 flex items-center justify-between">
-            <button onclick="exitLobby()" class="text-gray-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-                [ Terminate Connection ]
+            <button onclick="exitLobby()" class="text-gray-500 text-[10px] font-black uppercase tracking-widest hover:text-white">
+                ← TERMINATE
             </button>
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span class="text-[10px] font-bold text-green-500 orbitron">LIVE_SERVER</span>
+            <div id="status-bar" class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full">
+                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
+                <span class="text-[9px] font-bold text-gray-400 orbitron">SERVER_STABLE</span>
             </div>
         </div>
 
-        <!-- Card View -->
-        <div class="glass-panel rounded-[2.5rem] overflow-hidden mb-8">
-            <div class="h-56 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');">
-                <div class="w-full h-full bg-gradient-to-t from-black via-transparent to-transparent"></div>
-            </div>
-            <div class="p-6 -mt-12">
-                <div class="bg-yellow-600 w-fit px-4 py-1 rounded-full text-[9px] font-black uppercase orbitron mb-2">1v1 Duel Mode</div>
-                <h1 class="text-3xl font-black italic uppercase tracking-tighter orbitron text-white">The Trial Broiler</h1>
-                <p class="text-gray-400 text-xs font-medium uppercase tracking-widest mt-1">High Stakes • Winner Takes All</p>
+        <div class="glass-panel rounded-[2rem] overflow-hidden mb-8 border-b-2 border-yellow-500/30">
+            <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');"></div>
+            <div class="p-6">
+                <h1 class="text-2xl font-black italic uppercase tracking-tighter orbitron">The Trial Broiler</h1>
+                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">1v1 High-Stakes Duel</p>
             </div>
         </div>
 
-        <!-- Lobby Visualization -->
-        <div class="glass-panel p-8 rounded-[3rem] mb-6">
+        <div class="glass-panel p-8 rounded-[2.5rem] mb-6">
             <div class="flex justify-between items-center mb-10">
-                <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 orbitron">Syncing Neurals...</h3>
-                <span id="count_display" class="text-xs font-black text-yellow-500 orbitron">0 / 2 SLOTS</span>
+                <h3 class="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 orbitron">Neural Slots</h3>
+                <span id="count_display" class="text-[10px] font-black text-yellow-500 orbitron">0 / 2 READY</span>
             </div>
             
-            <!-- THE CIRCLES -->
-            <div class="flex gap-10 justify-center items-center">
+            <div class="flex gap-12 justify-center items-center">
                 <div class="flex flex-col items-center gap-4">
-                    <div id="slot-0" class="slot-circle">
-                        <span class="text-[10px] orbitron opacity-20" id="label-0">P1</span>
-                    </div>
-                    <span id="name-0" class="text-[10px] font-bold text-gray-600 orbitron">EMPTY</span>
+                    <div id="slot-0" class="slot-circle"></div>
+                    <span id="name-0" class="text-[9px] font-bold text-gray-700 orbitron tracking-wider">EMPTY</span>
                 </div>
-
-                <div class="orbitron text-xl font-black italic text-gray-800">VS</div>
-
                 <div class="flex flex-col items-center gap-4">
-                    <div id="slot-1" class="slot-circle">
-                        <span class="text-[10px] orbitron opacity-20" id="label-1">P2</span>
-                    </div>
-                    <span id="name-1" class="text-[10px] font-bold text-gray-600 orbitron">EMPTY</span>
+                    <div id="slot-1" class="slot-circle"></div>
+                    <span id="name-1" class="text-[9px] font-bold text-gray-700 orbitron tracking-wider">EMPTY</span>
                 </div>
             </div>
         </div>
 
-        <!-- Dynamic Action Button -->
-        <button id="mainBtn" onclick="handleMainAction()" class="w-full py-7 bg-white text-black rounded-[2rem] font-black uppercase italic tracking-tighter shadow-2xl transition-all duration-500 transform active:scale-95 disabled:opacity-30 disabled:grayscale">
-            Initialising...
+        <button id="mainBtn" onclick="handleMainAction()" class="w-full py-6 bg-white text-black rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl transition-all active:scale-95 disabled:opacity-20">
+            LOADING SYSTEM...
         </button>
     </main>
 
-    <!-- Bottom Nav -->
     <nav class="bottom-nav glass-panel">
-        <a href="dashboard.html" class="nav-item">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span class="text-[8px] font-black uppercase mt-1">Lobby</span>
-        </a>
-        <a href="#" class="nav-item">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            <span class="text-[8px] font-black uppercase mt-1">Arena</span>
-        </a>
+        <div class="text-yellow-500 opacity-100 flex flex-col items-center">
+            <span class="text-[10px] font-black orbitron">LOBBY</span>
+        </div>
     </nav>
 
     <script>
-        // CLIENT CONFIG
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
         
-        // Identity Management
         const currentUser = localStorage.getItem('league_user');
         if (!currentUser) window.location.href = 'index.html';
 
-        let lobbyState = {
-            players: [],
-            signal: null
-        };
+        let cachedPlayers = [];
+        let cachedSignal = null;
 
         async function syncLobby() {
-            try {
-                // 1. Fetch Players in Lobby
-                const { data: players } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
-                // 2. Fetch Admin Signals (is_live, etc)
-                const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').maybeSingle();
-
-                lobbyState.players = players || [];
-                lobbyState.signal = signal;
-
-                updateUI();
-            } catch (err) {
-                console.error("Critical Sync Error", err);
-            }
+            const { data: players } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
+            const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').maybeSingle();
+            
+            cachedPlayers = players || [];
+            cachedSignal = signal;
+            updateUI();
         }
 
         function updateUI() {
-            const total = lobbyState.players.length;
-            const isUserIn = lobbyState.players.some(p => p.player_username === currentUser);
+            const total = cachedPlayers.length;
+            const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
             const btn = document.getElementById('mainBtn');
             const alertBox = document.getElementById('battle_alert');
 
-            // 1. Update Display Count
-            document.getElementById('count_display').innerText = `${total} / 2 JOINED`;
+            document.getElementById('count_display').innerText = `${total} / 2 READY`;
 
-            // 2. Update Neural Circles
+            // Reset and Update Slots
             for(let i=0; i<2; i++) {
                 const circle = document.getElementById(`slot-${i}`);
-                const nameLabel = document.getElementById(`name-${i}`);
-                const placeholder = document.getElementById(`label-${i}`);
+                const nameLabel = document.getElementById(`name-${nameLabel = nameLabel = nameLabel = nameLabel = nameLabel = nameLabel = nameLabel = nameLabel = nameLabel = i}`);
+                const nameSpan = document.getElementById(`name-${i}`);
 
-                if(lobbyState.players[i]) {
+                if(cachedPlayers[i]) {
                     circle.classList.add('slot-filled');
-                    nameLabel.innerText = lobbyState.players[i].player_username.toUpperCase();
-                    nameLabel.classList.add('text-yellow-500');
-                    placeholder.classList.add('hidden');
+                    nameSpan.innerText = cachedPlayers[i].player_username.substring(0, 12).toUpperCase();
+                    nameSpan.classList.add('text-yellow-500');
                 } else {
                     circle.classList.remove('slot-filled');
-                    nameLabel.innerText = "EMPTY";
-                    nameLabel.classList.remove('text-yellow-500');
-                    placeholder.classList.remove('hidden');
+                    nameSpan.innerText = "EMPTY";
+                    nameSpan.classList.remove('text-yellow-500');
                 }
             }
 
-            // 3. SECURE ACTION LOGIC
+            // Logic Flow
             if (total >= 2) {
-                // Room is full. Check if the Arena is Live (Admin Triggered)
-                const isLive = lobbyState.signal?.is_live;
-
-                if (isLive) {
+                if (cachedSignal?.is_live) {
                     alertBox.classList.remove('hidden');
                     if (isUserIn) {
-                        // THE GATEWAY: User is part of the specific 2 players
                         btn.innerText = "ENTER ARENA ⚔️";
-                        btn.className = "w-full py-7 bg-yellow-500 text-black rounded-[2rem] font-black uppercase italic tracking-tighter shadow-2xl btn-glow animate-bounce";
+                        btn.className = "w-full py-6 bg-yellow-500 text-black rounded-3xl font-black uppercase italic shadow-[0_0_30px_rgba(251,191,36,0.5)]";
                         btn.disabled = false;
                     } else {
-                        // User is just a spectator or late
                         btn.innerText = "MATCH IN PROGRESS";
                         btn.disabled = true;
-                        btn.className = "w-full py-7 bg-gray-900 text-gray-500 rounded-[2rem] font-black uppercase italic tracking-tighter";
+                        btn.className = "w-full py-6 bg-gray-900 text-gray-600 rounded-3xl font-black uppercase italic";
                     }
                 } else {
-                    // Lobby full but admin hasn't clicked "Live"
-                    btn.innerText = isUserIn ? "AWAITING SERVER START..." : "LOBBY FULL";
+                    btn.innerText = isUserIn ? "WAITING FOR ADMIN..." : "LOBBY FULL";
                     btn.disabled = true;
-                    btn.className = "w-full py-7 bg-zinc-900 text-zinc-600 rounded-[2rem] font-black uppercase italic tracking-tighter border border-white/5";
+                    btn.className = "w-full py-6 bg-zinc-900 text-zinc-600 rounded-3xl font-black uppercase italic";
                 }
             } else {
-                // Room not full
                 alertBox.classList.add('hidden');
                 if (isUserIn) {
                     btn.innerText = "WAITING FOR CHALLENGER...";
                     btn.disabled = true;
-                    btn.className = "w-full py-7 bg-zinc-900 text-zinc-600 rounded-[2rem] font-black uppercase italic tracking-tighter border border-white/5";
+                    btn.className = "w-full py-6 bg-zinc-900 text-zinc-500 rounded-3xl font-black uppercase italic border border-white/5";
                 } else {
                     btn.innerText = "JOIN DUEL";
                     btn.disabled = false;
-                    btn.className = "w-full py-7 bg-white text-black rounded-[2rem] font-black uppercase italic tracking-tighter shadow-2xl";
+                    btn.className = "w-full py-6 bg-white text-black rounded-3xl font-black uppercase italic tracking-widest";
                 }
             }
         }
 
         async function handleMainAction() {
-            const isUserIn = lobbyState.players.some(p => p.player_username === currentUser);
+            const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
             
-            if (!isUserIn && lobbyState.players.length < 2) {
-                // JOIN ACTION
+            if (!isUserIn && cachedPlayers.length < 2) {
+                // Limitless Move: Direct Atomic Insert
                 const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
+                
                 if (error) {
-                    alert("Sync Error: Attempt to hijack slot failed.");
+                    // Check if error is due to primary key / unique constraint (user already in)
+                    if (error.code === '23505') {
+                        console.log("User already in DB");
+                    } else {
+                        console.error("Join Error:", error.message);
+                    }
                 }
-            } else if (isUserIn && lobbyState.players.length >= 2 && lobbyState.signal?.is_live) {
-                // ENTER ARENA ACTION
-                // Passing username to arena for leaderboard tracking
+                syncLobby();
+            } else if (isUserIn && cachedPlayers.length >= 2 && cachedSignal?.is_live) {
+                // Secure hand-off to Arena
                 window.location.href = `1in2arena.html?user=${encodeURIComponent(currentUser)}`;
             }
-            syncLobby();
         }
 
         async function exitLobby() {
@@ -276,15 +232,13 @@
             window.location.href = 'dashboard.html';
         }
 
-        // REAL-TIME SUBSCRIPTION
-        const channel = sb.channel('lobby_gateway')
+        // Real-time Engine
+        sb.channel('lobby_gateway')
             .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncLobby)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'Lobby_Signals' }, syncLobby)
             .subscribe();
 
-        // Initial Boot
         syncLobby();
-
     </script>
 </body>
 </html>
