@@ -63,6 +63,100 @@
             </div>
         </div>
     </div>
+    <!-- 
+    ARENA COMMAND MODULE 
+    Integrate this section into your existing Farmer's Game Plan Admin Panel 
+-->
+
+<section class="glass-panel p-6 rounded-[2rem] border border-orange-500/20 mb-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-xl font-black orbitron italic text-orange-500">ARENA COMMAND</h2>
+            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">1in2 Duel Protocol Control</p>
+        </div>
+        <div id="lobby-status-tag" class="px-3 py-1 bg-zinc-900 rounded-full border border-white/5 flex items-center gap-2">
+            <span id="pulse-dot" class="w-2 h-2 bg-gray-600 rounded-full"></span>
+            <span id="status-text" class="text-[9px] font-black orbitron text-gray-400">IDLE</span>
+        </div>
+    </div>
+
+    <!-- Live Occupancy Tracker -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="bg-black/40 p-4 rounded-2xl border border-white/5 text-center">
+            <span class="block text-[8px] text-gray-500 font-bold uppercase mb-1">Player 1</span>
+            <span id="admin-p1" class="text-xs font-black orbitron text-zinc-600">VACANT</span>
+        </div>
+        <div class="bg-black/40 p-4 rounded-2xl border border-white/5 text-center">
+            <span class="block text-[8px] text-gray-500 font-bold uppercase mb-1">Player 2</span>
+            <span id="admin-p2" class="text-xs font-black orbitron text-zinc-600">VACANT</span>
+        </div>
+    </div>
+
+    <!-- Master Trigger -->
+    <div class="flex flex-col gap-3">
+        <button id="activateBtn" onclick="toggleArena(true)" class="w-full py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-black uppercase italic tracking-tighter transition-all shadow-lg shadow-green-900/20">
+            ACTIVATE ARENA GATEWAY
+        </button>
+        <button id="deactivateBtn" onclick="toggleArena(false)" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-500 rounded-xl font-black uppercase italic tracking-tighter transition-all border border-white/5">
+            CLOSE GATEWAY & RESET
+        </button>
+    </div>
+</section>
+
+<script>
+    // INTEGRATION LOGIC: Add these functions to your Admin Panel Script
+    
+    async function listenToLobby() {
+        // Monitor player counts for the Admin
+        const { data: players } = await sb.from('1in2').select('player_username').order('created_at');
+        
+        const p1 = document.getElementById('admin-p1');
+        const p2 = document.getElementById('admin-p2');
+        const dot = document.getElementById('pulse-dot');
+        const statusText = document.getElementById('status-text');
+
+        p1.innerText = players?.[0]?.player_username.toUpperCase() || "VACANT";
+        p1.className = players?.[0] ? "text-xs font-black orbitron text-orange-500" : "text-xs font-black orbitron text-zinc-600";
+        
+        p2.innerText = players?.[1]?.player_username.toUpperCase() || "VACANT";
+        p2.className = players?.[1] ? "text-xs font-black orbitron text-orange-500" : "text-xs font-black orbitron text-zinc-600";
+
+        if(players?.length >= 2) {
+            dot.className = "w-2 h-2 bg-yellow-500 animate-pulse rounded-full";
+            statusText.innerText = "READY FOR DEPLOYMENT";
+            statusText.className = "text-[9px] font-black orbitron text-yellow-500";
+        } else {
+            dot.className = "w-2 h-2 bg-gray-600 rounded-full";
+            statusText.innerText = "WAITING FOR USERS";
+            statusText.className = "text-[9px] font-black orbitron text-gray-400";
+        }
+    }
+
+    async function toggleArena(isLive) {
+        const { error } = await sb.from('Lobby_Signals')
+            .update({ is_live: isLive })
+            .eq('lobby_id', '1in2');
+        
+        if(error) {
+            console.error("Signal Failed", error);
+        } else {
+            // If resetting, also clear the lobby table to prepare for the next round
+            if(!isLive) {
+                await sb.from('1in2').delete().neq('id', 0);
+            }
+            alert(isLive ? "ARENA BROADCAST LIVE" : "ARENA TERMINATED & RESET");
+        }
+    }
+
+    // Initialize the admin listeners
+    sb.channel('admin_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, listenToLobby)
+      .subscribe();
+    
+    listenToLobby();
+</script>
+
+
 
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
