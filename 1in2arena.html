@@ -93,6 +93,11 @@
     </div>
 
     <script>
+        // TOP OF SCRIPT
+const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+const SB_KEY = 'YOUR_KEY_HERE'; 
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
         let board = [], score = 0, timeLeft = 60, isProcessing = false;
