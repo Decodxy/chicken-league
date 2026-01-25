@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>1in2 Arena | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
         
@@ -59,10 +60,10 @@
 </head>
 <body class="flex flex-col items-center py-6">
 
-       <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
+    <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
         <div class="glass-ui p-4 rounded-2xl score-box">
             <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
-            <h2 id="score" class="text-3xl font-black">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
+            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
         </div>
 
         <div class="flex-1 flex justify-center px-2">
@@ -79,8 +80,6 @@
         </div>
     </div>
 
-
-
     <div id="arena-container">
         <div id="grid-bg"></div>
         <div id="item-layer"></div>
@@ -93,10 +92,10 @@
     </div>
 
     <script>
-        // TOP OF SCRIPT
-const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        // SUPABASE INITIALIZATION
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
@@ -134,6 +133,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
             board[r][c] = { type, el };
         }
 
+        // --- ZERO-BUG TOUCH LOGIC ---
         touchMask.addEventListener('touchstart', (e) => {
             if (isProcessing) return;
             const rect = touchMask.getBoundingClientRect();
@@ -170,17 +170,14 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
             const item1 = board[r1][c1];
             const item2 = board[r2][c2];
 
-            // Visual Slide
             item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
             item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
 
-            // Logical Swap
             board[r1][c1] = item2;
             board[r2][c2] = item1;
 
             setTimeout(() => {
                 if (!checkMatches()) {
-                    // NO MATCH: Physics Slide Back
                     item1.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
                     item2.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
                     board[r1][c1] = item1;
@@ -194,7 +191,6 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
         function checkMatches() {
             let matches = new Set();
-            // Check rows/cols for 3+
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols - 2; c++) {
                     if (board[r][c] && board[r][c+1] && board[r][c+2] &&
@@ -258,53 +254,45 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
             setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
         }
 
-        // REPLACE YOUR OLD startTimer WITH THIS:
-function startTimer() {
-    const int = setInterval(async () => {
-        timeLeft--;
-        const timerEl = document.getElementById('timer');
-        if (timerEl) timerEl.innerText = timeLeft;
-        
-        if (timeLeft <= 0) { 
-            clearInterval(int); 
-            // Lock the board so they can't keep playing
-            isProcessing = true; 
-            await saveGamePerformance(); 
+        // --- GAME END & DATA SYNC ---
+        function startTimer() {
+            const int = setInterval(async () => {
+                timeLeft--;
+                const timerEl = document.getElementById('timer');
+                if (timerEl) timerEl.innerText = timeLeft;
+                
+                if (timeLeft <= 0) { 
+                    clearInterval(int); 
+                    isProcessing = true; // Lock interaction
+                    await saveGamePerformance(); 
+                }
+            }, 1000);
         }
-    }, 1000);
-}
 
-// ADD THIS BRAND NEW FUNCTION RIGHT BELOW IT:
-async function saveGamePerformance() {
-    try {
-        // 1. Get the current logged-in user's identity
-        const { data: { user } } = await sb.auth.getUser();
-        
-        // 2. Extract their Username from metadata (set during sign-up)
-        // If not found, it defaults to 'Elite_Chicken'
-        const activeUsername = user?.user_metadata?.username || user?.email || "Elite_Chicken";
+        async function saveGamePerformance() {
+            try {
+                // Fetch authenticated user
+                const { data: { user } } = await sb.auth.getUser();
+                const activeUsername = user?.user_metadata?.username || user?.email || "Elite_Chicken";
 
-        // 3. Push the score to the league_performances table
-        const { error } = await sb
-            .from('league_performances')
-            .insert([{ 
-                username: activeUsername, 
-                score: parseFloat(score.toFixed(1)), 
-                league_id: '1in2' 
-            }]);
+                // Sync with league_performances table
+                const { error } = await sb
+                    .from('league_performances')
+                    .insert([{ 
+                        username: activeUsername, 
+                        score: parseFloat(score.toFixed(1)), 
+                        league_id: '1in2' 
+                    }]);
 
-        if (error) throw error;
+                if (error) throw error;
+                window.location.href = '1in2leaderboard.html';
 
-        // 4. Redirect to the live standings
-        window.location.href = '1in2leaderboard.html';
-
-    } catch (err) {
-        console.error("Combat Sync Failed:", err.message);
-        alert("Weight synchronization failed. Data connection lost.");
-        // Optional: still redirect so they can see the board anyway
-        window.location.href = '1in2leaderboard.html';
-    }
-}
+            } catch (err) {
+                console.error("Combat Sync Failed:", err.message);
+                alert("Weight synchronization failed. Data connection lost.");
+                window.location.href = '1in2leaderboard.html';
+            }
+        }
 
         init();
     </script>
