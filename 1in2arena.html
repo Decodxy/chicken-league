@@ -7,78 +7,259 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #050505; color: white; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
-        .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .grid-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 92vw; max-width: 380px; margin: 0 auto; }
-        .cell { aspect-ratio: 1/1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; background: rgba(255,255,255,0.05); transition: 0.2s; border: 1px solid rgba(255,255,255,0.05); }
-        .selected { border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); transform: scale(1.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
+        
+        body { background: #000; color: #fff; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
+        .brand-red { color: #ff0000; }
+        .bg-brand-red { background: #ff0000; }
+        .border-brand-red { border-color: #ff0000; }
+        
+        .glass-ui { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 8px; 
+            width: 94vw; 
+            max-width: 400px; 
+            margin: 0 auto; 
+            position: relative;
+        }
+
+        .cell { 
+            aspect-ratio: 1/1; 
+            border-radius: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.8rem; 
+            background: #0a0a0a; 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            border: 1px solid #1a1a1a; 
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .selected { 
+            border: 3px solid #fff; 
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.3); 
+            transform: scale(1.1); 
+            z-index: 10;
+        }
+
+        .match-vanish { transform: scale(0); opacity: 0; }
+        
+        .score-box { border-left: 4px solid #ff0000; }
+        
+        .timer-font { font-family: 'Orbitron', sans-serif; }
+
+        @keyframes fall {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .falling { animation: fall 0.3s ease-out; }
     </style>
 </head>
 <body class="flex flex-col items-center py-8">
 
-    <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
-        <div class="glass-ui p-4 rounded-2xl border-l-4 border-orange-500">
-            <p class="text-[9px] text-gray-500 font-black uppercase">Your Broiler Weight</p>
-            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-sm text-orange-500">kg</span></h2>
+    <div class="w-full max-w-md px-6 flex justify-between items-center mb-10">
+        <div class="glass-ui p-4 rounded-2xl score-box">
+            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Target Weight</p>
+            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-sm brand-red">kg</span></h2>
         </div>
         <div class="text-center">
-            <div id="timer" class="text-4xl font-black italic text-orange-600">60</div>
-            <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds left</p>
+            <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
+            <p class="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">Combat Seconds</p>
         </div>
     </div>
 
-    <div id="grid" class="grid-container glass-ui p-3 rounded-[2.5rem]"></div>
+    <div id="grid" class="grid-container glass-ui p-4 rounded-[3rem]"></div>
 
-    <div class="mt-10 glass-ui px-6 py-3 rounded-full flex items-center gap-3">
-        <div class="h-2 w-2 bg-green-500 rounded-full animate-ping"></div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-gray-300">1v1 Duel Mode Active</span>
+    <div class="mt-12 glass-ui px-8 py-4 rounded-full flex items-center gap-4">
+        <div class="h-2 w-2 bg-brand-red rounded-full animate-pulse shadow-[0_0_10px_#ff0000]"></div>
+        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-white">League Sync Active</span>
     </div>
 
     <script>
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'YOUR_KEY'; // Use project key
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        
         const user = localStorage.getItem('league_user');
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
+        const rows = 6;
+        const cols = 6;
         let score = 0;
         let timeLeft = 60;
         let selectedCell = null;
+        let gridData = [];
 
         function initArena() {
             const gridEl = document.getElementById('grid');
-            for (let i = 0; i < 36; i++) {
+            gridEl.innerHTML = '';
+            gridData = [];
+
+            for (let i = 0; i < rows * cols; i++) {
+                const item = items[Math.floor(Math.random() * items.length)];
                 const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.innerHTML = items[Math.floor(Math.random() * items.length)];
-                cell.onclick = () => handleSwap(cell);
+                cell.className = 'cell falling';
+                cell.dataset.index = i;
+                cell.innerHTML = item;
+                cell.onclick = () => handleClick(cell);
                 gridEl.appendChild(cell);
+                gridData.push(item);
             }
+            
+            // Check for initial matches so game starts clean
+            checkAndResolveMatches();
             startCountdown();
         }
 
-        function handleSwap(cell) {
+        function handleClick(cell) {
+            const idx = parseInt(cell.dataset.index);
+            
             if (!selectedCell) {
                 selectedCell = cell;
                 cell.classList.add('selected');
             } else {
-                let temp = selectedCell.innerHTML;
-                selectedCell.innerHTML = cell.innerHTML;
-                cell.innerHTML = temp;
-                selectedCell.classList.remove('selected');
-                selectedCell = null;
-                // Simplified Score Logic
-                score += 0.5;
-                document.getElementById('score').innerText = score.toFixed(1) + 'kg';
+                const prevIdx = parseInt(selectedCell.dataset.index);
+                
+                // RESTRICTED MOVEMENT LOGIC (Up, Down, Left, Right only)
+                const isNeighbor = (
+                    (Math.abs(idx - prevIdx) === 1 && Math.floor(idx/cols) === Math.floor(prevIdx/cols)) || // Left/Right
+                    (Math.abs(idx - prevIdx) === cols) // Up/Down
+                );
+
+                if (isNeighbor) {
+                    swapCells(selectedCell, cell);
+                    setTimeout(() => {
+                        if (!checkAndResolveMatches()) {
+                            // Swap back if no match found
+                            swapCells(selectedCell, cell);
+                        }
+                        selectedCell.classList.remove('selected');
+                        selectedCell = null;
+                    }, 300);
+                } else {
+                    selectedCell.classList.remove('selected');
+                    selectedCell = cell;
+                    cell.classList.add('selected');
+                }
             }
         }
 
+        function swapCells(c1, c2) {
+            const temp = c1.innerHTML;
+            c1.innerHTML = c2.innerHTML;
+            c2.innerHTML = temp;
+            
+            const idx1 = c1.dataset.index;
+            const idx2 = c2.dataset.index;
+            gridData[idx1] = c1.innerHTML;
+            gridData[idx2] = c2.innerHTML;
+        }
+
+        function checkAndResolveMatches() {
+            let matchedIndices = new Set();
+
+            // Horizontal check
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols - 2; c++) {
+                    let i = r * cols + c;
+                    if (gridData[i] && gridData[i] === gridData[i+1] && gridData[i] === gridData[i+2]) {
+                        matchedIndices.add(i); matchedIndices.add(i+1); matchedIndices.add(i+2);
+                    }
+                }
+            }
+
+            // Vertical check
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows - 2; r++) {
+                    let i = r * cols + c;
+                    if (gridData[i] && gridData[i] === gridData[i+cols] && gridData[i] === gridData[i+cols*2]) {
+                        matchedIndices.add(i); matchedIndices.add(i+cols); matchedIndices.add(i+cols*2);
+                    }
+                }
+            }
+
+            if (matchedIndices.size > 0) {
+                processMatches(Array.from(matchedIndices));
+                return true;
+            }
+            return false;
+        }
+
+        async function processMatches(indices) {
+            score += (indices.length * 0.1);
+            document.getElementById('score').innerText = score.toFixed(1) + 'kg';
+
+            // Visual vanish
+            const allCells = document.querySelectorAll('.cell');
+            indices.forEach(idx => {
+                allCells[idx].classList.add('match-vanish');
+                gridData[idx] = null;
+            });
+
+            setTimeout(() => {
+                applyGravity();
+            }, 300);
+        }
+
+        function applyGravity() {
+            const allCells = document.querySelectorAll('.cell');
+            
+            for (let c = 0; c < cols; c++) {
+                let emptySpots = 0;
+                for (let r = rows - 1; r >= 0; r--) {
+                    let i = r * cols + c;
+                    if (gridData[i] === null) {
+                        emptySpots++;
+                    } else if (emptySpots > 0) {
+                        // Move item down
+                        let targetIdx = (r + emptySpots) * cols + c;
+                        gridData[targetIdx] = gridData[i];
+                        gridData[i] = null;
+                        allCells[targetIdx].innerHTML = gridData[targetIdx];
+                        allCells[targetIdx].classList.remove('match-vanish');
+                        allCells[i].innerHTML = '';
+                    }
+                }
+                // Fill top with new items
+                for (let e = 0; e < emptySpots; e++) {
+                    let i = e * cols + c;
+                    gridData[i] = items[Math.floor(Math.random() * items.length)];
+                    allCells[i].innerHTML = gridData[i];
+                    allCells[i].classList.remove('match-vanish');
+                    allCells[i].classList.add('falling');
+                    setTimeout(() => allCells[i].classList.remove('falling'), 300);
+                }
+            }
+
+            // Recursive check for chain reactions
+            setTimeout(() => {
+                if (checkAndResolveMatches()) {
+                    // Chain reaction found
+                }
+            }, 400);
+        }
+
         function startCountdown() {
-            const timer = setInterval(() => {
+            const timerEl = document.getElementById('timer');
+            const interval = setInterval(() => {
                 timeLeft--;
-                document.getElementById('timer').innerText = timeLeft;
+                timerEl.innerText = timeLeft;
                 if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    alert(`DUEL ENDED! Final weight: ${score}kg`);
-                    window.location.href = 'dashboard.html';
+                    clearInterval(interval);
+                    finishGame();
                 }
             }, 1000);
+        }
+
+        async function finishGame() {
+            // MARK: Logic for isolated leaderboard goes here
+            // Update league_performances with league_id: '1in2'
+            alert(`TIME UP! Chicken Weight: ${score.toFixed(1)}kg`);
+            window.location.href = 'dashboard.html';
         }
 
         if(!user) window.location.href = 'index.html';
