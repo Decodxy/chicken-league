@@ -258,13 +258,54 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
             setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
         }
 
-        function startTimer() {
-            const int = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').innerText = timeLeft;
-                if (timeLeft <= 0) { clearInterval(int); alert("Weight: " + score.toFixed(1) + "kg"); }
-            }, 1000);
+        // REPLACE YOUR OLD startTimer WITH THIS:
+function startTimer() {
+    const int = setInterval(async () => {
+        timeLeft--;
+        const timerEl = document.getElementById('timer');
+        if (timerEl) timerEl.innerText = timeLeft;
+        
+        if (timeLeft <= 0) { 
+            clearInterval(int); 
+            // Lock the board so they can't keep playing
+            isProcessing = true; 
+            await saveGamePerformance(); 
         }
+    }, 1000);
+}
+
+// ADD THIS BRAND NEW FUNCTION RIGHT BELOW IT:
+async function saveGamePerformance() {
+    try {
+        // 1. Get the current logged-in user's identity
+        const { data: { user } } = await sb.auth.getUser();
+        
+        // 2. Extract their Username from metadata (set during sign-up)
+        // If not found, it defaults to 'Elite_Chicken'
+        const activeUsername = user?.user_metadata?.username || user?.email || "Elite_Chicken";
+
+        // 3. Push the score to the league_performances table
+        const { error } = await sb
+            .from('league_performances')
+            .insert([{ 
+                username: activeUsername, 
+                score: parseFloat(score.toFixed(1)), 
+                league_id: '1in2' 
+            }]);
+
+        if (error) throw error;
+
+        // 4. Redirect to the live standings
+        window.location.href = '1in2leaderboard.html';
+
+    } catch (err) {
+        console.error("Combat Sync Failed:", err.message);
+        alert("Weight synchronization failed. Data connection lost.");
+        // Optional: still redirect so they can see the board anyway
+        window.location.href = '1in2leaderboard.html';
+    }
+}
+
         init();
     </script>
 </body>
