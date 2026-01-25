@@ -22,12 +22,11 @@
             border: 1px solid #111;
         }
 
-        /* THE FIX: TOUCH MASK */
         #touch-mask {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 100; /* Always on top */
+            z-index: 100;
             touch-action: none;
         }
 
@@ -50,7 +49,7 @@
             font-size: 2rem;
             transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 10;
-            pointer-events: none; /* Items don't catch touches, the mask does */
+            pointer-events: none;
         }
 
         .match-vanish { transform: scale(0) !important; opacity: 0; }
@@ -74,11 +73,12 @@
     <div id="arena-container">
         <div id="grid-bg"></div>
         <div id="item-layer"></div>
-        <div id="touch-mask"></div> </div>
+        <div id="touch-mask"></div> 
+    </div>
 
     <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
         <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]"></div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Zero-Bug Precision Mode</span>
+        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Validated Physics Sync</span>
     </div>
 
     <script>
@@ -91,7 +91,6 @@
         const touchMask = document.getElementById('touch-mask');
 
         function init() {
-            // Build Grid Map
             const gridBg = document.getElementById('grid-bg');
             for (let i = 0; i < 36; i++) {
                 const cell = document.createElement('div');
@@ -99,7 +98,6 @@
                 gridBg.appendChild(cell);
             }
 
-            // Fill Board
             for (let r = 0; r < rows; r++) {
                 board[r] = [];
                 for (let c = 0; c < cols; c++) {
@@ -120,13 +118,11 @@
             board[r][c] = { type, el };
         }
 
-        // GLOBAL TOUCH LOGIC
         touchMask.addEventListener('touchstart', (e) => {
             if (isProcessing) return;
             const rect = touchMask.getBoundingClientRect();
             startX = e.touches[0].clientX - rect.left;
             startY = e.touches[0].clientY - rect.top;
-            
             startC = Math.floor(startX / size);
             startR = Math.floor(startY / size);
         });
@@ -137,12 +133,10 @@
             const endX = e.changedTouches[0].clientX - rect.left;
             const endY = e.changedTouches[0].clientY - rect.top;
 
-            const dx = endX - startX;
-            const dy = endY - startY;
+            const dx = endX - startX, dy = endY - startY;
             const threshold = 25;
 
             let tr = startR, tc = startC;
-
             if (Math.abs(dx) > Math.abs(dy)) {
                 if (Math.abs(dx) > threshold) tc += dx > 0 ? 1 : -1;
             } else {
@@ -150,30 +144,41 @@
             }
 
             if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== startR || tc !== startC)) {
-                executeSwap(startR, startC, tr, tc);
+                trySwap(startR, startC, tr, tc);
             }
             startR = undefined;
         });
 
-        function executeSwap(r1, c1, r2, c2) {
+        function trySwap(r1, c1, r2, c2) {
             isProcessing = true;
             const item1 = board[r1][c1];
             const item2 = board[r2][c2];
 
+            // Visual Slide
             item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
             item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
 
+            // Logical Swap
             board[r1][c1] = item2;
             board[r2][c2] = item1;
 
             setTimeout(() => {
-                checkMatches();
-                isProcessing = false;
+                if (!checkMatches()) {
+                    // NO MATCH: Physics Slide Back
+                    item1.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
+                    item2.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
+                    board[r1][c1] = item1;
+                    board[r2][c2] = item2;
+                    setTimeout(() => { isProcessing = false; }, 250);
+                } else {
+                    isProcessing = false;
+                }
             }, 300);
         }
 
         function checkMatches() {
             let matches = new Set();
+            // Check rows/cols for 3+
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols - 2; c++) {
                     if (board[r][c] && board[r][c+1] && board[r][c+2] &&
@@ -195,13 +200,12 @@
                 isProcessing = true;
                 score += (matches.size * 0.1);
                 document.getElementById('score').innerText = score.toFixed(1) + 'kg';
-                
                 matches.forEach(coord => {
                     const [r, c] = coord.split(',').map(Number);
                     if(board[r][c]) {
                         board[r][c].el.classList.add('match-vanish');
-                        const elToRemove = board[r][c].el;
-                        setTimeout(() => elToRemove.remove(), 250);
+                        const el = board[r][c].el;
+                        setTimeout(() => el.remove(), 250);
                         board[r][c] = null;
                     }
                 });
@@ -235,9 +239,7 @@
                     setTimeout(() => { el.style.transform = `translate(${c * size}px, ${r * size}px)`; }, 50);
                 }
             }
-            setTimeout(() => {
-                if (!checkMatches()) isProcessing = false;
-            }, 450);
+            setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
         }
 
         function startTimer() {
@@ -247,7 +249,6 @@
                 if (timeLeft <= 0) { clearInterval(int); alert("Weight: " + score.toFixed(1) + "kg"); }
             }, 1000);
         }
-
         init();
     </script>
 </body>
