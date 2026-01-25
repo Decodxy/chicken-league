@@ -12,17 +12,33 @@
         .brand-red { color: #ff0000; }
         .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        #game-board { 
+        #arena-container {
             position: relative;
-            width: 360px; 
-            height: 360px; 
-            background: #050505;
-            border-radius: 2rem;
+            width: 360px;
+            height: 360px;
             margin: 0 auto;
-            border: 1px solid #111;
+            border-radius: 1.5rem;
             overflow: hidden;
+            background: #050505;
         }
 
+        /* DOTTED GRID MAPPING */
+        #grid-bg {
+            position: absolute;
+            top: 0; left: 0;
+            display: grid;
+            grid-template-columns: repeat(6, 60px);
+            grid-template-rows: repeat(6, 60px);
+            z-index: 1;
+        }
+
+        .grid-cell {
+            width: 60px;
+            height: 60px;
+            border: 1px dotted rgba(255, 255, 255, 0.05);
+        }
+
+        /* OBJECTS */
         .item {
             position: absolute;
             width: 60px;
@@ -31,46 +47,56 @@
             align-items: center;
             justify-content: center;
             font-size: 1.8rem;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             z-index: 10;
+            user-select: none;
         }
 
-        .match-vanish { transform: scale(0) !important; opacity: 0; }
-        
+        .match-vanish { transform: scale(0) !important; opacity: 0; transition: 0.2s; }
         .score-box { border-left: 4px solid #ff0000; }
         .timer-font { font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
 <body class="flex flex-col items-center py-6">
 
-    <div class="w-full max-w-md px-6 flex justify-between items-center mb-10">
+    <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
         <div class="glass-ui p-4 rounded-2xl score-box">
-            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Live Weight</p>
+            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
             <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
         </div>
         <div class="text-center">
             <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
-            <p class="text-[8px] font-bold text-gray-500 uppercase">Sec</p>
+            <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds</p>
         </div>
     </div>
 
-    <div id="game-board" class="glass-ui"></div>
+    <div id="arena-container" class="glass-ui">
+        <div id="grid-bg"></div> <div id="item-layer"></div> </div>
 
-    <div class="mt-12 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
+    <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
         <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse"></div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Manual Swipe Precision</span>
+        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Grid-Lock Precision Active</span>
     </div>
 
     <script>
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
         let board = [], score = 0, timeLeft = 60;
-        let startX, startY, isDragging = false, activeItem = null;
+        let startX, startY, activeItem = null;
 
-        const container = document.getElementById('game-board');
+        const itemLayer = document.getElementById('item-layer');
+        const gridBg = document.getElementById('grid-bg');
 
         function init() {
+            // Build Dotted Background
+            for (let i = 0; i < rows * cols; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                gridBg.appendChild(cell);
+            }
+
+            // Spawn Initial Board
             for (let r = 0; r < rows; r++) {
                 board[r] = [];
                 for (let c = 0; c < cols; c++) {
@@ -78,7 +104,7 @@
                 }
             }
             startTimer();
-            setTimeout(checkMatches, 600);
+            setTimeout(checkMatches, 500);
         }
 
         function spawnItem(r, c) {
@@ -92,15 +118,14 @@
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
                 activeItem = { r, c, el };
-                isDragging = true;
-            });
+            }, {passive: true});
 
-            container.appendChild(el);
+            itemLayer.appendChild(el);
             board[r][c] = { type, el };
         }
 
         document.addEventListener('touchend', (e) => {
-            if (!isDragging || !activeItem) return;
+            if (!activeItem) return;
             const endX = e.changedTouches[0].clientX;
             const endY = e.changedTouches[0].clientY;
             const dx = endX - startX, dy = endY - startY;
@@ -114,63 +139,65 @@
                 if (Math.abs(dy) > threshold) tr += dy > 0 ? 1 : -1;
             }
 
+            // Boundary Check
             if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== activeItem.r || tc !== activeItem.c)) {
-                swap(activeItem.r, activeItem.c, tr, tc);
+                executeSwap(activeItem.r, activeItem.c, tr, tc);
             }
-            isDragging = false;
+            activeItem = null;
         });
 
-        function swap(r1, c1, r2, c2, callback) {
+        function executeSwap(r1, c1, r2, c2) {
             const item1 = board[r1][c1];
             const item2 = board[r2][c2];
 
-            // Physical Slide Animation
+            // Update DOM positions (Permanent Slide)
             item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
             item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
 
+            // Update logical board
             board[r1][c1] = item2;
             board[r2][c2] = item1;
 
-            setTimeout(() => {
-                if (!checkMatches() && !callback) {
-                    // Undo Swap Slide
-                    swap(r2, c2, r1, c1, true);
-                }
-            }, 350);
+            // Trigger Match Check
+            setTimeout(checkMatches, 350);
         }
 
         function checkMatches() {
-            let toRemove = new Set();
+            let matches = new Set();
 
-            // Horiz
+            // Horizontal
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols - 2; c++) {
                     if (board[r][c] && board[r][c+1] && board[r][c+2] &&
                         board[r][c].type === board[r][c+1].type && board[r][c].type === board[r][c+2].type) {
-                        toRemove.add(`${r},${c}`); toRemove.add(`${r},${c+1}`); toRemove.add(`${r},${c+2}`);
+                        matches.add(`${r},${c}`); matches.add(`${r},${c+1}`); matches.add(`${r},${c+2}`);
                     }
                 }
             }
-            // Vert
+            // Vertical
             for (let c = 0; c < cols; c++) {
                 for (let r = 0; r < rows - 2; r++) {
                     if (board[r][c] && board[r+1][c] && board[r+2][c] &&
                         board[r][c].type === board[r+1][c].type && board[r][c].type === board[r+2][c].type) {
-                        toRemove.add(`${r},${c}`); toRemove.add(`${r+1},${c}`); toRemove.add(`${r+2},${c}`);
+                        matches.add(`${r},${c}`); matches.add(`${r+1},${c}`); matches.add(`${r+2},${c}`);
                     }
                 }
             }
 
-            if (toRemove.size > 0) {
-                score += (toRemove.size * 0.1);
+            if (matches.size > 0) {
+                score += (matches.size * 0.1);
                 document.getElementById('score').innerText = score.toFixed(1) + 'kg';
-                toRemove.forEach(coord => {
+                
+                matches.forEach(coord => {
                     const [r, c] = coord.split(',').map(Number);
-                    board[r][c].el.classList.add('match-vanish');
-                    setTimeout(() => board[r][c].el.remove(), 300);
-                    board[r][c] = null;
+                    const item = board[r][c];
+                    if(item) {
+                        item.el.classList.add('match-vanish');
+                        setTimeout(() => item.el.remove(), 250);
+                        board[r][c] = null;
+                    }
                 });
-                setTimeout(applyGravity, 400);
+                setTimeout(applyGravity, 300);
                 return true;
             }
             return false;
@@ -186,33 +213,33 @@
                         const item = board[r][c];
                         board[r + empty][c] = item;
                         board[r][c] = null;
-                        // Gravity Slide Animation
                         item.el.style.transform = `translate(${c * size}px, ${(r + empty) * size}px)`;
                     }
                 }
-                // Fill top with sliding new items
+                // Fill with new sliding items
                 for (let i = 0; i < empty; i++) {
                     const r = i;
                     const type = items[Math.floor(Math.random() * items.length)];
                     const el = document.createElement('div');
                     el.className = 'item';
                     el.innerHTML = type;
-                    // Start above board
                     el.style.transform = `translate(${c * size}px, -60px)`;
-                    container.appendChild(el);
+                    itemLayer.appendChild(el);
                     board[r][c] = { type, el };
-                    // Trigger slide down
+                    
+                    // Closure to re-attach events correctly
+                    const row = r, col = c;
+                    el.addEventListener('touchstart', (e) => {
+                        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+                        activeItem = { r: row, c: col, el };
+                    }, {passive: true});
+
                     setTimeout(() => {
                         el.style.transform = `translate(${c * size}px, ${r * size}px)`;
                     }, 50);
-                    
-                    // Re-bind touch for new items
-                    el.addEventListener('touchstart', (e) => {
-                        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-                        activeItem = { r, c, el }; isDragging = true;
-                    });
                 }
             }
+            // Chain reaction check
             setTimeout(checkMatches, 500);
         }
 
@@ -220,7 +247,10 @@
             const int = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer').innerText = timeLeft;
-                if (timeLeft <= 0) { clearInterval(int); alert("Weight achieved: " + score.toFixed(1) + "kg"); }
+                if (timeLeft <= 0) { 
+                    clearInterval(int); 
+                    alert("Duel Over! Weight: " + score.toFixed(1) + "kg"); 
+                }
             }, 1000);
         }
 
