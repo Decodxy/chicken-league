@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>1in2 League Standings | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;700;900&display=swap');
+        
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh; 
+            overflow-x: hidden;
+        }
+
+        .brand-red { color: #ff0000; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* Glassmorphism UI */
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.02); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+
+        /* Rank Item Styling */
+        .rank-row {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .rank-row:hover {
+            background: rgba(255, 0, 0, 0.05);
+            transform: translateX(5px);
+        }
+
+        .top-rank {
+            background: linear-gradient(90deg, rgba(255, 0, 0, 0.1) 0%, transparent 100%);
+            border-left: 4px solid #ff0000;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col items-center py-10 px-4">
+
+    <div class="w-full max-w-md flex justify-between items-end mb-10">
+        <div>
+            <h1 class="orbitron text-3xl font-black italic tracking-tighter uppercase">
+                1in2 <span class="brand-red">League</span>
+            </h1>
+            <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.4em] mt-1">Live Combat Rankings</p>
+        </div>
+        <button onclick="location.href='arena.html'" class="text-[10px] font-black border border-white/20 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition duration-300">
+            ARENA
+        </button>
+    </div>
+
+    <div class="w-full max-w-md glass-panel rounded-[2rem] overflow-hidden">
+        <div class="p-5 border-b border-white/10 flex justify-between text-[10px] font-black text-gray-500 uppercase tracking-widest">
+            <span>Ranked Combatant</span>
+            <span>Total Weight</span>
+        </div>
+
+        <div id="leaderboard-list" class="max-h-[70vh] overflow-y-auto">
+            <div class="p-20 text-center opacity-30 orbitron animate-pulse text-xs uppercase tracking-widest">
+                Establishing Link...
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flex items-center gap-3 opacity-40">
+        <div class="h-1.5 w-1.5 bg-red-600 rounded-full animate-ping"></div>
+        <span class="text-[8px] font-black uppercase tracking-widest">Real-time Sync Active</span>
+    </div>
+
+    <script>
+        // SUPABASE CONFIGURATION
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+        /**
+         * Fetches data from league_performances table
+         */
+        async function fetchRankings() {
+            const { data, error } = await sb
+                .from('league_performances')
+                .select('*')
+                .eq('league_id', '1in2')
+                .order('score', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                console.error("Critical Sync Error:", error.message);
+                return;
+            }
+
+            renderUI(data);
+        }
+
+        /**
+         * Renders the fetched data into the HTML
+         */
+        function renderUI(players) {
+            const listEl = document.getElementById('leaderboard-list');
+            if (players.length === 0) {
+                listEl.innerHTML = `<div class="p-20 text-center text-xs text-gray-500 uppercase font-black">No Records Found</div>`;
+                return;
+            }
+
+            listEl.innerHTML = players.map((player, index) => {
+                const rank = index + 1;
+                const isTop = rank <= 3;
+                
+                return `
+                    <div class="rank-row p-6 flex justify-between items-center ${rank === 1 ? 'top-rank' : ''}">
+                        <div class="flex items-center gap-5">
+                            <span class="orbitron text-lg font-black ${isTop ? 'brand-red' : 'text-zinc-800'}">
+                                #${rank.toString().padStart(2, '0')}
+                            </span>
+                            <div>
+                                <p class="text-sm font-black uppercase tracking-tight">${player.username}</p>
+                                <p class="text-[8px] text-gray-600 font-bold uppercase tracking-tighter">
+                                    Captured ${new Date(player.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="orbitron text-xl font-black">${player.score.toFixed(1)}</p>
+                            <p class="text-[9px] brand-red font-black uppercase tracking-widest">KG</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // REAL-TIME SUBSCRIPTION
+        // Listens for new inserts and refreshes UI instantly
+        sb.channel('db-changes')
+          .on('postgres_changes', 
+              { event: 'INSERT', schema: 'public', table: 'league_performances', filter: 'league_id=eq.1in2' }, 
+              () => {
+                  console.log("New entry detected! Refreshing...");
+                  fetchRankings();
+              }
+          )
+          .subscribe();
+
+        // Initial Execution
+        fetchRankings();
+    </script>
+</body>
+</html>
