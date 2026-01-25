@@ -18,42 +18,42 @@
             height: 360px;
             margin: 0 auto;
             border-radius: 1.5rem;
-            overflow: hidden;
             background: #050505;
+            border: 1px solid #111;
         }
 
-        /* DOTTED GRID MAPPING */
-        #grid-bg {
+        /* THE FIX: TOUCH MASK */
+        #touch-mask {
             position: absolute;
             top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 100; /* Always on top */
+            touch-action: none;
+        }
+
+        #grid-bg {
+            position: absolute;
             display: grid;
             grid-template-columns: repeat(6, 60px);
-            grid-template-rows: repeat(6, 60px);
             z-index: 1;
         }
 
         .grid-cell {
-            width: 60px;
-            height: 60px;
-            border: 1px dotted rgba(255, 255, 255, 0.05);
+            width: 60px; height: 60px;
+            border: 0.5px dotted rgba(255, 255, 255, 0.1);
         }
 
-        /* OBJECTS */
         .item {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
+            width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 10;
-            user-select: none;
+            pointer-events: none; /* Items don't catch touches, the mask does */
         }
 
-        .match-vanish { transform: scale(0) !important; opacity: 0; transition: 0.2s; }
+        .match-vanish { transform: scale(0) !important; opacity: 0; }
         .score-box { border-left: 4px solid #ff0000; }
         .timer-font { font-family: 'Orbitron', sans-serif; }
     </style>
@@ -63,7 +63,7 @@
     <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
         <div class="glass-ui p-4 rounded-2xl score-box">
             <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
-            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
+            <h2 id="score" class="text-3xl font-black">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
         </div>
         <div class="text-center">
             <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
@@ -71,32 +71,35 @@
         </div>
     </div>
 
-    <div id="arena-container" class="glass-ui">
-        <div id="grid-bg"></div> <div id="item-layer"></div> </div>
+    <div id="arena-container">
+        <div id="grid-bg"></div>
+        <div id="item-layer"></div>
+        <div id="touch-mask"></div> </div>
 
     <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
-        <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse"></div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Grid-Lock Precision Active</span>
+        <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]"></div>
+        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Zero-Bug Precision Mode</span>
     </div>
 
     <script>
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
-        let board = [], score = 0, timeLeft = 60;
-        let startX, startY, activeItem = null;
+        let board = [], score = 0, timeLeft = 60, isProcessing = false;
+        let startR, startC, startX, startY;
 
         const itemLayer = document.getElementById('item-layer');
-        const gridBg = document.getElementById('grid-bg');
+        const touchMask = document.getElementById('touch-mask');
 
         function init() {
-            // Build Dotted Background
-            for (let i = 0; i < rows * cols; i++) {
+            // Build Grid Map
+            const gridBg = document.getElementById('grid-bg');
+            for (let i = 0; i < 36; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'grid-cell';
                 gridBg.appendChild(cell);
             }
 
-            // Spawn Initial Board
+            // Fill Board
             for (let r = 0; r < rows; r++) {
                 board[r] = [];
                 for (let c = 0; c < cols; c++) {
@@ -113,25 +116,32 @@
             el.className = 'item';
             el.innerHTML = type;
             el.style.transform = `translate(${c * size}px, ${r * size}px)`;
-            
-            el.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                activeItem = { r, c, el };
-            }, {passive: true});
-
             itemLayer.appendChild(el);
             board[r][c] = { type, el };
         }
 
-        document.addEventListener('touchend', (e) => {
-            if (!activeItem) return;
-            const endX = e.changedTouches[0].clientX;
-            const endY = e.changedTouches[0].clientY;
-            const dx = endX - startX, dy = endY - startY;
-            const threshold = 30;
+        // GLOBAL TOUCH LOGIC
+        touchMask.addEventListener('touchstart', (e) => {
+            if (isProcessing) return;
+            const rect = touchMask.getBoundingClientRect();
+            startX = e.touches[0].clientX - rect.left;
+            startY = e.touches[0].clientY - rect.top;
+            
+            startC = Math.floor(startX / size);
+            startR = Math.floor(startY / size);
+        });
 
-            let tr = activeItem.r, tc = activeItem.c;
+        touchMask.addEventListener('touchend', (e) => {
+            if (isProcessing || startR === undefined) return;
+            const rect = touchMask.getBoundingClientRect();
+            const endX = e.changedTouches[0].clientX - rect.left;
+            const endY = e.changedTouches[0].clientY - rect.top;
+
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const threshold = 25;
+
+            let tr = startR, tc = startC;
 
             if (Math.abs(dx) > Math.abs(dy)) {
                 if (Math.abs(dx) > threshold) tc += dx > 0 ? 1 : -1;
@@ -139,33 +149,31 @@
                 if (Math.abs(dy) > threshold) tr += dy > 0 ? 1 : -1;
             }
 
-            // Boundary Check
-            if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== activeItem.r || tc !== activeItem.c)) {
-                executeSwap(activeItem.r, activeItem.c, tr, tc);
+            if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== startR || tc !== startC)) {
+                executeSwap(startR, startC, tr, tc);
             }
-            activeItem = null;
+            startR = undefined;
         });
 
         function executeSwap(r1, c1, r2, c2) {
+            isProcessing = true;
             const item1 = board[r1][c1];
             const item2 = board[r2][c2];
 
-            // Update DOM positions (Permanent Slide)
             item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
             item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
 
-            // Update logical board
             board[r1][c1] = item2;
             board[r2][c2] = item1;
 
-            // Trigger Match Check
-            setTimeout(checkMatches, 350);
+            setTimeout(() => {
+                checkMatches();
+                isProcessing = false;
+            }, 300);
         }
 
         function checkMatches() {
             let matches = new Set();
-
-            // Horizontal
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols - 2; c++) {
                     if (board[r][c] && board[r][c+1] && board[r][c+2] &&
@@ -174,7 +182,6 @@
                     }
                 }
             }
-            // Vertical
             for (let c = 0; c < cols; c++) {
                 for (let r = 0; r < rows - 2; r++) {
                     if (board[r][c] && board[r+1][c] && board[r+2][c] &&
@@ -185,15 +192,16 @@
             }
 
             if (matches.size > 0) {
+                isProcessing = true;
                 score += (matches.size * 0.1);
                 document.getElementById('score').innerText = score.toFixed(1) + 'kg';
                 
                 matches.forEach(coord => {
                     const [r, c] = coord.split(',').map(Number);
-                    const item = board[r][c];
-                    if(item) {
-                        item.el.classList.add('match-vanish');
-                        setTimeout(() => item.el.remove(), 250);
+                    if(board[r][c]) {
+                        board[r][c].el.classList.add('match-vanish');
+                        const elToRemove = board[r][c].el;
+                        setTimeout(() => elToRemove.remove(), 250);
                         board[r][c] = null;
                     }
                 });
@@ -207,16 +215,14 @@
             for (let c = 0; c < cols; c++) {
                 let empty = 0;
                 for (let r = rows - 1; r >= 0; r--) {
-                    if (board[r][c] === null) {
-                        empty++;
-                    } else if (empty > 0) {
+                    if (board[r][c] === null) empty++;
+                    else if (empty > 0) {
                         const item = board[r][c];
                         board[r + empty][c] = item;
                         board[r][c] = null;
                         item.el.style.transform = `translate(${c * size}px, ${(r + empty) * size}px)`;
                     }
                 }
-                // Fill with new sliding items
                 for (let i = 0; i < empty; i++) {
                     const r = i;
                     const type = items[Math.floor(Math.random() * items.length)];
@@ -226,31 +232,19 @@
                     el.style.transform = `translate(${c * size}px, -60px)`;
                     itemLayer.appendChild(el);
                     board[r][c] = { type, el };
-                    
-                    // Closure to re-attach events correctly
-                    const row = r, col = c;
-                    el.addEventListener('touchstart', (e) => {
-                        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-                        activeItem = { r: row, c: col, el };
-                    }, {passive: true});
-
-                    setTimeout(() => {
-                        el.style.transform = `translate(${c * size}px, ${r * size}px)`;
-                    }, 50);
+                    setTimeout(() => { el.style.transform = `translate(${c * size}px, ${r * size}px)`; }, 50);
                 }
             }
-            // Chain reaction check
-            setTimeout(checkMatches, 500);
+            setTimeout(() => {
+                if (!checkMatches()) isProcessing = false;
+            }, 450);
         }
 
         function startTimer() {
             const int = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer').innerText = timeLeft;
-                if (timeLeft <= 0) { 
-                    clearInterval(int); 
-                    alert("Duel Over! Weight: " + score.toFixed(1) + "kg"); 
-                }
+                if (timeLeft <= 0) { clearInterval(int); alert("Weight: " + score.toFixed(1) + "kg"); }
             }, 1000);
         }
 
