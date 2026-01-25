@@ -289,7 +289,8 @@
 
             } catch (err) {
                 console.error("Combat Sync Failed:", err.message);
-                alert("Weight synchronization failed. Data connection lost.");
+                alert("Sync Failed: " + err.message);
+
                 window.location.href = '1in2leaderboard.html';
             }
         }
