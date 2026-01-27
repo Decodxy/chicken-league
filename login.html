@@ -27,7 +27,6 @@
     <script>
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co'; 
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-        // Corrected initialization: window.supabase.createClient
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
         async function handleLogin() {
@@ -40,28 +39,42 @@
                 return;
             }
 
-            btn.innerText = "VERIFYING...";
+            btn.innerText = "AUTHENTICATING...";
             btn.disabled = true;
 
             try {
-                // Fixed table name to 'Profiles' to match our DB Fix
-                const { data, error } = await sb
-                    .from('Profiles')
-                    .select('public_username')
-                    .eq('phone_number', phone)
-                    .eq('password', pass)
-                    .maybeSingle();
+                // 1. Official Supabase Auth Sign-In
+                // We use the same pseudo-email format from the sign-up page
+                const { data: authData, error: authError } = await sb.auth.signInWithPassword({
+                    email: phone + "@cl.com",
+                    password: pass
+                });
 
-                if (error) {
-                    alert("System Error: " + error.message);
-                } else if (data) {
-                    localStorage.setItem('league_user', data.public_username);
-                    window.location.href = "dashboard.html";
+                if (authError) {
+                    // Fallback check: If Auth fails, try the Profiles table just in case 
+                    // this is an old user who hasn't been migrated to Auth yet.
+                    const { data: profileData, error: profileError } = await sb
+                        .from('Profiles')
+                        .select('public_username')
+                        .eq('phone_number', phone)
+                        .eq('password', pass)
+                        .maybeSingle();
+
+                    if (profileData) {
+                        localStorage.setItem('league_user', profileData.public_username);
+                        window.location.href = "dashboard.html";
+                    } else {
+                        throw new Error("Invalid phone number or password.");
+                    }
                 } else {
-                    alert("No account found with those details. Check your phone number or password.");
+                    // 2. Successful Auth - Grab username from metadata
+                    const u = authData.user.user_metadata.username;
+                    localStorage.setItem('league_user', u);
+                    window.location.href = "dashboard.html";
                 }
+
             } catch (err) {
-                alert("Login failed. Check your connection.");
+                alert("Login Error: " + err.message);
             } finally {
                 btn.innerText = "LOGIN TO ARENA";
                 btn.disabled = false;
