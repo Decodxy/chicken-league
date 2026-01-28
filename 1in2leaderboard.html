@@ -82,6 +82,25 @@
     </div>
 
     <script>
+// ADD THIS TO THE TOP OF YOUR SCRIPTS
+async function checkUserSession() {
+    const { data: { session }, error } = await sb.auth.getSession();
+    
+    if (error || !session) {
+        console.log("No active session found. Redirecting to Login...");
+        window.location.href = "login.html"; // Kick them out if not logged in
+        return;
+    }
+    
+    // Success: The "Bridge" is active. 
+    // You can now access session.user.user_metadata.username anywhere!
+    console.log("Combatant Verified:", session.user.user_metadata.username);
+}
+
+// Execute immediately on page load
+checkUserSession();
+
+        
         // SUPABASE CONFIGURATION
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
