@@ -130,6 +130,24 @@
     </nav>
 
     <script>
+        // ADD THIS TO THE TOP OF YOUR SCRIPTS
+async function checkUserSession() {
+    const { data: { session }, error } = await sb.auth.getSession();
+    
+    if (error || !session) {
+        console.log("No active session found. Redirecting to Login...");
+        window.location.href = "login.html"; // Kick them out if not logged in
+        return;
+    }
+    
+    // Success: The "Bridge" is active. 
+    // You can now access session.user.user_metadata.username anywhere!
+    console.log("Combatant Verified:", session.user.user_metadata.username);
+}
+
+// Execute immediately on page load
+checkUserSession();
+
         // Set User Identity
         const user = localStorage.getItem('league_user');
         if (user) {
