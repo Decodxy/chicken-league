@@ -7,80 +7,29 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="security-bridge.js"></script>
+
     <style>
-        :root {
-            --arena-gold: #fbbf24;
-            --arena-glow: rgba(251, 191, 36, 0.5);
-            --bg-dark: #050505;
-        }
-
-        body { 
-            background: var(--bg-dark); 
-            color: white; 
-            font-family: 'Inter', sans-serif; 
-            min-height: 100vh; 
-            overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
-        }
-
+        :root { --arena-gold: #fbbf24; --arena-glow: rgba(251, 191, 36, 0.5); --bg-dark: #050505; }
+        body { background: var(--bg-dark); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; background-image: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 70%); }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-
-        .glass-panel { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(25px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-        }
-
-        .slot-circle { 
-            width: 80px; height: 80px; 
-            border-radius: 50%; 
-            border: 2px dashed rgba(255,255,255,0.1); 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            display: flex; align-items: center; justify-content: center; 
-            background: rgba(255,255,255,0.01);
-            position: relative;
-        }
-
-        .slot-filled { 
-            background: rgba(251, 191, 36, 0.1); 
-            border: 2px solid var(--arena-gold); 
-            box-shadow: 0 0 25px var(--arena-glow);
-            transform: scale(1.05);
-            border-style: solid;
-        }
-
-        .btn-loading {
-            position: relative;
-            pointer-events: none;
-            opacity: 0.7;
-        }
-        
-        .btn-loading::after {
-            content: "";
-            position: absolute; width: 16px; height: 16px;
-            top: 0; left: 0; right: 0; bottom: 0; margin: auto;
-            border: 2px solid transparent; border-top-color: #000;
-            border-radius: 50%; animation: spin 0.6s linear infinite;
-        }
-
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .slot-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.1); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.01); position: relative; }
+        .slot-filled { background: rgba(251, 191, 36, 0.1); border: 2px solid var(--arena-gold); box-shadow: 0 0 25px var(--arena-glow); transform: scale(1.05); border-style: solid; }
+        .btn-loading { position: relative; pointer-events: none; opacity: 0.7; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="security-bridge.js"></script>
-
 </head>
 <body class="pb-10">
 
-    <!-- Debug Log for Handshake -->
     <div id="debug-status" class="fixed bottom-4 left-4 right-4 z-50 text-[8px] orbitron text-zinc-500 bg-black/80 p-2 rounded border border-white/5 pointer-events-none">
         HANDSHAKE: INITIALIZING...
     </div>
 
     <main class="max-w-md mx-auto p-6">
         <div class="mt-4 mb-6 flex items-center justify-between">
-            <button onclick="exitLobby()" class="text-gray-600 text-[10px] font-black uppercase tracking-widest hover:text-white">
-                ← EXIT LOBBY
-            </button>
+            <button onclick="exitLobby()" class="text-gray-600 text-[10px] font-black uppercase tracking-widest hover:text-white">← EXIT LOBBY</button>
             <div id="connection-indicator" class="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full">
                 <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                 <span class="text-[9px] font-bold text-red-500 orbitron">DISCONNECTED</span>
@@ -114,41 +63,13 @@
         </div>
 
         <button id="mainBtn" onclick="handleMainAction()" class="w-full py-5 bg-white text-black rounded-2xl font-black uppercase italic tracking-tighter transition-all active:scale-95">
-            STARTING SYSTEM...
+            INITIALIZING BRIDGE...
         </button>
     </main>
 
     <script>
-
-        // ADD THIS TO THE TOP OF YOUR SCRIPTS
-async function checkUserSession() {
-    const { data: { session }, error } = await sb.auth.getSession();
-    
-    if (error || !session) {
-        console.log("No active session found. Redirecting to Login...");
-        window.location.href = "login.html"; // Kick them out if not logged in
-        return;
-    }
-    
-    // Success: The "Bridge" is active. 
-    // You can now access session.user.user_metadata.username anywhere!
-    console.log("Combatant Verified:", session.user.user_metadata.username);
-}
-
-// Execute immediately on page load
-checkUserSession();
-
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
-        
-        // Ensure user identity is valid
+        // Use the username from our security bridge
         let currentUser = localStorage.getItem('league_user');
-        if(!currentUser) {
-            currentUser = "PILOT_" + Math.random().toString(36).substring(2, 7).toUpperCase();
-            localStorage.setItem('league_user', currentUser);
-        }
-
         let cachedPlayers = [];
         let cachedSignal = null;
         let isProcessing = false;
@@ -160,6 +81,7 @@ checkUserSession();
 
         async function syncLobby() {
             try {
+                // 'sb' is already available from security-bridge.js
                 const { data: players, error: pErr } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
                 const { data: signal, error: sErr } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').maybeSingle();
                 
@@ -168,7 +90,6 @@ checkUserSession();
                 cachedPlayers = players || [];
                 cachedSignal = signal;
                 
-                // Update connection indicator
                 const indicator = document.getElementById('connection-indicator');
                 indicator.className = "flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full";
                 indicator.innerHTML = `<span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span class="text-[9px] font-bold text-green-500 orbitron">CONNECTED</span>`;
@@ -207,81 +128,52 @@ checkUserSession();
                 }
             }
 
-            if (isProcessing) return; // Don't flip text while db is writing
+            if (isProcessing) return;
 
             if (total >= 2) {
                 if (cachedSignal?.is_live) {
-                    if (isUserIn) {
-                        btn.innerText = "ENTER ARENA";
-                        btn.className = "w-full py-5 bg-yellow-400 text-black rounded-2xl font-black uppercase italic shadow-[0_0_30px_rgba(251,191,36,0.3)]";
-                        btn.disabled = false;
-                    } else {
-                        btn.innerText = "LOBBY FULL";
-                        btn.disabled = true;
-                        btn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-2xl font-black uppercase italic";
-                    }
+                    btn.innerText = isUserIn ? "ENTER ARENA" : "LOBBY FULL";
+                    btn.disabled = !isUserIn;
+                    btn.className = isUserIn ? "w-full py-5 bg-yellow-400 text-black rounded-2xl font-black uppercase italic" : "w-full py-5 bg-zinc-900 text-zinc-600 rounded-2xl font-black uppercase italic";
                 } else {
                     btn.innerText = isUserIn ? "WAITING FOR ADMIN..." : "LOBBY FULL";
                     btn.disabled = true;
-                    btn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-2xl font-black uppercase italic";
                 }
             } else {
-                if (isUserIn) {
-                    btn.innerText = "SEARCHING FOR OPPONENT...";
-                    btn.disabled = true;
-                    btn.className = "w-full py-5 bg-zinc-900 text-zinc-400 rounded-2xl font-black uppercase italic border border-white/5";
-                } else {
-                    btn.innerText = "JOIN LEAGUE";
-                    btn.disabled = false;
-                    btn.className = "w-full py-5 bg-white text-black rounded-2xl font-black uppercase italic";
-                }
+                btn.innerText = isUserIn ? "SEARCHING FOR OPPONENT..." : "JOIN LEAGUE";
+                btn.disabled = isUserIn;
             }
         }
 
         async function handleMainAction() {
             if(isProcessing) return;
             const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
-            const btn = document.getElementById('mainBtn');
             
             if (!isUserIn && cachedPlayers.length < 2) {
                 isProcessing = true;
-                btn.innerText = "REGISTERING...";
-                btn.classList.add('btn-loading');
-                log(`SENDING HANDSHAKE FOR ${currentUser}...`);
-
+                log(`REGISTERING ${currentUser}...`);
                 const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
-                
-                if (error) {
-                    log(`FAILED: ${error.message}`);
-                    isProcessing = false;
-                    btn.classList.remove('btn-loading');
-                    updateUI();
-                } else {
-                    log("HANDSHAKE SUCCESSFUL");
-                    await syncLobby();
-                    isProcessing = false;
-                    btn.classList.remove('btn-loading');
-                }
+                if (error) log(`FAILED: ${error.message}`);
+                await syncLobby();
+                isProcessing = false;
             } else if (isUserIn && cachedPlayers.length >= 2 && cachedSignal?.is_live) {
-                log("REDIRECTING TO ARENA...");
                 window.location.href = `1in2arena.html?user=${encodeURIComponent(currentUser)}&league=1in2`;
             }
         }
 
         async function exitLobby() {
-            log("REMOVING HANDSHAKE...");
             await sb.from('1in2').delete().eq('player_username', currentUser);
             window.location.href = 'dashboard.html';
         }
 
-        // Real-time
+        // Initialize real-time
         sb.channel('lobby_updates')
             .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncLobby)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'Lobby_Signals' }, syncLobby)
             .subscribe();
 
-        syncLobby();
+        // Small delay to ensure security-bridge.js finishes
+        setTimeout(syncLobby, 500);
     </script>
 </body>
 </html>
-
