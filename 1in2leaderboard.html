@@ -6,51 +6,22 @@
     <title>1in2 League Standings | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="security-bridge.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;700;900&display=swap');
-        
-        body { 
-            background: #000; 
-            color: #fff; 
-            font-family: 'Inter', sans-serif; 
-            min-height: 100vh; 
-            overflow-x: hidden;
-        }
-
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
         .brand-red { color: #ff0000; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        
-        /* Glassmorphism UI */
-        .glass-panel { 
-            background: rgba(255, 255, 255, 0.02); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-
-        /* Rank Item Styling */
-        .rank-row {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .rank-row:hover {
-            background: rgba(255, 0, 0, 0.05);
-            transform: translateX(5px);
-        }
-
-        .top-rank {
-            background: linear-gradient(90deg, rgba(255, 0, 0, 0.1) 0%, transparent 100%);
-            border-left: 4px solid #ff0000;
-        }
-
-        /* Custom Scrollbar */
+        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .rank-row { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .rank-row:hover { background: rgba(255, 0, 0, 0.05); transform: translateX(5px); }
+        .top-rank { background: linear-gradient(90deg, rgba(255, 0, 0, 0.1) 0%, transparent 100%); border-left: 4px solid #ff0000; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 10px; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="security-bridge.js"></script>
-
 </head>
 <body class="flex flex-col items-center py-10 px-4">
 
@@ -61,7 +32,7 @@
             </h1>
             <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.4em] mt-1">Live Combat Rankings</p>
         </div>
-        <button onclick="location.href='arena.html'" class="text-[10px] font-black border border-white/20 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition duration-300">
+        <button onclick="location.href='1in2arena.html'" class="text-[10px] font-black border border-white/20 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition duration-300">
             ARENA
         </button>
     </div>
@@ -85,34 +56,32 @@
     </div>
 
     <script>
-// ADD THIS TO THE TOP OF YOUR SCRIPTS
-async function checkUserSession() {
-    const { data: { session }, error } = await sb.auth.getSession();
-    
-    if (error || !session) {
-        console.log("No active session found. Redirecting to Login...");
-        window.location.href = "login.html"; // Kick them out if not logged in
-        return;
-    }
-    
-    // Success: The "Bridge" is active. 
-    // You can now access session.user.user_metadata.username anywhere!
-    console.log("Combatant Verified:", session.user.user_metadata.username);
-}
-
-// Execute immediately on page load
-checkUserSession();
-
-        
-        // SUPABASE CONFIGURATION
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-        
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
-
         /**
-         * Fetches data from league_performances table
+         * STARTUP SEQUENCE
          */
+        async function bootStandings() {
+            // Check session via the global 'sb' client created in security-bridge.js
+            const { data: { session } } = await sb.auth.getSession();
+            
+            if (!session) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            console.log("Standings Authorized for:", session.user.user_metadata.username);
+            
+            // Initial Load
+            fetchRankings();
+
+            // Setup Real-time Listener
+            sb.channel('db-changes')
+              .on('postgres_changes', 
+                  { event: 'INSERT', schema: 'public', table: 'league_performances', filter: 'league_id=eq.1in2' }, 
+                  () => fetchRankings()
+              )
+              .subscribe();
+        }
+
         async function fetchRankings() {
             const { data, error } = await sb
                 .from('league_performances')
@@ -125,16 +94,12 @@ checkUserSession();
                 console.error("Critical Sync Error:", error.message);
                 return;
             }
-
             renderUI(data);
         }
 
-        /**
-         * Renders the fetched data into the HTML
-         */
         function renderUI(players) {
             const listEl = document.getElementById('leaderboard-list');
-            if (players.length === 0) {
+            if (!players || players.length === 0) {
                 listEl.innerHTML = `<div class="p-20 text-center text-xs text-gray-500 uppercase font-black">No Records Found</div>`;
                 return;
             }
@@ -165,20 +130,8 @@ checkUserSession();
             }).join('');
         }
 
-        // REAL-TIME SUBSCRIPTION
-        // Listens for new inserts and refreshes UI instantly
-        sb.channel('db-changes')
-          .on('postgres_changes', 
-              { event: 'INSERT', schema: 'public', table: 'league_performances', filter: 'league_id=eq.1in2' }, 
-              () => {
-                  console.log("New entry detected! Refreshing...");
-                  fetchRankings();
-              }
-          )
-          .subscribe();
-
-        // Initial Execution
-        fetchRankings();
+        // Execute boot sequence
+        bootStandings();
     </script>
 </body>
 </html>
