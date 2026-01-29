@@ -92,28 +92,22 @@
     </div>
 
     <script>
-        // ADD THIS TO THE TOP OF YOUR SCRIPTS
-async function checkUserSession() {
-    const { data: { session }, error } = await sb.auth.getSession();
-    
-    if (error || !session) {
-        console.log("No active session found. Redirecting to Login...");
-        window.location.href = "login.html"; // Kick them out if not logged in
-        return;
-    }
-    
-    // Success: The "Bridge" is active. 
-    // You can now access session.user.user_metadata.username anywhere!
-    console.log("Combatant Verified:", session.user.user_metadata.username);
-}
-
-// Execute immediately on page load
-checkUserSession();
-
         // SUPABASE INITIALIZATION
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+        // SESSION SHIELD
+        async function checkUserSession() {
+            const { data: { session }, error } = await sb.auth.getSession();
+            if (error || !session) {
+                console.log("No active session. Redirecting...");
+                window.location.href = "login.html";
+                return;
+            }
+            console.log("Arena Verified:", session.user.user_metadata.username);
+        }
+        checkUserSession();
 
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
@@ -151,7 +145,6 @@ checkUserSession();
             board[r][c] = { type, el };
         }
 
-        // --- ZERO-BUG TOUCH LOGIC ---
         touchMask.addEventListener('touchstart', (e) => {
             if (isProcessing) return;
             const rect = touchMask.getBoundingClientRect();
@@ -272,7 +265,6 @@ checkUserSession();
             setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
         }
 
-        // --- GAME END & DATA SYNC ---
         function startTimer() {
             const int = setInterval(async () => {
                 timeLeft--;
@@ -281,7 +273,7 @@ checkUserSession();
                 
                 if (timeLeft <= 0) { 
                     clearInterval(int); 
-                    isProcessing = true; // Lock interaction
+                    isProcessing = true; 
                     await saveGamePerformance(); 
                 }
             }, 1000);
@@ -289,11 +281,17 @@ checkUserSession();
 
         async function saveGamePerformance() {
             try {
-                // Fetch authenticated user
+                // 1. IDENTITY RESOLUTION (Handover from Sign-up)
                 const { data: { user } } = await sb.auth.getUser();
-                const activeUsername = user?.user_metadata?.username || user?.email || "Elite_Chicken";
+                
+                // Priority: Auth Metadata > Email Prefix > Fallback
+                const activeUsername = user?.user_metadata?.username || 
+                                     user?.email?.split('@')[0] || 
+                                     "Elite_Chicken";
 
-                // Sync with league_performances table
+                console.log("SYNCING SCORE FOR:", activeUsername);
+
+                // 2. DATA DEPLOYMENT
                 const { error } = await sb
                     .from('league_performances')
                     .insert([{ 
@@ -307,8 +305,6 @@ checkUserSession();
 
             } catch (err) {
                 console.error("Combat Sync Failed:", err.message);
-                alert("Sync Failed: " + err.message);
-
                 window.location.href = '1in2leaderboard.html';
             }
         }
