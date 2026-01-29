@@ -51,37 +51,43 @@
             }
 
             const btn = document.getElementById('runBtn');
-            btn.innerText = "AUTHENTICATING...";
+            btn.innerText = "CREATING SECURE SESSION...";
             btn.disabled = true;
 
             try {
-                // 1. CREATE AUTH USER (This makes the Arena consistent)
-                // We use phone + @chickenleague.com as a pseudo-email for Supabase Auth
+                // 1. HANDOVER TO AUTH SYSTEM
+                // We create the account and embed the 'username' directly into the secure Metadata
                 const { data: authData, error: authError } = await sb.auth.signUp({
                     email: ph + "@cl.com",
                     password: ps,
                     options: {
-                        data: { username: u, phone_number: ph }
+                        data: { 
+                            username: u, 
+                            phone_number: ph 
+                        }
                     }
                 });
 
                 if (authError) throw authError;
 
-                // 2. CREATE PROFILE RECORD (For your dashboard/public data)
+                // 2. LINK TO PUBLIC PROFILES TABLE
+                // We use authData.user.id to ensure this table is tied to the Auth Record
                 const { error: profileError } = await sb.from('Profiles').insert([{ 
+                    id: authData.user.id, // Linking the UUID
                     public_username: u, 
                     phone_number: ph, 
-                    password: ps, 
+                    password: ps, // Optional: for your manual reference
                     total_score: 0 
                 }]);
 
                 if (profileError) throw profileError;
 
-                alert("SUCCESS! WELCOME TO THE ARENA.");
+                alert("SUCCESS! YOUR IDENTITY IS SECURED.");
                 localStorage.setItem('league_user', u);
                 window.location.href = "dashboard.html";
 
             } catch (err) {
+                console.error("Signup Failed:", err.message);
                 alert("System Error: " + err.message);
                 btn.innerText = "CREATE ACCOUNT & PLAY";
                 btn.disabled = false;
