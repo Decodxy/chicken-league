@@ -6,60 +6,23 @@
     <title>1in2 Arena | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="security-bridge.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
-        
         body { background: #000; color: #fff; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
         .brand-red { color: #ff0000; }
         .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        #arena-container {
-            position: relative;
-            width: 360px;
-            height: 360px;
-            margin: 0 auto;
-            border-radius: 1.5rem;
-            background: #050505;
-            border: 1px solid #111;
-        }
-
-        #touch-mask {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 100;
-            touch-action: none;
-        }
-
-        #grid-bg {
-            position: absolute;
-            display: grid;
-            grid-template-columns: repeat(6, 60px);
-            z-index: 1;
-        }
-
-        .grid-cell {
-            width: 60px; height: 60px;
-            border: 0.5px dotted rgba(255, 255, 255, 0.1);
-        }
-
-        .item {
-            position: absolute;
-            width: 60px; height: 60px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem;
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10;
-            pointer-events: none;
-        }
-
+        #arena-container { position: relative; width: 360px; height: 360px; margin: 0 auto; border-radius: 1.5rem; background: #050505; border: 1px solid #111; }
+        #touch-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; touch-action: none; }
+        #grid-bg { position: absolute; display: grid; grid-template-columns: repeat(6, 60px); z-index: 1; }
+        .grid-cell { width: 60px; height: 60px; border: 0.5px dotted rgba(255, 255, 255, 0.1); }
+        .item { position: absolute; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2rem; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; pointer-events: none; }
         .match-vanish { transform: scale(0) !important; opacity: 0; }
         .score-box { border-left: 4px solid #ff0000; }
         .timer-font { font-family: 'Orbitron', sans-serif; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="security-bridge.js"></script>
-
 </head>
 <body class="flex flex-col items-center py-6">
 
@@ -68,15 +31,9 @@
             <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
             <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
         </div>
-
         <div class="flex-1 flex justify-center px-2">
-            <button onclick="location.href='1in2leaderboard.html'" 
-                    style="z-index: 101;"
-                    class="bg-white text-black text-[8px] font-black uppercase tracking-tighter px-3 py-2 rounded-md border border-white hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-[0_0_10px_rgba(255,255,255,0.1)] whitespace-nowrap">
-                View Leader Board
-            </button>
+            <button onclick="location.href='1in2leaderboard.html'" style="z-index: 101;" class="bg-white text-black text-[8px] font-black uppercase tracking-tighter px-3 py-2 rounded-md border border-white hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-[0_0_10px_rgba(255,255,255,0.1)]">View Leader Board</button>
         </div>
-
         <div class="text-center">
             <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
             <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds</p>
@@ -91,27 +48,10 @@
 
     <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
         <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]"></div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Match 3 to Earn points</span>
+        <span id="player-tag" class="text-[9px] font-black uppercase tracking-[0.2em]">Authenticating...</span>
     </div>
 
     <script>
-        // SUPABASE INITIALIZATION
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
-
-        // SESSION SHIELD
-        async function checkUserSession() {
-            const { data: { session }, error } = await sb.auth.getSession();
-            if (error || !session) {
-                console.log("No active session. Redirecting...");
-                window.location.href = "login.html";
-                return;
-            }
-            console.log("Arena Verified:", session.user.user_metadata.username);
-        }
-        checkUserSession();
-
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
         let board = [], score = 0, timeLeft = 60, isProcessing = false;
@@ -120,8 +60,22 @@
         const itemLayer = document.getElementById('item-layer');
         const touchMask = document.getElementById('touch-mask');
 
+        // THE COMMAND CENTER: Wait for Auth before starting game
+        async function startArenaLogic() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) {
+                const username = session.user.user_metadata.username || "Elite_Chicken";
+                document.getElementById('player-tag').innerText = `Active: ${username}`;
+                console.log("ARENA START: Identity Verified.");
+                init(); // Start the grid
+            } else {
+                window.location.href = "login.html";
+            }
+        }
+
         function init() {
             const gridBg = document.getElementById('grid-bg');
+            gridBg.innerHTML = ''; // Clear pitch
             for (let i = 0; i < 36; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'grid-cell';
@@ -162,17 +116,14 @@
             const rect = touchMask.getBoundingClientRect();
             const endX = e.changedTouches[0].clientX - rect.left;
             const endY = e.changedTouches[0].clientY - rect.top;
-
             const dx = endX - startX, dy = endY - startY;
             const threshold = 25;
-
             let tr = startR, tc = startC;
             if (Math.abs(dx) > Math.abs(dy)) {
                 if (Math.abs(dx) > threshold) tc += dx > 0 ? 1 : -1;
             } else {
                 if (Math.abs(dy) > threshold) tr += dy > 0 ? 1 : -1;
             }
-
             if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== startR || tc !== startC)) {
                 trySwap(startR, startC, tr, tc);
             }
@@ -183,13 +134,10 @@
             isProcessing = true;
             const item1 = board[r1][c1];
             const item2 = board[r2][c2];
-
             item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
             item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
-
             board[r1][c1] = item2;
             board[r2][c2] = item1;
-
             setTimeout(() => {
                 if (!checkMatches()) {
                     item1.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
@@ -221,7 +169,6 @@
                     }
                 }
             }
-
             if (matches.size > 0) {
                 isProcessing = true;
                 score += (matches.size * 0.1);
@@ -271,9 +218,7 @@
         function startTimer() {
             const int = setInterval(async () => {
                 timeLeft--;
-                const timerEl = document.getElementById('timer');
-                if (timerEl) timerEl.innerText = timeLeft;
-                
+                document.getElementById('timer').innerText = timeLeft;
                 if (timeLeft <= 0) { 
                     clearInterval(int); 
                     isProcessing = true; 
@@ -284,35 +229,21 @@
 
         async function saveGamePerformance() {
             try {
-                // 1. IDENTITY RESOLUTION (Handover from Sign-up)
                 const { data: { user } } = await sb.auth.getUser();
-                
-                // Priority: Auth Metadata > Email Prefix > Fallback
-                const activeUsername = user?.user_metadata?.username || 
-                                     user?.email?.split('@')[0] || 
-                                     "Elite_Chicken";
-
-                console.log("SYNCING SCORE FOR:", activeUsername);
-
-                // 2. DATA DEPLOYMENT
-                const { error } = await sb
-                    .from('league_performances')
-                    .insert([{ 
-                        username: activeUsername, 
-                        score: parseFloat(score.toFixed(1)), 
-                        league_id: '1in2' 
-                    }]);
-
-                if (error) throw error;
+                const activeUsername = user?.user_metadata?.username || "Elite_Chicken";
+                await sb.from('league_performances').insert([{ 
+                    username: activeUsername, 
+                    score: parseFloat(score.toFixed(1)), 
+                    league_id: '1in2' 
+                }]);
                 window.location.href = '1in2leaderboard.html';
-
             } catch (err) {
-                console.error("Combat Sync Failed:", err.message);
                 window.location.href = '1in2leaderboard.html';
             }
         }
 
-        init();
+        // ENTRY POINT
+        startArenaLogic();
     </script>
 </body>
 </html>
