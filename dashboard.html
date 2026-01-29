@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard | Chicken League Empire</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="security-bridge.js"></script>
+    <script src="ui-bridge.js"></script>
+
     <style>
         body { background: #000; color: white; font-family: 'system-ui', sans-serif; min-height: 100vh; overflow-x: hidden; }
         
-        /* THE COMMAND CENTER BACKGROUND (Placeholder for your instructions) */
         #empire_bg {
             position: fixed;
             inset: 0;
@@ -23,141 +28,71 @@
             border-radius: 2rem;
         }
 
-        /* STICKY BOTTOM NAVIGATION */
-        .bottom-nav {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 450px;
-            height: 75px;
-            background: rgba(10, 10, 10, 0.8);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
-        }
-
-        .nav-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            text-decoration: none;
-            color: rgba(255,255,255,0.4);
-            transition: all 0.3s ease;
-        }
-
-        .nav-link.active { color: #fbbf24; } /* Golden Home Icon */
-        .nav-link i { font-style: normal; font-size: 1.4rem; }
-        .nav-link span { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
+        .brand-red { color: #ff0000; }
+        .bg-brand-red { background-color: #ff0000; }
+        .border-brand-red { border-color: #ff0000; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="security-bridge.js"></script>
-
 </head>
-<body>
+<body class="pt-24 pb-32"> <div id="empire_bg"></div>
 
-    <div id="empire_bg"></div>
-
-    <main class="p-6 pt-12 pb-32">
+    <main class="p-6">
         <div class="flex justify-between items-center mb-10">
             <div>
                 <p class="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em]">Operational Hub</p>
-                <h1 class="text-3xl font-black italic uppercase tracking-tighter">Command Center</h1>
+                <h1 class="text-3xl font-black italic uppercase tracking-tighter">Command <span class="brand-red">Center</span></h1>
             </div>
-            <div class="h-12 w-12 rounded-full border-2 border-orange-600 overflow-hidden glass-card flex items-center justify-center">
-                <span id="user_initial" class="font-black text-orange-500 uppercase">?</span>
+            <div class="h-12 w-12 rounded-full border-2 border-brand-red overflow-hidden glass-card flex items-center justify-center">
+                <span id="user_initial" class="font-black brand-red uppercase text-xl">?</span>
             </div>
         </div>
 
-     <div class="grid gap-4">
-    <a href="1in2.html" class="glass-card p-6 flex items-center justify-between group active:scale-95 transition-all border-l-4 border-orange-600">
-        <div class="flex items-center gap-4">
-            <div class="h-12 w-12 rounded-full bg-orange-600/10 flex items-center justify-center text-orange-500 font-black">2</div>
-            <div>
-                <h3 class="font-black italic uppercase text-lg leading-tight">Duo Duel</h3>
-                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wide">1 IN 2 • Instant Payout</p>
-            </div>
-        </div>
-        <div class="text-orange-500 font-black animate-pulse">LIVE</div>
-    </a>
+        <div class="grid gap-4">
+            <a href="1in2.html" class="glass-card p-6 flex items-center justify-between group active:scale-95 transition-all border-l-4 border-brand-red">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-full bg-red-600/10 flex items-center justify-center brand-red font-black">2</div>
+                    <div>
+                        <h3 class="font-black italic uppercase text-lg leading-tight">Duo Duel</h3>
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wide">1 IN 2 • Instant Payout</p>
+                    </div>
+                </div>
+                <div class="brand-red font-black animate-pulse text-xs tracking-widest">LIVE</div>
+            </a>
 
-    <a href="1in5.html" class="glass-card p-6 flex items-center justify-between group active:scale-95 transition-all border-l-4 border-blue-600">
-        <div class="flex items-center gap-4">
-            <div class="h-12 w-12 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-500 font-black">5</div>
-            <div>
-                <h3 class="font-black italic uppercase text-lg leading-tight">Squad Clash</h3>
-                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wide">1 IN 5 • Higher Yield</p>
-            </div>
-        </div>
-        <div class="text-blue-500 font-black">OPEN</div>
-    </a>
+            <a href="#" class="glass-card p-6 flex items-center justify-between group opacity-50 transition-all border-l-4 border-zinc-700">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 font-black">5</div>
+                    <div>
+                        <h3 class="font-black italic uppercase text-lg leading-tight text-zinc-400">Squad Clash</h3>
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wide">1 IN 5 • Higher Yield</p>
+                    </div>
+                </div>
+                <div class="text-zinc-600 font-black text-[10px]">LOCKED</div>
+            </a>
 
-    <a href="1in100.html" class="glass-card p-6 flex items-center justify-between group active:scale-95 transition-all border-l-4 border-green-600">
-        <div class="flex items-center gap-4">
-            <div class="h-12 w-12 rounded-full bg-green-600/10 flex items-center justify-center text-green-500 font-black">100</div>
-            <div>
-                <h3 class="font-black italic uppercase text-lg leading-tight">Century Battle</h3>
-                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wide">1 IN 100 • The Mature Broiler</p>
-            </div>
+            <a href="#" class="glass-card p-6 flex items-center justify-between group opacity-50 transition-all border-l-4 border-zinc-700">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 font-black">100</div>
+                    <div>
+                        <h3 class="font-black italic uppercase text-lg leading-tight text-zinc-400">Century Battle</h3>
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wide">1 IN 100 • Giant Broiler</p>
+                    </div>
+                </div>
+                <div class="text-zinc-600 font-black text-[10px]">SOON</div>
+            </a>
         </div>
-        <div class="text-green-500 font-black">SOON</div>
-    </a>
-</div>
-
     </main>
 
-    <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-link active">
-            <i>🏠</i>
-            <span>Home</span>
-        </a>
-        <a href="#" class="nav-link">
-            <i>🏆</i>
-            <span>Ranks</span>
-        </a>
-        <a href="#" class="nav-link">
-            <i>🏦</i>
-            <span>Wallet</span>
-        </a>
-        <a href="#" class="nav-link">
-            <i>👤</i>
-            <span>Profile</span>
-        </a>
-    </nav>
-
     <script>
-        // ADD THIS TO THE TOP OF YOUR SCRIPTS
-async function checkUserSession() {
-    const { data: { session }, error } = await sb.auth.getSession();
-    
-    if (error || !session) {
-        console.log("No active session found. Redirecting to Login...");
-        window.location.href = "login.html"; // Kick them out if not logged in
-        return;
-    }
-    
-    // Success: The "Bridge" is active. 
-    // You can now access session.user.user_metadata.username anywhere!
-    console.log("Combatant Verified:", session.user.user_metadata.username);
-}
-
-// Execute immediately on page load
-checkUserSession();
-
-        // Set User Identity
-        const user = localStorage.getItem('league_user');
-        if (user) {
-            document.getElementById('user_initial').innerText = user.charAt(0);
-        } else {
-            window.location.href = 'index.html';
+        // Use the session data provided by security-bridge.js
+        async function loadProfile() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) {
+                const username = session.user.user_metadata.username || session.user.email.split('@')[0];
+                document.getElementById('user_initial').innerText = username.charAt(0);
+                console.log("Dashboard loaded for combatant:", username);
+            }
         }
+        loadProfile();
     </script>
 </body>
 </html>
