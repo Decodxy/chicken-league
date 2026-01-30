@@ -11,40 +11,32 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=Orbitron:wght@900&display=swap');
-        
-        body { background: #000; color: #eff3f4; font-family: 'Inter', sans-serif; margin: 0; -webkit-font-smoothing: antialiased; }
+        body { background: #000; color: #eff3f4; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         .font-chirp { font-weight: 900; letter-spacing: -0.04em; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1.5rem; }
-
-        .slot-circle { 
-            width: 85px; height: 85px; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); 
-            display: flex; align-items: center; justify-content: center; 
-            background: rgba(255,255,255,0.02); transition: all 0.3s ease;
-        }
-
+        .slot-circle { width: 85px; height: 85px; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); transition: all 0.3s ease; }
         .slot-filled { background: #fff; border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.15); }
-        .brand-blue { color: #3b82f6; }
+        .btn-blue { background: #3b82f6; color: white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
     </style>
 </head>
-<body class="pt-10 pb-32">
+<body class="pt-20 pb-32">
 
     <main class="max-w-md mx-auto px-6">
-        
         <div class="flex justify-between items-center mb-6">
-            <h2 class="font-chirp text-xl uppercase italic tracking-tighter">Arena <span class="brand-blue">Lobby</span></h2>
+            <h2 class="font-chirp text-xl uppercase italic tracking-tighter">Arena <span class="text-blue-500">Lobby</span></h2>
             <div id="connection-indicator" class="flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-white/5">
-                <span class="w-1.5 h-1.5 bg-zinc-600 rounded-full"></span>
-                <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Registry Sync...</span>
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+                <span class="text-[9px] font-black text-blue-500 uppercase tracking-widest">Live Sync</span>
             </div>
         </div>
 
         <div class="mb-6">
-            <div class="h-48 bg-cover bg-center rounded-2xl border-b-2 border-blue-600 shadow-lg shadow-blue-500/10" style="background-image: url('https://i.ibb.co/FbCS1n9p/IMG-2638.jpg');"></div>
+            <div class="h-48 bg-cover bg-center rounded-2xl border-b-2 border-blue-600" style="background-image: url('https://i.ibb.co/FbCS1n9p/IMG-2638.jpg');"></div>
             <div class="py-4 flex justify-between items-start">
                 <div>
-                    <h1 class="text-2xl font-chirp uppercase leading-none">Trial Broiler</h1>
-                    <p class="brand-blue text-[9px] font-black uppercase tracking-[0.2em] mt-2">1v1 Instant Duel • Schedule Gated</p>
+                    <h1 class="text-2xl font-chirp uppercase leading-none italic">Trial Broiler</h1>
+                    <p class="text-blue-500 text-[9px] font-black uppercase tracking-[0.2em] mt-2">1v1 Continuous Weight Duel</p>
                 </div>
                 <span id="count_display" class="orbitron text-sm font-black text-white bg-white/10 px-3 py-1 rounded">0/2</span>
             </div>
@@ -53,26 +45,20 @@
         <div class="glass-panel p-8 mb-6">
             <div class="flex gap-8 justify-center items-center">
                 <div class="flex flex-col items-center gap-3">
-                    <div id="slot-0" class="slot-circle">
-                        <div class="w-2 h-2 bg-zinc-800 rounded-full"></div>
-                    </div>
+                    <div id="slot-0" class="slot-circle"><div class="w-2 h-2 bg-zinc-800 rounded-full"></div></div>
                     <span id="name-0" class="text-[10px] font-black text-zinc-600 uppercase">Searching...</span>
                 </div>
                 <div class="text-zinc-800 font-black italic orbitron text-xl">VS</div>
                 <div class="flex flex-col items-center gap-3">
-                    <div id="slot-1" class="slot-circle">
-                        <div class="w-2 h-2 bg-zinc-800 rounded-full"></div>
-                    </div>
+                    <div id="slot-1" class="slot-circle"><div class="w-2 h-2 bg-zinc-800 rounded-full"></div></div>
                     <span id="name-1" class="text-[10px] font-black text-zinc-600 uppercase">Searching...</span>
                 </div>
             </div>
         </div>
 
-        <button id="mainBtn" onclick="handleMainAction()" class="w-full py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp text-lg uppercase transition-all active:scale-95 disabled:opacity-50">
+        <button id="mainBtn" onclick="handleMainAction()" class="w-full py-5 bg-white text-black rounded-xl font-chirp text-lg uppercase transition-all active:scale-95 disabled:opacity-50">
             Connecting...
         </button>
-
-        <p id="timer_hint" class="text-center text-[10px] font-black uppercase text-zinc-500 mt-4 tracking-widest"></p>
     </main>
 
     <script>
@@ -80,35 +66,27 @@
         let cachedPlayers = [];
         let leagueRegistry = null;
         let isProcessing = false;
+        let timerRef = null;
 
         async function syncLobby() {
             try {
                 const { data: { session } } = await sb.auth.getSession();
                 if (session) currentUser = session.user.user_metadata.username;
 
-                // 1. Fetch Players from the 1in2 table
                 const { data: players } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
-                // 2. Fetch Global Schedule from Registry
                 const { data: registry } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
                 
                 cachedPlayers = players || [];
                 leagueRegistry = registry;
                 
-                const indicator = document.getElementById('connection-indicator');
-                indicator.innerHTML = `<span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span><span class="text-[9px] font-black text-blue-500 uppercase">Active Registry</span>`;
-                
                 updateUI();
-            } catch (e) { console.error("Registry Sync Failure"); }
+            } catch (e) { console.error("Sync Error"); }
         }
 
         function updateUI() {
             const total = cachedPlayers.length;
             const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
             const btn = document.getElementById('mainBtn');
-            const hint = document.getElementById('timer_hint');
-            const now = new Date();
-            const opens = new Date(leagueRegistry.start_time);
-            const closes = new Date(leagueRegistry.closing_time);
 
             document.getElementById('count_display').innerText = `${total}/2`;
 
@@ -117,83 +95,117 @@
                 const circle = document.getElementById(`slot-${i}`);
                 const nameSpan = document.getElementById(`name-${i}`);
                 const player = cachedPlayers[i];
+
                 if(player) {
                     circle.classList.add('slot-filled');
                     circle.innerHTML = `<span class="text-black font-black text-2xl orbitron">${player.player_username[0].toUpperCase()}</span>`;
                     nameSpan.innerText = player.player_username;
-                    nameSpan.classList.replace('text-zinc-600', 'text-white');
+                    nameSpan.className = "text-[10px] font-black text-white uppercase";
                 } else {
                     circle.classList.remove('slot-filled');
                     circle.innerHTML = `<div class="w-2 h-2 bg-zinc-800 rounded-full"></div>`;
                     nameSpan.innerText = "OPEN SLOT";
-                    nameSpan.classList.replace('text-white', 'text-zinc-600');
+                    nameSpan.className = "text-[10px] font-black text-zinc-600 uppercase";
                 }
             }
 
-            // --- LEAGUE GATE LOGIC ---
+            if (isProcessing) return;
+
+            // --- THE COMPLEMENTARY LOGIC ---
             
-            // 1. If Arena is closed or not active
-            if (!leagueRegistry.is_active || now > closes) {
-                btn.innerText = "ARENA CLOSED";
-                btn.disabled = true;
-                btn.className = "w-full py-5 bg-zinc-900 text-zinc-700 rounded-xl font-chirp text-lg uppercase";
-                hint.innerText = "NEXT DEPLOYMENT PENDING ADMIN APPROVAL";
+            // 1. If not in the lobby and there is space
+            if (!isUserIn && total < 2) {
+                btn.innerText = "JOIN ARENA";
+                btn.disabled = false;
+                btn.className = "w-full py-5 bg-white text-black rounded-xl font-chirp text-lg uppercase";
                 return;
             }
 
-            // 2. If Arena is scheduled but not yet open
-            if (now < opens) {
-                const diff = opens - now;
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                btn.innerText = `STARTS IN ${h}H ${m}M`;
+            // 2. If user is in lobby but it's not full yet
+            if (isUserIn && total < 2) {
+                btn.innerText = "SEARCHING FOR OPPONENT...";
                 btn.disabled = true;
-                btn.className = "w-full py-5 bg-zinc-900 text-blue-500 border border-blue-500/20 rounded-xl font-chirp text-lg uppercase";
-                hint.innerText = "WINDOW SCHEDULED";
+                btn.className = "w-full py-5 bg-zinc-900 text-zinc-500 rounded-xl font-chirp text-lg uppercase";
                 return;
             }
 
-            // 3. Arena is LIVE
+            // 3. Lobby is full (2/2)
             if (total >= 2) {
-                btn.innerText = isUserIn ? "ENTER ARENA" : "LOBBY FULL";
-                btn.disabled = !isUserIn;
-                btn.className = isUserIn 
-                    ? "w-full py-5 bg-blue-600 text-white rounded-xl font-chirp text-lg uppercase shadow-lg shadow-blue-500/40 animate-pulse" 
-                    : "w-full py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp text-lg uppercase";
-                hint.innerText = isUserIn ? "YOUR DUEL IS READY" : "WAIT FOR NEXT SLOT";
-            } else {
-                btn.innerText = isUserIn ? "SEARCHING..." : "JOIN ARENA";
-                btn.disabled = isUserIn;
-                btn.className = "w-full py-5 bg-white text-black rounded-xl font-chirp text-lg uppercase shadow-lg";
-                hint.innerText = isUserIn ? "WAITING FOR CHALLENGER" : "SLOTS AVAILABLE";
+                const now = new Date();
+                const startTime = leagueRegistry.start_time ? new Date(leagueRegistry.start_time) : null;
+
+                // Case: Admin has NOT set a time
+                if (!startTime) {
+                    btn.innerText = isUserIn ? "WAIT FOR EVENT TIME" : "LOBBY FULL";
+                    btn.disabled = true;
+                    btn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp text-lg uppercase";
+                } 
+                // Case: Time is set but not yet reached
+                else if (now < startTime) {
+                    if (isUserIn) {
+                        startCountdown(startTime);
+                    } else {
+                        btn.innerText = "LOBBY FULL";
+                        btn.disabled = true;
+                    }
+                } 
+                // Case: Time has elapsed
+                else {
+                    btn.innerText = isUserIn ? "ENTER ARENA" : "LOBBY FULL";
+                    btn.disabled = !isUserIn;
+                    btn.className = isUserIn ? "w-full py-5 btn-blue text-white rounded-xl font-chirp text-lg uppercase animate-pulse" : "w-full py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp text-lg uppercase";
+                }
             }
+        }
+
+        function startCountdown(target) {
+            if (timerRef) clearInterval(timerRef);
+            const btn = document.getElementById('mainBtn');
+            btn.disabled = true;
+            btn.className = "w-full py-5 bg-zinc-900 text-blue-500 rounded-xl font-chirp text-lg uppercase orbitron";
+
+            timerRef = setInterval(() => {
+                const now = new Date();
+                const diff = target - now;
+
+                if (diff <= 0) {
+                    clearInterval(timerRef);
+                    syncLobby(); // Refresh UI to show "ENTER ARENA"
+                } else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    btn.innerText = `STARTS IN ${m}:${s.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
         }
 
         async function handleMainAction() {
             if(isProcessing) return;
             const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
             
+            // Join Logic
             if (!isUserIn && cachedPlayers.length < 2) {
                 isProcessing = true;
                 await sb.from('1in2').insert([{ player_username: currentUser }]);
                 await syncLobby();
                 isProcessing = false;
-            } else if (isUserIn && cachedPlayers.length >= 2) {
-                // Moving into the Arena
-                window.location.href = `1in2arena.html?league=1in2`;
+            } 
+            // Enter Arena Logic
+            else if (isUserIn && cachedPlayers.length >= 2) {
+                const now = new Date();
+                if (leagueRegistry.is_active && new Date(leagueRegistry.start_time) <= now) {
+                    window.location.href = '1in2arena.html';
+                }
             }
         }
 
-        // REAL-TIME SUBSCRIPTIONS
-        sb.channel('lobby_updates')
+        // Real-time Subscriptions
+        sb.channel('lobby_gate')
             .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncLobby)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, syncLobby)
             .subscribe();
 
-        // Initial Sync
-        syncLobby();
-        // Fallback refresh for timer accuracy
-        setInterval(updateUI, 10000);
+        setTimeout(syncLobby, 500);
     </script>
 </body>
 </html>
