@@ -1,4 +1,4 @@
-// UI-BRIDGE: MONOCHROME & MINIMAL BLUE
+// UI-BRIDGE: SOLID MONOCHROME FOOTER
 const injectGlobalUI = () => {
     const headerHTML = `
     <header class="fixed top-0 left-0 right-0 z-[1001] w-full max-w-md mx-auto px-6 py-4 flex justify-between items-center bg-black border-b border-white/5">
@@ -24,17 +24,18 @@ const injectGlobalUI = () => {
         </div>
     </header>`;
 
+    // MODIFIED: Nav is now pinned to the absolute bottom (bottom-0) with no side padding
     const stickyNavHTML = `
-    <nav class="fixed bottom-0 left-0 right-0 z-[1000] max-w-md mx-auto px-4 pb-6">
-        <div class="flex justify-around items-center py-5 px-6 rounded-2xl border border-white/10 bg-black shadow-2xl">
-            <button onclick="location.href='dashboard.html'" class="${window.location.pathname.includes('dashboard') ? 'text-blue-500' : 'text-zinc-600'}">
-                <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <nav class="fixed bottom-0 left-0 right-0 z-[1000] w-full max-w-md mx-auto bg-black border-t border-white/10">
+        <div class="flex justify-around items-center pt-4 pb-8 px-6">
+            <button onclick="location.href='dashboard.html'" class="${window.location.pathname.includes('dashboard') ? 'text-blue-500' : 'text-zinc-600'} transition-colors">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             </button>
-            <button onclick="location.href='1in2.html'" class="${window.location.pathname.includes('1in2.html') ? 'text-blue-500' : 'text-zinc-600'}">
-                <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2v8h8V2h-8zm0 11v9h8v-9h-8zM2 2v14h8V2H2zm0 17v3h8v-3H2z"/></svg>
+            <button onclick="location.href='1in2.html'" class="${window.location.pathname.includes('1in2.html') ? 'text-blue-500' : 'text-zinc-600'} transition-colors">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2v8h8V2h-8zm0 11v9h8v-9h-8zM2 2v14h8V2H2zm0 17v3h8v-3H2z"/></svg>
             </button>
-            <button onclick="location.href='1in2leaderboard.html'" class="${window.location.pathname.includes('leaderboard') ? 'text-blue-500' : 'text-zinc-600'}">
-                <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6 0V5h4v14h-4v-8zM4 11h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>
+            <button onclick="location.href='1in2leaderboard.html'" class="${window.location.pathname.includes('leaderboard') ? 'text-blue-500' : 'text-zinc-600'} transition-colors">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6 0V5h4v14h-4v-8zM4 11h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>
             </button>
         </div>
     </nav>`;
