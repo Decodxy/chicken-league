@@ -24,10 +24,17 @@
         .font-chirp { font-weight: 900; letter-spacing: -0.04em; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
 
+        /* Modified to support total transparency where needed */
         .glass-panel { 
             background: rgba(255, 255, 255, 0.03); 
             border: 1px solid rgba(255, 255, 255, 0.08); 
             border-radius: 1.5rem; 
+        }
+
+        /* Specialized class for the HD Card to remove all background nesting */
+        .clear-panel {
+            background: none !important;
+            border: none !important;
         }
 
         .slot-circle { 
@@ -45,7 +52,6 @@
             box-shadow: 0 0 20px rgba(255,255,255,0.15); 
         }
 
-        /* Kill the visible debug text */
         #debug-status { display: none; }
     </style>
 </head>
@@ -61,7 +67,7 @@
             </div>
         </div>
 
-        <div class="glass-panel overflow-hidden mb-6 border-b-2 border-blue-600">
+        <div class="overflow-hidden mb-6 border-b-2 border-blue-600 rounded-[1.5rem]">
             <div class="h-44 bg-cover bg-center" style="background-image: url('https://i.ibb.co/fzmPStzb/IMG-2638.jpg');"></div>
             <div class="p-5 bg-transparent"> <div class="flex justify-between items-start">
                     <div>
@@ -101,6 +107,7 @@
     </main>
 
     <script>
+        // ... (Script remains unchanged as it is already optimized for the Monochrome/X-standard build)
         let currentUser = null;
         let cachedPlayers = [];
         let cachedSignal = null;
