@@ -7,99 +7,103 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script src="security-bridge.js"></script>
     <script src="ui-bridge.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
+        /* Twitter/X Style Font Stack */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=Orbitron:wght@900&display=swap');
         
         body { 
             background: #000; 
-            color: white; 
-            font-family: 'Inter', sans-serif; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
+            color: #eff3f4; /* Twitter White */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
         
+        .font-chirp { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -0.02em; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
 
         #empire_bg {
             position: fixed;
             inset: 0;
             z-index: -1;
-            background: radial-gradient(circle at top, #001a33 0%, #000 70%);
+            background: linear-gradient(to bottom, #001a33 0%, #000000 100%);
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .glass-card:active {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(0.98);
         }
     </style>
 </head>
-<body class="pt-20 pb-32"> <div id="empire_bg"></div>
+<body class="pt-16 pb-32"> <div id="empire_bg"></div>
 
-    <main class="px-6">
-        <div class="flex justify-between items-end mb-8">
+    <main class="px-5">
+        <div class="flex justify-between items-center mb-6">
             <div>
-                <p class="text-blue-500 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Operational Hub</p>
-                <h1 class="text-3xl font-black italic uppercase tracking-tighter orbitron">Control <span class="text-blue-600">Center</span></h1>
+                <p class="text-blue-500 text-[11px] font-black uppercase tracking-[0.2em]">Operational Hub</p>
+                <h1 class="text-3xl font-chirp uppercase tracking-tighter">CONTROL CENTER</h1>
             </div>
-            <div class="h-10 w-10 rounded-lg border border-blue-600/30 overflow-hidden glass-card flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.2)]">
-                <span id="user_initial" class="font-black text-blue-500 uppercase text-lg orbitron">?</span>
+            <div class="h-10 w-10 rounded-full border border-blue-500/50 overflow-hidden bg-blue-500/10 flex items-center justify-center">
+                <span id="user_initial" class="font-black text-blue-500 text-lg">?</span>
             </div>
         </div>
 
-        <div class="grid gap-4">
-            <a href="1in2.html" class="glass-card p-6 flex items-center justify-between group active:scale-[0.98] transition-all border-l-4 border-blue-600 shadow-xl shadow-blue-900/5">
+        <div class="grid gap-3">
+            <a href="1in2.html" class="glass-card p-5 flex items-center justify-between border-l-4 border-blue-500 shadow-lg shadow-blue-500/10">
                 <div class="flex items-center gap-4">
-                    <div class="h-12 w-12 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-500 font-black orbitron text-xl">02</div>
+                    <div class="h-11 w-11 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black orbitron text-lg italic">2</div>
                     <div>
-                        <h3 class="font-black italic uppercase text-lg leading-tight orbitron">Duo Duel</h3>
-                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">1 IN 2 • Instant Settlement</p>
+                        <h3 class="font-chirp text-lg leading-tight uppercase">Duo Duel</h3>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">1 IN 2 • INSTANT SETTLEMENT</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <div class="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-md">
+                    <div class="h-1.5 w-1.5 bg-blue-500 rounded-full animate-pulse"></div>
                     <span class="text-blue-500 font-black text-[9px] tracking-widest uppercase">Live</span>
                 </div>
             </a>
 
-            <div class="glass-card p-6 flex items-center justify-between opacity-40 border-l-4 border-zinc-800">
-                <div class="flex items-center gap-4 text-zinc-500">
-                    <div class="h-12 w-12 rounded-lg bg-zinc-900 flex items-center justify-center font-black orbitron text-xl text-zinc-700">05</div>
+            <a href="1in5.html" class="glass-card p-5 flex items-center justify-between border-l-4 border-white/20">
+                <div class="flex items-center gap-4">
+                    <div class="h-11 w-11 rounded-xl bg-zinc-800 flex items-center justify-center text-white font-black orbitron text-lg italic">5</div>
                     <div>
-                        <h3 class="font-black italic uppercase text-lg leading-tight orbitron">Squad Clash</h3>
-                        <p class="text-[10px] font-bold uppercase tracking-wide">1 IN 5 • Higher Yield</p>
+                        <h3 class="font-chirp text-lg leading-tight uppercase">Squad Clash</h3>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">1 IN 5 • MULTI-ENTRY</p>
                     </div>
                 </div>
-                <span class="text-zinc-700 font-black text-[9px] tracking-widest uppercase">Locked</span>
-            </div>
+                <span class="text-white/40 font-black text-[9px] tracking-widest uppercase bg-white/5 px-2 py-1 rounded-md">Join</span>
+            </a>
 
-            <div class="glass-card p-6 flex items-center justify-between opacity-40 border-l-4 border-zinc-800">
-                <div class="flex items-center gap-4 text-zinc-500">
-                    <div class="h-12 w-12 rounded-lg bg-zinc-900 flex items-center justify-center font-black orbitron text-xl text-zinc-700">100</div>
+            <a href="1in100.html" class="glass-card p-5 flex items-center justify-between border-l-4 border-white/10">
+                <div class="flex items-center gap-4">
+                    <div class="h-11 w-11 rounded-xl bg-zinc-900 flex items-center justify-center text-white/50 font-black orbitron text-lg italic">100</div>
                     <div>
-                        <h3 class="font-black italic uppercase text-lg leading-tight orbitron">Century Battle</h3>
-                        <p class="text-[10px] font-bold uppercase tracking-wide">1 IN 100 • Mature Broiler</p>
+                        <h3 class="font-chirp text-lg leading-tight uppercase text-white/70">Century Battle</h3>
+                        <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-wide">1 IN 100 • THE MATURE BROILER</p>
                     </div>
                 </div>
-                <span class="text-zinc-800 font-black text-[9px] tracking-widest uppercase italic">Soon</span>
-            </div>
+                <span class="text-blue-500/50 font-black text-[9px] tracking-widest uppercase italic border border-blue-500/20 px-2 py-1 rounded-md">Queue</span>
+            </a>
         </div>
     </main>
 
     <script>
         async function loadProfile() {
-            // Re-using the initialized 'sb' from security-bridge.js
             const { data: { session } } = await sb.auth.getSession();
             if (session) {
-                const username = session.user.user_metadata.username || "Combatant";
-                document.getElementById('user_initial').innerText = username.charAt(0);
-                console.log("System Status: Online. Pilot:", username);
+                const username = session.user.user_metadata.username || "User";
+                document.getElementById('user_initial').innerText = username.charAt(0).toUpperCase();
             }
         }
         loadProfile();
