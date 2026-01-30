@@ -6,13 +6,12 @@
     <title>1in2 Arena | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script src="security-bridge.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
         body { background: #000; color: #fff; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
-        .brand-red { color: #ff0000; }
+        .brand-blue { color: #3b82f6; }
         .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         #arena-container { position: relative; width: 360px; height: 360px; margin: 0 auto; border-radius: 1.5rem; background: #050505; border: 1px solid #111; }
         #touch-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; touch-action: none; }
@@ -20,7 +19,7 @@
         .grid-cell { width: 60px; height: 60px; border: 0.5px dotted rgba(255, 255, 255, 0.1); }
         .item { position: absolute; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2rem; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; pointer-events: none; }
         .match-vanish { transform: scale(0) !important; opacity: 0; }
-        .score-box { border-left: 4px solid #ff0000; }
+        .score-box { border-left: 4px solid #3b82f6; }
         .timer-font { font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
@@ -28,15 +27,12 @@
 
     <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
         <div class="glass-ui p-4 rounded-2xl score-box">
-            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
-            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
+            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Global Weight</p>
+            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-blue ml-1">kg</span></h2>
         </div>
-        <div class="flex-1 flex justify-center px-2">
-            <button onclick="location.href='1in2leaderboard.html'" style="z-index: 101;" class="bg-white text-black text-[8px] font-black uppercase tracking-tighter px-3 py-2 rounded-md border border-white hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-[0_0_10px_rgba(255,255,255,0.1)]">View Leader Board</button>
-        </div>
-        <div class="text-center">
-            <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
-            <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds</p>
+        <div class="text-right">
+            <div id="countdown" class="text-2xl font-black brand-blue timer-font italic">OPEN</div>
+            <p class="text-[8px] font-bold text-gray-500 uppercase">Arena Window</p>
         </div>
     </div>
 
@@ -47,48 +43,86 @@
     </div>
 
     <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
-        <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]"></div>
-        <span id="player-tag" class="text-[9px] font-black uppercase tracking-[0.2em]">Authenticating...</span>
+        <div id="heartbeat-led" class="h-2 w-2 bg-blue-600 rounded-full animate-pulse shadow-[0_0_10px_#3b82f6]"></div>
+        <span id="player-tag" class="text-[9px] font-black uppercase tracking-[0.2em]">Linking to Registry...</span>
     </div>
 
     <script>
         const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
         const rows = 6, cols = 6, size = 60;
-        let board = [], score = 0, timeLeft = 60, isProcessing = false;
-        let startR, startC, startX, startY;
+        let board = [], currentSessionScore = 0, dbBaseScore = 0, isProcessing = false;
+        let startR, startC, startX, startY, currentUser, heartbeat;
 
         const itemLayer = document.getElementById('item-layer');
         const touchMask = document.getElementById('touch-mask');
 
-        // THE COMMAND CENTER: Wait for Auth before starting game
         async function startArenaLogic() {
             const { data: { session } } = await sb.auth.getSession();
-            if (session) {
-                const username = session.user.user_metadata.username || "Elite_Chicken";
-                document.getElementById('player-tag').innerText = `Active: ${username}`;
-                console.log("ARENA START: Identity Verified.");
-                init(); // Start the grid
-            } else {
-                window.location.href = "login.html";
+            if (!session) { window.location.href = "login.html"; return; }
+            
+            currentUser = session.user.user_metadata.username;
+            document.getElementById('player-tag').innerText = `Sync: ${currentUser}`;
+
+            // Fetch initial DB score
+            const { data } = await sb.from('league_performances').select('score').eq('username', currentUser).eq('league_id', '1in2').single();
+            dbBaseScore = data ? data.score : 0;
+            updateScoreDisplay();
+
+            init(); 
+            startHeartbeat();
+        }
+
+        function startHeartbeat() {
+            heartbeat = setInterval(async () => {
+                const { data: registry } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
+                const now = new Date();
+                const closing = new Date(registry.closing_time);
+
+                // Authority Check: If closed or inactive, boot user
+                if (!registry.is_active || now > closing) {
+                    clearInterval(heartbeat);
+                    isProcessing = true;
+                    alert("ARENA WINDOW CLOSED.");
+                    window.location.href = '1in2leaderboard.html';
+                } else {
+                    // Update countdown display
+                    const diff = closing - now;
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    document.getElementById('countdown').innerText = `${m}:${s.toString().padStart(2, '0')}`;
+                }
+            }, 5000);
+        }
+
+        async function syncMatchToDB(weight) {
+            // Real-time Push to Counter
+            const { error } = await sb.rpc('increment_league_score', { 
+                p_username: currentUser, 
+                p_league_id: '1in2', 
+                p_weight: weight 
+            });
+            if (!error) {
+                dbBaseScore += weight;
+                updateScoreDisplay();
             }
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score').innerHTML = `${dbBaseScore.toFixed(1)}<span class="text-xs brand-blue ml-1">kg</span>`;
         }
 
         function init() {
             const gridBg = document.getElementById('grid-bg');
-            gridBg.innerHTML = ''; // Clear pitch
+            gridBg.innerHTML = '';
             for (let i = 0; i < 36; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'grid-cell';
                 gridBg.appendChild(cell);
             }
-
             for (let r = 0; r < rows; r++) {
                 board[r] = [];
-                for (let c = 0; c < cols; c++) {
-                    spawnItem(r, c);
-                }
+                for (let c = 0; c < cols; c++) { spawnItem(r, c); }
             }
-            startTimer();
             setTimeout(checkMatches, 500);
         }
 
@@ -102,6 +136,7 @@
             board[r][c] = { type, el };
         }
 
+        // ... [Keeping your existing touch handling logic: touchstart, touchend, trySwap] ...
         touchMask.addEventListener('touchstart', (e) => {
             if (isProcessing) return;
             const rect = touchMask.getBoundingClientRect();
@@ -171,8 +206,11 @@
             }
             if (matches.size > 0) {
                 isProcessing = true;
-                score += (matches.size * 0.1);
-                document.getElementById('score').innerText = score.toFixed(1) + 'kg';
+                const matchWeight = (matches.size * 0.1);
+                
+                // REAL-TIME SYNC:
+                syncMatchToDB(matchWeight);
+
                 matches.forEach(coord => {
                     const [r, c] = coord.split(',').map(Number);
                     if(board[r][c]) {
@@ -215,34 +253,6 @@
             setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
         }
 
-        function startTimer() {
-            const int = setInterval(async () => {
-                timeLeft--;
-                document.getElementById('timer').innerText = timeLeft;
-                if (timeLeft <= 0) { 
-                    clearInterval(int); 
-                    isProcessing = true; 
-                    await saveGamePerformance(); 
-                }
-            }, 1000);
-        }
-
-        async function saveGamePerformance() {
-            try {
-                const { data: { user } } = await sb.auth.getUser();
-                const activeUsername = user?.user_metadata?.username || "Elite_Chicken";
-                await sb.from('league_performances').insert([{ 
-                    username: activeUsername, 
-                    score: parseFloat(score.toFixed(1)), 
-                    league_id: '1in2' 
-                }]);
-                window.location.href = '1in2leaderboard.html';
-            } catch (err) {
-                window.location.href = '1in2leaderboard.html';
-            }
-        }
-
-        // ENTRY POINT
         startArenaLogic();
     </script>
 </body>
