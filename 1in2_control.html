@@ -147,19 +147,25 @@
         }
 
         async function resetLobbyOnly() {
-            if (!confirm("Eject all players from lobby?")) return;
-            const { error } = await sb.from('1in2').delete().neq('player_username', 'SYSTEM_RESERVED');
+            if (!confirm("EJECT ALL PLAYERS? This will fix the 3/2 ghosting issue.")) return;
+            
+            // SURGICAL FIX: Delete all rows where ID is not null (everything)
+            const { error } = await sb.from('1in2').delete().not('player_username', 'is', null);
+            
             if (!error) {
-                alert("LOBBY CLEARED.");
+                alert("LOBBY PURGED. ARENA RESET TO 0/2.");
                 refreshCommander();
+            } else {
+                console.error("Purge Error:", error);
+                alert("Failed to clear lobby.");
             }
         }
 
         async function nuclearReset() {
             if (!confirm("CRITICAL: Wipe lobby and all performance history?")) return;
 
-            // Step 1: Clear Lobby
-            await sb.from('1in2').delete().neq('player_username', 'SYSTEM_RESERVED');
+            // Step 1: Force Clear Lobby
+            await sb.from('1in2').delete().not('player_username', 'is', null);
             
             // Step 2: Clear Scores
             await sb.from('league_performances').delete().eq('league_id', '1in2');
@@ -167,7 +173,7 @@
             // Step 3: Deactivate League
             await toggleActive(false);
             
-            alert("LEAGUE PURGED.");
+            alert("LEAGUE PURGED AND RE-INITIALIZED.");
             refreshCommander();
         }
 
@@ -179,5 +185,6 @@
 
         refreshCommander();
     </script>
+
 </body>
 </html>
