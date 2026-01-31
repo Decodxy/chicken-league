@@ -145,21 +145,7 @@
             await sb.from('Leagues_Registry').update({ is_active: state }).eq('id', '1in2');
             refreshCommander();
         }
-
-        async function resetLobbyOnly() {
-            if (!confirm("EJECT ALL PLAYERS? This will fix the 3/2 ghosting issue.")) return;
-            
-            // SURGICAL FIX: Delete all rows where ID is not null (everything)
-            const { error } = await sb.from('1in2').delete().not('player_username', 'is', null);
-            
-            if (!error) {
-                alert("LOBBY PURGED. ARENA RESET TO 0/2.");
-                refreshCommander();
-            } else {
-                console.error("Purge Error:", error);
-                alert("Failed to clear lobby.");
-            }
-        }
+The "Limitless" Diagnostic Script
 
         async function nuclearReset() {
             if (!confirm("CRITICAL: Wipe lobby and all performance history?")) return;
