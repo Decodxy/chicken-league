@@ -1,74 +1,86 @@
-<div class="glass p-8 rounded-[2rem] border border-red-900/30 text-center">
+<div class="glass p-8 rounded-[2rem] border border-red-900/30 text-center bg-black">
     <h3 class="orbitron text-red-500 text-xs font-black uppercase tracking-widest mb-4 italic">Arena Security</h3>
     
     <button id="purge-btn" onclick="executeNuclearPurge()" 
-        class="w-full py-6 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/20 transition-all active:scale-95 group">
+        class="w-full py-6 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/40 transition-all active:scale-95 group border border-red-500/50">
         <span class="group-hover:scale-110 transition-transform inline-block">Reset 1in2 Lobby</span>
     </button>
     
-    <p id="purge-status" class="text-[9px] text-zinc-600 mt-4 font-bold uppercase tracking-widest">System Ready</p>
+    <p id="purge-status" class="text-[9px] text-zinc-500 mt-4 font-bold uppercase tracking-widest">System Ready</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // 1. CONFIGURATION (Ensure these are your actual credentials)
+    // PROTOCOL: MASTER COMMANDER KEYS
     const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-    const SB_KEY = 'YOUR_SUPABASE_SERVICE_ROLE_KEY'; // Use Service Role for bypass power
+    // AUTHORIZED SERVICE ROLE KEY (Bypasses all RLS)
+    const SB_KEY = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzk4ODAyNCwiZXhwIjoyMDgzNTY0MDI0fQ.XmCY_EFQSxBhzt4ZcFJBb9Ohi2JaF5dPAVXXV4sd13c'; 
     const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
     async function executeNuclearPurge() {
         const btn = document.getElementById('purge-btn');
         const status = document.getElementById('purge-status');
         
-        if (!confirm("CONFIRM TOTAL PURGE? All players will be ejected.")) return;
+        if (!confirm("WARNING: EXECUTING NUCLEAR PURGE. ALL PLAYERS WILL BE EJECTED. PROCEED?")) return;
 
-        // Visual Feedback: Loading State
+        // Visual Feedback: Engagement State
         btn.disabled = true;
         btn.innerText = "PURGING...";
-        status.innerText = "EXECUTING DELETE COMMAND...";
-        status.className = "text-[9px] text-blue-500 mt-4 font-black animate-pulse";
+        status.innerText = "DELETING PLAYER RECORDS...";
+        status.className = "text-[9px] text-red-500 mt-4 font-black animate-pulse";
 
         try {
             // STEP 1: Wipe the 1in2 Lobby Table
             const { error: deleteError } = await sb
                 .from('1in2')
                 .delete()
-                .not('player_username', 'is', null);
+                .not('player_username', 'is', null); // Targets every row that isn't null
 
             if (deleteError) throw deleteError;
+            console.log("Lobby Wiped.");
 
-            // STEP 2: Optional - Reset Arena Flags in Registry
-            await sb.from('Leagues_Registry')
-                .update({ is_active: false })
+            // STEP 2: Reset Arena Flags in Registry
+            // This force-locks the arena and clears the countdown for everyone
+            const { error: registryError } = await sb
+                .from('Leagues_Registry')
+                .update({ 
+                    is_active: false,
+                    start_time: null,
+                    closing_time: null 
+                })
                 .eq('id', '1in2');
 
-            // STEP 3: Verification
-            const { data: verify } = await sb.from('1in2').select('id');
+            if (registryError) throw registryError;
+            console.log("Registry Reset.");
+
+            // STEP 3: Verification Protocol
+            const { data: verify, error: vError } = await sb.from('1in2').select('id');
             
+            if (vError) throw vError;
+
             if (verify.length === 0) {
-                status.innerText = "SUCCESS: ARENA IS EMPTY";
+                status.innerText = "SUCCESS: ARENA PURGED (0/2)";
                 status.className = "text-[9px] text-green-500 mt-4 font-black";
-                btn.classList.replace('bg-red-600', 'bg-green-600');
+                btn.className = "w-full py-6 bg-green-600 text-white rounded-2xl font-black uppercase italic tracking-tighter transition-all";
                 btn.innerText = "LOBBY CLEARED";
                 
-                // Reset button after 3 seconds
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerText = "Reset 1in2 Lobby";
-                    btn.classList.replace('bg-green-600', 'bg-red-600');
+                    btn.className = "w-full py-6 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/40 transition-all active:scale-95 group border border-red-500/50";
                     status.innerText = "System Ready";
-                    status.className = "text-[9px] text-zinc-600 mt-4 font-bold uppercase";
+                    status.className = "text-[9px] text-zinc-500 mt-4 font-bold uppercase";
                 }, 3000);
             } else {
-                throw new Error("GHOST DATA PERSISTS");
+                throw new Error("GHOST DATA PERSISTS: " + verify.length + " entries remain.");
             }
 
         } catch (err) {
             console.error("Purge Failed:", err);
-            status.innerText = "ERROR: " + err.message;
-            status.className = "text-[9px] text-red-500 mt-4 font-black";
+            status.innerText = "CRITICAL ERROR: " + err.message;
+            status.className = "text-[9px] text-red-600 mt-4 font-black";
             btn.disabled = false;
-            btn.innerText = "Retry Purge";
+            btn.innerText = "RETRY PURGE";
         }
     }
 </script>
