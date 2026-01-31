@@ -1,47 +1,81 @@
-<div class="glass p-8 rounded-[2rem] border border-red-900/30 text-center bg-black">
-    <h3 class="orbitron text-red-500 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Internal Command</h3>
-    
-    <button id="purge-btn" onclick="triggerInternalReset()" 
-        class="w-full py-6 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/40 transition-all active:scale-95 group border border-red-500/50">
-        Execute Nuclear Reset
-    </button>
-    
-    <p id="purge-status" class="text-[9px] text-zinc-500 mt-4 font-bold uppercase tracking-widest">Protocol: RPC-Override</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMMAND CENTER | 1in2 Arena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(220, 38, 38, 0.2); }
+        body { background: #000; color: #fff; overflow: hidden; }
+        .glow-red { box-shadow: 0 0 30px rgba(220, 38, 38, 0.2); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-    const SB_ANON_KEY = 'YOUR_PUBLIC_ANON_KEY'; // Use your standard public key here
+    <div class="glass p-12 rounded-[3rem] text-center max-w-sm w-full glow-red">
+        <h3 class="orbitron text-red-600 text-[10px] font-black uppercase tracking-[0.5em] mb-2">Security Level 01</h3>
+        <h1 class="orbitron text-white text-2xl font-black italic mb-8 tracking-tighter">ARENA <span class="text-red-600">OVERRIDE</span></h1>
+        
+        <button id="purge-btn" onclick="executeNuclearReset()" 
+            class="w-full py-8 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter transition-all active:scale-95 shadow-xl shadow-red-900/40 group">
+            <span class="group-hover:scale-110 inline-block transition-transform">Execute Nuclear Reset</span>
+        </button>
+        
+        <div class="mt-8 flex flex-col items-center gap-2">
+            <div id="status-dot" class="w-2 h-2 bg-zinc-800 rounded-full"></div>
+            <p id="status-text" class="text-[9px] text-zinc-500 font-black uppercase tracking-[0.2em]">Link Status: Standby</p>
+        </div>
+    </div>
 
-    const sb = window.supabase.createClient(SB_URL, SB_ANON_KEY);
+    <script>
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        // Your verified Anon Key
+        const SB_KEY = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-    async function triggerInternalReset() {
-        const btn = document.getElementById('purge-btn');
-        const status = document.getElementById('purge-status');
+        async function executeNuclearReset() {
+            const btn = document.getElementById('purge-btn');
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
 
-        if (!confirm("FORCE INTERNAL RESET?")) return;
+            if (!confirm("EJECT ALL PLAYERS & RESET 1in2 ARENA?")) return;
 
-        btn.disabled = true;
-        status.innerText = "SIGNALING DATABASE...";
+            btn.disabled = true;
+            btn.innerText = "SIGNALING...";
+            statusText.innerText = "TRANSMITTING OVERRIDE...";
+            statusDot.className = "w-2 h-2 bg-red-600 animate-ping rounded-full";
 
-        try {
-            // This calls the SQL function we created in Step 1
-            const { error } = await sb.rpc('nuclear_reset_1in2');
+            try {
+                // CALLING THE DATABASE BRAIN (The RPC)
+                const { error } = await sb.rpc('nuclear_reset_1in2');
 
-            if (error) throw error;
+                if (error) throw error;
 
-            status.innerText = "ARENA PURGED SUCCESSFULLY";
-            status.className = "text-[9px] text-green-500 font-black";
-            btn.className = "w-full py-6 bg-green-600 text-white rounded-2xl font-black uppercase italic";
-            
-            setTimeout(() => location.reload(), 2000);
+                // SUCCESS STATE
+                statusText.innerText = "ARENA PURGED // 0 PLAYERS";
+                statusText.className = "text-[9px] text-green-500 font-black uppercase tracking-[0.2em]";
+                statusDot.className = "w-2 h-2 bg-green-500 rounded-full";
+                btn.className = "w-full py-8 bg-green-600 text-white rounded-2xl font-black uppercase italic tracking-tighter";
+                btn.innerText = "SUCCESS";
 
-        } catch (err) {
-            console.error(err);
-            status.innerText = "FAILURE: " + err.message;
-            status.className = "text-[9px] text-red-600 font-black";
-            btn.disabled = false;
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+
+            } catch (err) {
+                console.error(err);
+                statusText.innerText = "CRITICAL ERROR: " + err.message;
+                statusText.className = "text-[9px] text-red-600 font-black";
+                statusDot.className = "w-2 h-2 bg-red-600 rounded-full";
+                btn.disabled = false;
+                btn.innerText = "RETRY RESET";
+            }
         }
-    }
-</script>
+    </script>
+</body>
+</html>
