@@ -19,7 +19,6 @@
         .slot-circle { width: 85px; height: 85px; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); transition: all 0.3s ease; }
         .slot-filled { background: #fff; border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.15); }
         
-        /* State Styling */
         .btn-join { background: #fff; color: #000; }
         .btn-arena-locked { background: #111; color: #555; border: 1px solid #222; }
         .btn-arena-ready { background: #ff0000; color: #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); animation: pulse 1.5s infinite; }
@@ -30,7 +29,6 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Prevent text wrapping on small screens for sideways buttons */
         .btn-text-tight { font-size: 0.75rem; white-space: nowrap; }
     </style>
 </head>
@@ -89,27 +87,39 @@
         let timerRef = null;
 
         async function init() {
+            // Use the 'sb' provided by security-bridge.js
             const { data: { session } } = await sb.auth.getSession();
             if (!session) { window.location.href = "login.html"; return; }
             currentUser = session.user.user_metadata.username;
             
             await syncLobby();
             
-            // Subscriptions
+            // Subscriptions - Listening for changes from the admin panel
             sb.channel('lobby_gate')
-                .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncLobby)
+                .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, (payload) => {
+                    console.log("Lobby Change Detected:", payload.eventType);
+                    syncLobby();
+                })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, syncLobby)
                 .subscribe();
         }
 
         async function syncLobby() {
-            const { data: players } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
+            // Force fresh fetch to bypass cache
+            const { data: players, error } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
             const { data: registry } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
             
+            if (error) {
+                console.error("Sync Error:", error);
+                return;
+            }
+
             cachedPlayers = players || [];
             leagueRegistry = registry;
             
-            document.getElementById('connection-indicator').innerHTML = `<span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span><span class="text-[9px] font-black text-red-600 uppercase">Live Pulse</span>`;
+            // Visual Handshake Update
+            const indicator = document.getElementById('connection-indicator');
+            indicator.innerHTML = `<span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span><span class="text-[9px] font-black text-red-600 uppercase">Live Pulse</span>`;
             
             updateUI();
         }
@@ -117,6 +127,7 @@
         function updateUI() {
             const total = cachedPlayers.length;
             const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
+            
             const joinBtn = document.getElementById('joinBtn');
             const arenaBtn = document.getElementById('arenaBtn');
 
@@ -126,6 +137,7 @@
                 const circle = document.getElementById(`slot-${i}`);
                 const nameSpan = document.getElementById(`name-${i}`);
                 const p = cachedPlayers[i];
+
                 if(p) {
                     circle.classList.add('slot-filled');
                     circle.innerHTML = `<span class="text-black font-black text-2xl orbitron">${p.player_username[0].toUpperCase()}</span>`;
@@ -139,11 +151,11 @@
                 }
             }
 
-            // 1. JOIN BUTTON LOGIC
+            // JOIN BUTTON LOGIC
             if (isUserIn) {
                 joinBtn.innerText = "Lobby Joined";
                 joinBtn.disabled = true;
-                joinBtn.className = "py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp btn-text-tight uppercase";
+                joinBtn.className = "py-5 bg-zinc-900 text-zinc-400 rounded-xl font-chirp btn-text-tight uppercase border border-white/5";
             } else if (total >= 2) {
                 joinBtn.innerText = "Lobby Full";
                 joinBtn.disabled = true;
@@ -151,14 +163,15 @@
             } else {
                 joinBtn.innerText = "Join Lobby";
                 joinBtn.disabled = false;
-                joinBtn.className = "py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase";
+                joinBtn.className = "py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase hover:bg-zinc-200";
             }
 
-            // 2. ARENA BUTTON LOGIC
+            // ARENA BUTTON LOGIC
             if (!isUserIn) {
                 arenaBtn.innerText = "Lobby First";
                 arenaBtn.disabled = true;
                 arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+                if (timerRef) clearInterval(timerRef);
                 return;
             }
 
@@ -185,10 +198,8 @@
         function handleCountdown(target) {
             if (timerRef) clearInterval(timerRef);
             const arenaBtn = document.getElementById('arenaBtn');
-            arenaBtn.disabled = true;
-            arenaBtn.className = "py-5 btn-arena-locked text-red-500 rounded-xl font-chirp btn-text-tight uppercase orbitron";
-
-            timerRef = setInterval(() => {
+            
+            const runTimer = () => {
                 const diff = target - new Date();
                 if (diff <= 0) {
                     clearInterval(timerRef);
@@ -197,15 +208,32 @@
                     const m = Math.floor(diff / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
                     arenaBtn.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+                    arenaBtn.disabled = true;
+                    arenaBtn.className = "py-5 btn-arena-locked text-red-500 rounded-xl font-chirp btn-text-tight uppercase orbitron";
                 }
-            }, 1000);
+            };
+
+            runTimer();
+            timerRef = setInterval(runTimer, 1000);
         }
 
         async function joinLobby() {
             if (isProcessing) return;
             isProcessing = true;
+            
+            const { data } = await sb.from('1in2').select('id');
+            if (data && data.length >= 2) {
+                alert("Lobby just filled up!");
+                isProcessing = false;
+                return;
+            }
+
             const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
-            if (error) { alert("Lobby Entry Failed"); }
+            if (error) { 
+                console.error(error);
+                alert("Lobby Entry Failed"); 
+            }
+            
             await syncLobby();
             isProcessing = false;
         }
