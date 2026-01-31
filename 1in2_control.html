@@ -1,207 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-        (function() {
-            const params = new URLSearchParams(window.location.search);
-            const key = params.get('key');
-            
-            if (key !== "CL_BOSS_2026") {
-                window.location.stop(); // Nuclear stop
-                window.location.replace("index.html");
-                return;
-            }
-
-            // Hijack the entire window location strategy to block "login.html" redirects
-            const preventKick = (url) => {
-                if (typeof url === 'string' && url.includes('login.html')) {
-                    console.error("CRITICAL: Blocked unauthorized kick-out to login.html");
-                    return true;
-                }
-                return false;
-            };
-
-            // Wrap location methods
-            const originalReplace = window.location.replace;
-            window.location.replace = function(url) {
-                if (preventKick(url)) return;
-                originalReplace.apply(this, arguments);
-            };
-
-            const originalAssign = window.location.assign;
-            window.location.assign = function(url) {
-                if (preventKick(url)) return;
-                originalAssign.apply(this, arguments);
-            };
-
-            // Monitor for 'href' changes via Object property interception
-            const originalHref = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
-            Object.defineProperty(window.location, 'href', {
-                set: function(url) {
-                    if (preventKick(url)) return;
-                    originalHref.set.call(this, url);
-                }
-            });
-        })();
-    </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1in2 COMMANDER | SECURE BYPASS</title>
-    
+    <title>1in2 Commander | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="security-bridge.js"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
-        body { background: #000; color: white; font-family: 'Inter', sans-serif; visibility: hidden; }
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .brand-red { color: #FF0000; }
-        .brand-blue { color: #3b82f6; }
-        input[type="datetime-local"] { color-scheme: dark; background: #0a0a0a; border: 1px solid #222; padding: 10px; border-radius: 8px; width: 100%; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        /* Brand Colors */
+        .border-blue { border-color: #3b82f6; }
+        .text-blue { color: #3b82f6; }
+        .bg-blue { background-color: #3b82f6; }
+        .bg-red { background-color: #ff0000; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     </style>
 </head>
-<body id="main-body" class="p-6 md:p-12">
+<body class="p-6">
 
-    <div class="max-w-5xl mx-auto">
-        <div class="flex justify-between items-start mb-16">
-            <div>
-                <h1 class="text-6xl font-black orbitron italic tracking-tighter leading-none mb-2">
-                    1in2 <span class="brand-red">ARENA</span>
-                </h1>
-                <p class="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.6em]">Admin Command Interface // Protocol 2.0</p>
-            </div>
-            <div id="connection-status" class="flex items-center gap-3 glass px-5 py-2 rounded-full">
-                <div id="pulse" class="w-2 h-2 rounded-full bg-zinc-800"></div>
-                <span id="status-text" class="text-[9px] font-black uppercase text-zinc-500 tracking-widest">Awaiting Uplink</span>
+    <div class="max-w-3xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <a href="admin_panel.html?key=CL_BOSS_2026" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-blue-500 transition">← Back to Hub</a>
+            <div id="global-status" class="flex items-center gap-2 px-4 py-1 rounded-full border border-white/5 glass">
+                <span id="state-dot" class="status-dot bg-zinc-600"></span>
+                <span id="state-text" class="text-[10px] font-black uppercase text-zinc-500">Standby</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-8 space-y-6">
-                <div class="glass p-10 rounded-[3rem] border-t-2 border-blue-600/50">
-                    <h2 class="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-10">Gate Deployment Controls</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                        <div class="space-y-3">
-                            <label class="text-[9px] font-black text-zinc-500 uppercase ml-1">Opening Sequence (UTC)</label>
-                            <input type="datetime-local" id="open_time" class="orbitron text-xs">
-                        </div>
-                        <div class="space-y-3">
-                            <label class="text-[9px] font-black text-zinc-500 uppercase ml-1">Auto-Lock Sequence (UTC)</label>
-                            <input type="datetime-local" id="close_time" class="orbitron text-xs">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button onclick="saveSchedule()" class="bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black orbitron italic text-sm transition-all active:scale-95 shadow-lg shadow-blue-600/20">
-                            UPDATE PROTOCOL
-                        </button>
-                        <button onclick="toggleActive(false)" class="bg-zinc-900 border border-white/5 hover:border-red-600/40 hover:text-red-500 py-5 rounded-2xl font-black orbitron italic text-sm transition-all uppercase">
-                            Emergency Lock
-                        </button>
-                    </div>
-                </div>
+        <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2 orbitron">1in2 <span class="text-blue">Arena</span></h1>
+        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-10">League Deployment & Real-Time Sync Control</p>
 
-                <div class="glass p-8 rounded-[3rem]">
-                    <div class="flex justify-between items-center mb-8 px-2">
-                        <h3 class="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Lobby Pulse</h3>
-                        <div class="text-xs font-black orbitron"><span id="p-count" class="brand-blue">0</span> / 2</div>
-                    </div>
-                    <div id="player_list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        </div>
+        <div class="glass p-8 rounded-[2.5rem] border-t-4 border-blue mb-6">
+            <h2 class="text-xs font-black uppercase tracking-widest text-blue mb-6 italic">Tournament Scheduling</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div>
+                    <label class="text-[9px] font-black text-zinc-500 uppercase mb-2 block ml-1">Arena Opens (Start)</label>
+                    <input type="datetime-local" id="open_time" class="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-sm font-bold focus:border-blue outline-none transition-all">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-zinc-500 uppercase mb-2 block ml-1">Arena Closes (Auto-Lock)</label>
+                    <input type="datetime-local" id="close_time" class="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-sm font-bold focus:border-red-600 outline-none transition-all">
                 </div>
             </div>
 
-            <div class="lg:col-span-4 space-y-6">
-                <div class="glass p-8 rounded-[2.5rem] border border-red-900/20 bg-red-950/5">
-                    <h3 class="text-[10px] font-black uppercase text-red-600 mb-4 italic tracking-widest">Nuclear Wipe</h3>
-                    <p class="text-[9px] text-zinc-500 mb-8 font-bold leading-relaxed uppercase">Instantly purges the 1in2 lobby and clears all weight scores from the database.</p>
-                    <button onclick="nuclearReset()" class="w-full py-4 border border-red-600/30 text-red-600 hover:bg-red-600 hover:text-white rounded-xl font-black orbitron text-[10px] transition-all">
-                        EXECUTE PURGE
-                    </button>
-                </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="saveSchedule()" class="bg-blue hover:bg-blue-500 py-5 rounded-2xl font-black italic uppercase tracking-tighter transition-all active:scale-95 shadow-lg shadow-blue/20">
+                    Apply Schedule
+                </button>
+                <button onclick="toggleActive(false)" class="bg-zinc-900 hover:bg-zinc-800 py-5 rounded-2xl font-black italic uppercase tracking-tighter transition-all border border-white/5 text-zinc-400">
+                    Emergency Lock
+                </button>
+            </div>
+        </div>
 
-                <a href="admin_panel.html?key=CL_BOSS_2026" class="block w-full py-5 glass text-center rounded-2xl text-[9px] font-black text-zinc-500 uppercase tracking-[0.4em] hover:text-white transition-all">
-                    Return to Hub
-                </a>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="glass p-6 rounded-[2rem]">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-[10px] font-black uppercase text-zinc-500">Lobby Pulse</h3>
+                    <span id="player-count" class="orbitron text-[10px] text-blue">0/2</span>
+                </div>
+                <div id="player_list" class="space-y-2">
+                    </div>
+            </div>
+
+            <div class="glass p-6 rounded-[2rem] border border-red-900/20">
+                <h3 class="text-[10px] font-black uppercase text-red-500 mb-4 italic">Nuclear Reset Zone</h3>
+                <p class="text-[9px] text-zinc-500 mb-6 font-bold uppercase">Clears 1in2 lobby and wipes performance data.</p>
+                <button onclick="nuclearReset()" class="w-full py-4 bg-red-600/10 hover:bg-red-600 text-red-600 hover:text-white rounded-xl font-black uppercase text-[10px] border border-red-600/20 transition-all">
+                    Wipe League Data
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        async function runBossLogic() {
-            // Triple check key before showing UI
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('key') !== "CL_BOSS_2026") return; 
+        // Use your existing working config
+        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY = 'YOUR_SUPABASE_KEY'; // MUST match your working security-bridge key
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-            document.body.style.visibility = "visible";
+        // Security Check - Exactly as in your reference
+        if (new URLSearchParams(window.location.search).get('key') !== "CL_BOSS_2026") {
+            window.location.href = "index.html";
+        }
 
-            // Wait for Supabase Bridge
-            const interval = setInterval(() => {
-                if (window.sb) {
-                    clearInterval(interval);
-                    document.getElementById('pulse').className = "w-2 h-2 rounded-full bg-blue-500 animate-pulse";
-                    document.getElementById('status-text').innerText = "Link Established";
-                    document.getElementById('status-text').className = "text-[9px] font-black uppercase text-blue-500 tracking-widest";
-                    initSync();
+        async function refreshCommander() {
+            try {
+                const { data: league } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
+                const { data: players } = await sb.from('1in2').select('player_username');
+                
+                const dot = document.getElementById('state-dot');
+                const text = document.getElementById('state-text');
+                const pCount = document.getElementById('player-count');
+
+                if (league && league.is_active) {
+                    dot.className = "status-dot bg-green-500 animate-pulse";
+                    text.innerText = "Arena Live";
+                    text.className = "text-[10px] font-black uppercase text-green-500";
+                } else {
+                    dot.className = "status-dot bg-zinc-600";
+                    text.innerText = "Locked";
+                    text.className = "text-[10px] font-black uppercase text-zinc-500";
                 }
-            }, 100);
-        }
 
-        async function initSync() {
-            refresh();
-            sb.channel('1in2_commander')
-              .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, refresh)
-              .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, refresh)
-              .subscribe();
-        }
+                pCount.innerText = `${players ? players.length : 0}/2`;
 
-        async function refresh() {
-            const { data: players } = await sb.from('1in2').select('*');
-            const { data: league } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
-
-            // Update UI State
-            document.getElementById('p-count').innerText = players?.length || 0;
-            
-            const list = document.getElementById('player_list');
-            list.innerHTML = players?.length ? players.map(p => `
-                <div class="bg-white/5 p-5 rounded-2xl border border-white/5 flex justify-between items-center transition-all hover:bg-white/10">
-                    <span class="orbitron text-xs text-white italic font-black">${p.player_username.toUpperCase()}</span>
-                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></span>
-                </div>
-            `).join('') : '<div class="col-span-full py-10 text-center text-zinc-800 font-black text-[10px] uppercase">Lobby Isolated / Empty</div>';
+                const list = document.getElementById('player_list');
+                list.innerHTML = (players && players.length) ? players.map(p => `
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span class="text-xs font-bold orbitron italic">${p.player_username.toUpperCase()}</span>
+                        <span class="h-1.5 w-1.5 bg-green-500 rounded-full shadow-[0_0_5px_green]"></span>
+                    </div>
+                `).join('') : '<p class="text-zinc-700 italic text-[10px] py-2 uppercase font-black">Zero connections...</p>';
+            } catch (e) { console.error("Sync Error:", e); }
         }
 
         async function saveSchedule() {
             const open = document.getElementById('open_time').value;
             const close = document.getElementById('close_time').value;
-            
+
             const { error } = await sb.from('Leagues_Registry').update({
                 start_time: open ? new Date(open).toISOString() : null,
                 closing_time: close ? new Date(close).toISOString() : null,
                 is_active: true
             }).eq('id', '1in2');
 
-            if(!error) alert("PROTOCOL DEPLOYED SUCCESSFULLY");
+            if (!error) {
+                alert("ARENA PROTOCOL DEPLOYED.");
+                refreshCommander();
+            }
         }
 
         async function toggleActive(state) {
             await sb.from('Leagues_Registry').update({ is_active: state }).eq('id', '1in2');
-            refresh();
+            refreshCommander();
         }
 
         async function nuclearReset() {
-            if (!confirm("CONFIRM DATA PURGE? THIS CANNOT BE UNDONE.")) return;
-            await sb.from('1in2').delete().neq('id', 0);
+            if (!confirm("CRITICAL: Wipe lobby and scores?")) return;
+            await sb.from('1in2').delete().neq('player_username', '0');
             await sb.from('league_performances').delete().eq('league_id', '1in2');
             await toggleActive(false);
-            refresh();
+            alert("LEAGUE PURGED.");
+            refreshCommander();
         }
 
-        window.onload = runBossLogic;
+        // Real-time listener
+        sb.channel('commander_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, refreshCommander)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, refreshCommander)
+          .subscribe();
+
+        refreshCommander();
     </script>
 </body>
 </html>
