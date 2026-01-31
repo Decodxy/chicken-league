@@ -1,9 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('key') !== "CL_BOSS_2026") {
+                window.location.replace("https://google.com"); // Exit if no key
+                return;
+            }
+            // Temporarily hijack location changes to prevent auto-kicks
+            const originalAssign = window.location.assign;
+            window.location.assign = function(url) {
+                if (url.includes("login.html")) {
+                    console.warn("BLOCKED AUTO-KICK TO LOGIN");
+                    return;
+                }
+                originalAssign.apply(this, arguments);
+            };
+        })();
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1in2 COMMANDER | Chicken League</title>
+    <title>1in2 COMMANDER | NO KICK</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,147 +30,116 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; }
+        body { background: #000; color: white; font-family: 'Inter', sans-serif; display: none; } /* Hidden until key verified */
         .orbitron { font-family: 'Orbitron', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .neon-blue { border-top: 4px solid #3b82f6; box-shadow: 0 -10px 20px rgba(59, 130, 246, 0.1); }
-        
-        input[type="datetime-local"] { 
-            color-scheme: dark; background: #111; border: 1px solid #333; 
-            padding: 12px; border-radius: 12px; width: 100%; font-family: 'Orbitron', sans-serif; font-size: 11px;
-        }
     </style>
 </head>
-<body class="p-4 md:p-12">
+<body id="main-body" class="p-4 md:p-12">
 
     <div class="max-w-4xl mx-auto">
         <div class="flex justify-between items-end mb-12">
             <div>
                 <h1 class="text-5xl font-black orbitron italic tracking-tighter">1in2 <span class="text-red-600">ARENA</span></h1>
-                <p class="text-[9px] text-zinc-500 font-black uppercase tracking-[0.5em] mt-2">Internal Command // Protocol 2026</p>
+                <p class="text-[9px] text-zinc-500 font-black uppercase tracking-[0.5em] mt-2">Bypassing Standard Security // Admin Active</p>
             </div>
-            <div class="text-right">
-                <div id="status-text" class="text-[10px] font-black text-zinc-600 uppercase mb-1">Link: Disconnected</div>
-                <div id="indicator" class="w-12 h-1 bg-zinc-900 rounded-full ml-auto"></div>
+            <div id="sync-ui" class="text-right opacity-20">
+                <div class="text-[10px] font-black text-white uppercase mb-1">Link: Authenticating...</div>
+                <div class="w-12 h-1 bg-white/10 rounded-full ml-auto"></div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             <div class="lg:col-span-2 space-y-6">
-                <div class="glass p-8 rounded-[2.5rem] neon-blue">
-                    <h2 class="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-8 italic">Gate Deployment</h2>
+                <div class="glass p-8 rounded-[2.5rem] border-t-4 border-blue-600">
+                    <h2 class="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-8 italic">Arena Scheduling</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
-                            <label class="text-[8px] font-black text-zinc-600 uppercase mb-2 block ml-1">Open Protocol</label>
-                            <input type="datetime-local" id="open_time">
+                            <label class="text-[8px] font-black text-zinc-600 uppercase mb-2 block ml-1">Open Time</label>
+                            <input type="datetime-local" id="open_time" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white orbitron">
                         </div>
                         <div>
-                            <label class="text-[8px] font-black text-zinc-600 uppercase mb-2 block ml-1">Auto-Lock Protocol</label>
-                            <input type="datetime-local" id="close_time">
+                            <label class="text-[8px] font-black text-zinc-600 uppercase mb-2 block ml-1">Lock Time</label>
+                            <input type="datetime-local" id="close_time" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white orbitron">
                         </div>
                     </div>
-                    <div class="flex gap-4">
-                        <button onclick="saveSchedule()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black orbitron italic text-sm transition-all active:scale-95">DEPLOY SCHEDULE</button>
-                        <button onclick="toggleActive(false)" class="px-8 bg-zinc-900 border border-white/5 rounded-2xl font-black text-[10px] uppercase hover:text-red-500 transition-all">Manual Lock</button>
-                    </div>
+                    <button onclick="saveSchedule()" class="w-full bg-blue-600 py-5 rounded-2xl font-black orbitron italic text-sm">UPDATE ARENA PROTOCOL</button>
                 </div>
 
                 <div class="glass p-8 rounded-[2.5rem] border border-white/5">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Lobby Pulse</h3>
-                        <span id="p-count" class="orbitron text-sm text-white">0 / 2</span>
-                    </div>
-                    <div id="player_list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <p class="text-zinc-800 uppercase font-black text-[9px]">Scanning for connections...</p>
+                    <h3 class="text-[10px] font-black uppercase text-zinc-500 mb-6">Lobby Monitor</h3>
+                    <div id="player_list" class="space-y-4">
+                        <p class="text-zinc-800 font-black text-[9px]">Awaiting Data...</p>
                     </div>
                 </div>
             </div>
 
             <div class="space-y-6">
                 <div class="glass p-8 rounded-[2.5rem] border border-red-900/30 bg-red-950/5">
-                    <h3 class="text-[10px] font-black uppercase text-red-600 mb-4 italic tracking-widest">Nuclear Reset</h3>
-                    <p class="text-[8px] text-zinc-600 mb-6 font-bold leading-relaxed uppercase">Purges lobby table & wipes all weight scores for 1in2 arena.</p>
-                    <button onclick="nuclearReset()" class="w-full py-4 border border-red-600/30 hover:bg-red-600 text-red-600 hover:text-white rounded-xl font-black orbitron italic text-[10px] transition-all uppercase">Purge League</button>
+                    <h3 class="text-[10px] font-black uppercase text-red-600 mb-4">Reset</h3>
+                    <button onclick="nuclearReset()" class="w-full py-4 border border-red-600/30 text-red-600 rounded-xl font-black text-[10px]">PURGE LEAGUE</button>
                 </div>
-
-                <a href="admin_panel.html?key=CL_BOSS_2026" class="block w-full py-5 bg-zinc-900 text-center rounded-2xl text-[9px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-all border border-white/5">
-                    Back to Hub
-                </a>
+                <a href="admin_panel.html?key=CL_BOSS_2026" class="block w-full py-4 bg-zinc-900 text-center rounded-xl text-[9px] font-black text-zinc-500 uppercase border border-white/5">Hub Return</a>
             </div>
         </div>
     </div>
 
     <script>
-        async function init() {
+        async function forceInit() {
+            // Show body only after key is triple-confirmed
             const params = new URLSearchParams(window.location.search);
-            if (params.get('key') !== "CL_BOSS_2026") {
-                document.body.innerHTML = "<h1 class='orbitron p-20 text-red-600'>DENIED</h1>";
-                setTimeout(() => window.location.href = "login.html", 1500);
+            if (params.get('key') === "CL_BOSS_2026") {
+                document.body.style.display = "block";
+            } else {
+                window.location.href = "index.html";
                 return;
             }
 
-            const check = setInterval(() => {
-                if (typeof sb !== 'undefined') {
-                    clearInterval(check);
-                    document.getElementById('status-text').innerText = "Link: Connected";
-                    document.getElementById('status-text').className = "text-[10px] font-black text-green-500 uppercase mb-1";
-                    document.getElementById('indicator').className = "w-12 h-1 bg-green-500 rounded-full ml-auto shadow-[0_0_10px_#22c55e]";
-                    startSync();
+            // Connection loop
+            const checkSb = setInterval(() => {
+                if (window.sb) {
+                    clearInterval(checkSb);
+                    initSync();
                 }
             }, 100);
         }
 
-        function startSync() {
+        async function initSync() {
+            document.getElementById('sync-ui').classList.replace('opacity-20', 'opacity-100');
             refresh();
-            sb.channel('1in2_internal')
-                .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, refresh)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, refresh)
-                .subscribe();
+            sb.channel('admin_core').on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, refresh).subscribe();
         }
 
         async function refresh() {
-            const { data: league } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
             const { data: players } = await sb.from('1in2').select('*');
-
-            document.getElementById('p-count').innerText = `${players?.length || 0} / 2`;
-            
             const list = document.getElementById('player_list');
             list.innerHTML = players?.length ? players.map(p => `
                 <div class="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center">
-                    <span class="orbitron text-[10px] text-white italic">${p.player_username.toUpperCase()}</span>
-                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span class="orbitron text-xs text-white">${p.player_username.toUpperCase()}</span>
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 </div>
-            `).join('') : '<p class="text-zinc-800 font-black text-[9px] uppercase">Empty Lobby</p>';
+            `).join('') : '<p class="text-zinc-800 font-black text-[9px]">LOBBY EMPTY</p>';
         }
 
         async function saveSchedule() {
             const start = document.getElementById('open_time').value;
             const end = document.getElementById('close_time').value;
-            if(!start) return alert("Select Start");
-
             await sb.from('Leagues_Registry').update({
-                start_time: new Date(start).toISOString(),
+                start_time: start ? new Date(start).toISOString() : null,
                 closing_time: end ? new Date(end).toISOString() : null,
                 is_active: true
             }).eq('id', '1in2');
-            alert("SYNCED");
-        }
-
-        async function toggleActive(val) {
-            await sb.from('Leagues_Registry').update({ is_active: val }).eq('id', '1in2');
-            refresh();
+            alert("DEPLOΥED");
         }
 
         async function nuclearReset() {
-            if (!confirm("PURGE DATA?")) return;
+            if (!confirm("WIPE EVERYTHING?")) return;
             await sb.from('1in2').delete().neq('id', 0);
             await sb.from('league_performances').delete().eq('league_id', '1in2');
-            await toggleActive(false);
             refresh();
         }
 
-        window.onload = init;
+        window.onload = forceInit;
     </script>
 </body>
 </html>
