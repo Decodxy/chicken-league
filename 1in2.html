@@ -21,7 +21,7 @@
         
         /* State Styling */
         .btn-join { background: #fff; color: #000; }
-        .btn-arena-locked { background: #111; color: #444; border: 1px solid #222; }
+        .btn-arena-locked { background: #111; color: #555; border: 1px solid #222; }
         .btn-arena-ready { background: #ff0000; color: #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); animation: pulse 1.5s infinite; }
         
         @keyframes pulse {
@@ -29,6 +29,9 @@
             50% { transform: scale(1.02); opacity: 0.8; }
             100% { transform: scale(1); opacity: 1; }
         }
+
+        /* Prevent text wrapping on small screens for sideways buttons */
+        .btn-text-tight { font-size: 0.75rem; white-space: nowrap; }
     </style>
 </head>
 <body class="pt-20 pb-32">
@@ -67,12 +70,12 @@
             </div>
         </div>
 
-        <div class="flex flex-col gap-4">
-            <button id="joinBtn" onclick="joinLobby()" class="w-full py-5 btn-join rounded-xl font-chirp text-lg uppercase transition-all active:scale-95 disabled:opacity-20">
+        <div class="grid grid-cols-2 gap-3">
+            <button id="joinBtn" onclick="joinLobby()" class="py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase transition-all active:scale-95 disabled:opacity-20">
                 Join Lobby
             </button>
 
-            <button id="arenaBtn" onclick="enterArena()" class="w-full py-5 btn-arena-locked rounded-xl font-chirp text-lg uppercase transition-all disabled:cursor-not-allowed">
+            <button id="arenaBtn" onclick="enterArena()" class="py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase transition-all disabled:cursor-not-allowed">
                 Arena Locked
             </button>
         </div>
@@ -119,7 +122,6 @@
 
             document.getElementById('count_display').innerText = `${total}/2`;
 
-            // 1. Update Slots Visuals
             for(let i=0; i<2; i++) {
                 const circle = document.getElementById(`slot-${i}`);
                 const nameSpan = document.getElementById(`name-${i}`);
@@ -137,46 +139,46 @@
                 }
             }
 
-            // 2. JOIN BUTTON LOGIC
+            // 1. JOIN BUTTON LOGIC
             if (isUserIn) {
-                joinBtn.innerText = "LOBBY JOINED";
+                joinBtn.innerText = "Lobby Joined";
                 joinBtn.disabled = true;
-                joinBtn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp text-lg uppercase";
+                joinBtn.className = "py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp btn-text-tight uppercase";
             } else if (total >= 2) {
-                joinBtn.innerText = "LOBBY FULL";
+                joinBtn.innerText = "Lobby Full";
                 joinBtn.disabled = true;
-                joinBtn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp text-lg uppercase";
+                joinBtn.className = "py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp btn-text-tight uppercase";
             } else {
-                joinBtn.innerText = "JOIN LOBBY";
+                joinBtn.innerText = "Join Lobby";
                 joinBtn.disabled = false;
-                joinBtn.className = "w-full py-5 btn-join rounded-xl font-chirp text-lg uppercase";
+                joinBtn.className = "py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase";
             }
 
-            // 3. ARENA BUTTON LOGIC (The Access Gate)
+            // 2. ARENA BUTTON LOGIC
             if (!isUserIn) {
-                arenaBtn.innerText = "JOIN LOBBY FIRST";
+                arenaBtn.innerText = "Lobby First";
                 arenaBtn.disabled = true;
-                arenaBtn.className = "w-full py-5 btn-arena-locked rounded-xl font-chirp text-lg uppercase";
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
                 return;
             }
 
             const now = new Date();
-            const start = leagueRegistry.start_time ? new Date(leagueRegistry.start_time) : null;
+            const start = leagueRegistry?.start_time ? new Date(leagueRegistry.start_time) : null;
 
             if (!start) {
-                arenaBtn.innerText = "WAIT FOR EVENT TIME";
+                arenaBtn.innerText = "Wait Time";
                 arenaBtn.disabled = true;
-                arenaBtn.className = "w-full py-5 btn-arena-locked rounded-xl font-chirp text-lg uppercase";
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
             } else if (now < start) {
                 handleCountdown(start);
             } else if (leagueRegistry.is_active) {
-                arenaBtn.innerText = "ENTER ARENA";
+                arenaBtn.innerText = "Enter Arena";
                 arenaBtn.disabled = false;
-                arenaBtn.className = "w-full py-5 btn-arena-ready rounded-xl font-chirp text-lg uppercase";
+                arenaBtn.className = "py-5 btn-arena-ready rounded-xl font-chirp btn-text-tight uppercase";
             } else {
-                arenaBtn.innerText = "ARENA CLOSED";
+                arenaBtn.innerText = "Arena Closed";
                 arenaBtn.disabled = true;
-                arenaBtn.className = "w-full py-5 btn-arena-locked rounded-xl font-chirp text-lg uppercase";
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
             }
         }
 
@@ -184,7 +186,7 @@
             if (timerRef) clearInterval(timerRef);
             const arenaBtn = document.getElementById('arenaBtn');
             arenaBtn.disabled = true;
-            arenaBtn.className = "w-full py-5 btn-arena-locked text-red-500 rounded-xl font-chirp text-lg uppercase orbitron";
+            arenaBtn.className = "py-5 btn-arena-locked text-red-500 rounded-xl font-chirp btn-text-tight uppercase orbitron";
 
             timerRef = setInterval(() => {
                 const diff = target - new Date();
@@ -194,7 +196,7 @@
                 } else {
                     const m = Math.floor(diff / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    arenaBtn.innerText = `DOOR OPENS: ${m}:${s.toString().padStart(2, '0')}`;
+                    arenaBtn.innerText = `${m}:${s.toString().padStart(2, '0')}`;
                 }
             }, 1000);
         }
@@ -202,7 +204,8 @@
         async function joinLobby() {
             if (isProcessing) return;
             isProcessing = true;
-            await sb.from('1in2').insert([{ player_username: currentUser }]);
+            const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
+            if (error) { alert("Lobby Entry Failed"); }
             await syncLobby();
             isProcessing = false;
         }
