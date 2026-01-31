@@ -1,103 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1in2 Master Control | Chicken League</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-        body { background: #000; color: #fff; font-family: sans-serif; }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .btn-nuclear { background: #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.3); transition: all 0.3s; }
-        .btn-nuclear:hover { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5); }
-    </style>
-</head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<div class="glass p-8 rounded-[2rem] border border-red-900/30 text-center bg-black">
+    <h3 class="orbitron text-red-500 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Internal Command</h3>
+    
+    <button id="purge-btn" onclick="triggerInternalReset()" 
+        class="w-full py-6 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/40 transition-all active:scale-95 group border border-red-500/50">
+        Execute Nuclear Reset
+    </button>
+    
+    <p id="purge-status" class="text-[9px] text-zinc-500 mt-4 font-bold uppercase tracking-widest">Protocol: RPC-Override</p>
+</div>
 
-    <div class="glass w-full max-w-sm p-10 rounded-[3rem] text-center">
-        <div class="mb-8">
-            <h1 class="orbitron text-2xl font-black italic tracking-tighter text-white">ARENA <span class="text-red-600">RESET</span></h1>
-            <p class="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">1in2.html | Admin Override</p>
-        </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+    const SB_ANON_KEY = 'YOUR_PUBLIC_ANON_KEY'; // Use your standard public key here
 
-        <button id="purge-btn" onclick="executeNuclearPurge()" 
-            class="btn-nuclear w-full py-6 rounded-2xl font-black uppercase italic tracking-widest text-sm active:scale-95 disabled:opacity-50">
-            Execute Nuclear Reset
-        </button>
+    const sb = window.supabase.createClient(SB_URL, SB_ANON_KEY);
 
-        <div class="mt-8 space-y-2">
-            <div id="status-line" class="flex items-center justify-center gap-2">
-                <span id="status-dot" class="w-1.5 h-1.5 bg-zinc-800 rounded-full"></span>
-                <p id="status-text" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Ready for Command</p>
-            </div>
-            <p id="debug-log" class="text-[8px] text-zinc-800 font-mono"></p>
-        </div>
-    </div>
+    async function triggerInternalReset() {
+        const btn = document.getElementById('purge-btn');
+        const status = document.getElementById('purge-status');
 
-    <script>
-        // CRITICAL CONFIGURATION
-        const PROJECT_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const MASTER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzk4ODAyNCwiZXhwIjoyMDgzNTY0MDI0fQ.XmCY_EFQSxBhzt4ZcFJBb9Ohi2JaF5dPAVXXV4sd13c';
+        if (!confirm("FORCE INTERNAL RESET?")) return;
 
-        // Initialize with sanitization
-        const sb = window.supabase.createClient(PROJECT_URL, MASTER_KEY.trim());
+        btn.disabled = true;
+        status.innerText = "SIGNALING DATABASE...";
 
-        async function executeNuclearPurge() {
-            const btn = document.getElementById('purge-btn');
-            const statusText = document.getElementById('status-text');
-            const statusDot = document.getElementById('status-dot');
-            const debugLog = document.getElementById('debug-log');
+        try {
+            // This calls the SQL function we created in Step 1
+            const { error } = await sb.rpc('nuclear_reset_1in2');
 
-            if (!confirm("CONFIRM TOTAL PURGE? Players will be kicked from 1in2arena.html")) return;
+            if (error) throw error;
 
-            // UI Feedback
-            btn.disabled = true;
-            statusText.innerText = "AUTHENTICATING...";
-            statusDot.className = "w-1.5 h-1.5 bg-yellow-500 animate-pulse rounded-full";
+            status.innerText = "ARENA PURGED SUCCESSFULLY";
+            status.className = "text-[9px] text-green-500 font-black";
+            btn.className = "w-full py-6 bg-green-600 text-white rounded-2xl font-black uppercase italic";
+            
+            setTimeout(() => location.reload(), 2000);
 
-            try {
-                // STEP 1: TEST CONNECTION
-                debugLog.innerText = "Pinging Database...";
-                const { count, error: testError } = await sb.from('1in2').select('*', { count: 'exact', head: true });
-                
-                if (testError) throw testError;
-                debugLog.innerText = `Connected. Found ${count} records.`;
-
-                // STEP 2: DELETE ALL ENTRIES
-                statusText.innerText = "PURGING TABLE...";
-                const { error: deleteError } = await sb
-                    .from('1in2')
-                    .delete()
-                    .neq('player_username', 'VOID_RESERVED_SIGNAL'); // Deletes everything
-
-                if (deleteError) throw deleteError;
-
-                // STEP 3: RESET LEAGUE REGISTRY
-                statusText.innerText = "RESETTING REGISTRY...";
-                await sb.from('Leagues_Registry').update({ is_active: false, start_time: null }).eq('id', '1in2');
-
-                // FINAL SUCCESS
-                statusText.innerText = "ARENA CLEARED (0/2)";
-                statusText.className = "text-[10px] font-black text-green-500 uppercase tracking-widest";
-                statusDot.className = "w-1.5 h-1.5 bg-green-500 rounded-full";
-                btn.innerText = "SUCCESS";
-                btn.className = "w-full py-6 rounded-2xl font-black uppercase italic tracking-widest text-sm bg-white text-black";
-                
-                debugLog.innerText = "Handshake complete. Clients notified.";
-
-            } catch (err) {
-                console.error("Critical Failure:", err);
-                statusText.innerText = "ERROR: " + (err.message || "Unknown Failure");
-                statusText.className = "text-[10px] font-black text-red-600 uppercase tracking-widest";
-                statusDot.className = "w-1.5 h-1.5 bg-red-600 rounded-full";
-                debugLog.innerText = "Check Console (F12) for JWT details.";
-                btn.disabled = false;
-                btn.innerText = "RETRY RESET";
-            }
+        } catch (err) {
+            console.error(err);
+            status.innerText = "FAILURE: " + err.message;
+            status.className = "text-[9px] text-red-600 font-black";
+            btn.disabled = false;
         }
-    </script>
-</body>
-</html>
+    }
+</script>
