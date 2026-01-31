@@ -2,154 +2,219 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1in2 Commander | Chicken League</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>1in2 Lobby | Chicken League</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="security-bridge.js"></script>
+    <script src="ui-bridge.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=Orbitron:wght@900&display=swap');
+        body { background: #000; color: #eff3f4; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .font-chirp { font-weight: 900; letter-spacing: -0.04em; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1.5rem; }
+        .slot-circle { width: 85px; height: 85px; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); transition: all 0.3s ease; }
+        .slot-filled { background: #fff; border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.15); }
+        
+        /* State Styling */
+        .btn-join { background: #fff; color: #000; }
+        .btn-arena-locked { background: #111; color: #555; border: 1px solid #222; }
+        .btn-arena-ready { background: #ff0000; color: #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Prevent text wrapping on small screens for sideways buttons */
+        .btn-text-tight { font-size: 0.75rem; white-space: nowrap; }
     </style>
 </head>
-<body class="p-6">
+<body class="pt-20 pb-32">
 
-    <div class="max-w-3xl mx-auto">
-        <div class="flex items-center justify-between mb-8">
-            <a href="admin_panel.html?key=CL_BOSS_2026" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-blue-500 transition">← Back to Hub</a>
-            <div id="global-status" class="flex items-center gap-2 px-4 py-1 rounded-full border border-white/5 glass">
-                <span id="state-dot" class="status-dot bg-zinc-600"></span>
-                <span id="state-text" class="text-[10px] font-black uppercase text-zinc-500">Standby</span>
+    <main class="max-w-md mx-auto px-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="font-chirp text-xl uppercase italic tracking-tighter">Arena <span class="text-red-600">Lobby</span></h2>
+            <div id="connection-indicator" class="flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-white/5">
+                <span class="w-1.5 h-1.5 bg-zinc-600 rounded-full"></span>
+                <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Handshake...</span>
             </div>
         </div>
 
-        <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2 orbitron">1in2 <span class="text-blue-600">Arena</span></h1>
-        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-10">League Deployment & Real-Time Sync Control</p>
-
-        <div class="glass p-8 rounded-[2.5rem] border-t-4 border-blue-600 mb-6">
-            <h2 class="text-xs font-black uppercase tracking-widest text-blue-500 mb-6">Tournament Scheduling</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="mb-6">
+            <div class="h-48 bg-cover bg-center rounded-2xl border-b-2 border-red-600" style="background-image: url('https://i.ibb.co/FbCS1n9p/IMG-2638.jpg');"></div>
+            <div class="py-4 flex justify-between items-start">
                 <div>
-                    <label class="text-[9px] font-black text-zinc-500 uppercase mb-2 block">Arena Opens</label>
-                    <input type="datetime-local" id="open_time" class="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-sm font-bold focus:border-blue-600 outline-none">
+                    <h1 class="text-2xl font-chirp uppercase leading-none italic">Trial Broiler</h1>
+                    <p class="text-red-500 text-[9px] font-black uppercase tracking-[0.2em] mt-2">1v1 Continuous Weight Duel</p>
                 </div>
-                <div>
-                    <label class="text-[9px] font-black text-zinc-500 uppercase mb-2 block">Arena Closes (Temp Lock)</label>
-                    <input type="datetime-local" id="close_time" class="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-sm font-bold focus:border-red-600 outline-none">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="saveSchedule()" class="bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black italic uppercase tracking-tighter transition-all">
-                    Apply Schedule
-                </button>
-                <button onclick="toggleActive(false)" class="bg-zinc-900 hover:bg-red-900/40 py-5 rounded-2xl font-black italic uppercase tracking-tighter transition-all border border-white/5">
-                    Emergency Lock
-                </button>
+                <span id="count_display" class="orbitron text-sm font-black text-white bg-white/10 px-3 py-1 rounded">0/2</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div class="glass p-6 rounded-[2rem]">
-                <h3 class="text-[10px] font-black uppercase text-zinc-500 mb-4">Lobby Pulse</h3>
-                <div id="player_list" class="space-y-2">
-                    </div>
-            </div>
-
-            <div class="glass p-6 rounded-[2rem] border border-red-900/20">
-                <h3 class="text-[10px] font-black uppercase text-red-500 mb-4 italic">Nuclear Reset Zone</h3>
-                <p class="text-[9px] text-zinc-500 mb-6">Clears lobby and wipes all player scores for a fresh start.</p>
-                <button onclick="nuclearReset()" class="w-full py-4 bg-red-600/10 hover:bg-red-600 text-red-600 rounded-xl font-black uppercase text-[10px] border border-red-600/20 transition-all">
-                    Wipe League Data
-                </button>
+        <div class="glass-panel p-8 mb-8">
+            <div class="flex gap-8 justify-center items-center">
+                <div class="flex flex-col items-center gap-3">
+                    <div id="slot-0" class="slot-circle"><div class="w-2 h-2 bg-zinc-800 rounded-full"></div></div>
+                    <span id="name-0" class="text-[10px] font-black text-zinc-600 uppercase">Searching...</span>
+                </div>
+                <div class="text-zinc-800 font-black italic orbitron text-xl">VS</div>
+                <div class="flex flex-col items-center gap-3">
+                    <div id="slot-1" class="slot-circle"><div class="w-2 h-2 bg-zinc-800 rounded-full"></div></div>
+                    <span id="name-1" class="text-[10px] font-black text-zinc-600 uppercase">Searching...</span>
+                </div>
             </div>
         </div>
-    </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button id="joinBtn" onclick="joinLobby()" class="py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase transition-all active:scale-95 disabled:opacity-20">
+                Join Lobby
+            </button>
+
+            <button id="arenaBtn" onclick="enterArena()" class="py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase transition-all disabled:cursor-not-allowed">
+                Arena Locked
+            </button>
+        </div>
+    </main>
 
     <script>
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_SUPABASE_KEY'; // Use your security-bridge.js key
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        let currentUser = null;
+        let cachedPlayers = [];
+        let leagueRegistry = null;
+        let isProcessing = false;
+        let timerRef = null;
 
-        // Security Check
-        if (new URLSearchParams(window.location.search).get('key') !== "CL_BOSS_2026") {
-            window.location.href = "index.html";
+        async function init() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) { window.location.href = "login.html"; return; }
+            currentUser = session.user.user_metadata.username;
+            
+            await syncLobby();
+            
+            // Subscriptions
+            sb.channel('lobby_gate')
+                .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncLobby)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, syncLobby)
+                .subscribe();
         }
 
-        async function refreshCommander() {
-            // 1. Get League State
-            const { data: league } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
-            const { data: players } = await sb.from('1in2').select('player_username');
+        async function syncLobby() {
+            const { data: players } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
+            const { data: registry } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
             
-            const dot = document.getElementById('state-dot');
-            const text = document.getElementById('state-text');
+            cachedPlayers = players || [];
+            leagueRegistry = registry;
+            
+            document.getElementById('connection-indicator').innerHTML = `<span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span><span class="text-[9px] font-black text-red-600 uppercase">Live Pulse</span>`;
+            
+            updateUI();
+        }
 
-            if (league.is_active) {
-                dot.className = "status-dot bg-green-500 animate-pulse";
-                text.innerText = "Arena Live";
-                text.className = "text-[10px] font-black uppercase text-green-500";
-            } else {
-                dot.className = "status-dot bg-zinc-600";
-                text.innerText = "Locked";
-                text.className = "text-[10px] font-black uppercase text-zinc-500";
+        function updateUI() {
+            const total = cachedPlayers.length;
+            const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
+            const joinBtn = document.getElementById('joinBtn');
+            const arenaBtn = document.getElementById('arenaBtn');
+
+            document.getElementById('count_display').innerText = `${total}/2`;
+
+            for(let i=0; i<2; i++) {
+                const circle = document.getElementById(`slot-${i}`);
+                const nameSpan = document.getElementById(`name-${i}`);
+                const p = cachedPlayers[i];
+                if(p) {
+                    circle.classList.add('slot-filled');
+                    circle.innerHTML = `<span class="text-black font-black text-2xl orbitron">${p.player_username[0].toUpperCase()}</span>`;
+                    nameSpan.innerText = p.player_username;
+                    nameSpan.className = "text-[10px] font-black text-white uppercase";
+                } else {
+                    circle.classList.remove('slot-filled');
+                    circle.innerHTML = `<div class="w-2 h-2 bg-zinc-800 rounded-full"></div>`;
+                    nameSpan.innerText = "OPEN SLOT";
+                    nameSpan.className = "text-[10px] font-black text-zinc-600 uppercase";
+                }
             }
 
-            // 2. Update Player List
-            const list = document.getElementById('player_list');
-            list.innerHTML = players.length ? players.map(p => `
-                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                    <span class="text-xs font-bold">${p.player_username}</span>
-                    <span class="h-1.5 w-1.5 bg-green-500 rounded-full"></span>
-                </div>
-            `).join('') : '<p class="text-zinc-700 italic text-[10px]">No players in lobby...</p>';
+            // 1. JOIN BUTTON LOGIC
+            if (isUserIn) {
+                joinBtn.innerText = "Lobby Joined";
+                joinBtn.disabled = true;
+                joinBtn.className = "py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp btn-text-tight uppercase";
+            } else if (total >= 2) {
+                joinBtn.innerText = "Lobby Full";
+                joinBtn.disabled = true;
+                joinBtn.className = "py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp btn-text-tight uppercase";
+            } else {
+                joinBtn.innerText = "Join Lobby";
+                joinBtn.disabled = false;
+                joinBtn.className = "py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase";
+            }
+
+            // 2. ARENA BUTTON LOGIC
+            if (!isUserIn) {
+                arenaBtn.innerText = "Lobby First";
+                arenaBtn.disabled = true;
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+                return;
+            }
+
+            const now = new Date();
+            const start = leagueRegistry?.start_time ? new Date(leagueRegistry.start_time) : null;
+
+            if (!start) {
+                arenaBtn.innerText = "Wait Time";
+                arenaBtn.disabled = true;
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+            } else if (now < start) {
+                handleCountdown(start);
+            } else if (leagueRegistry.is_active) {
+                arenaBtn.innerText = "Enter Arena";
+                arenaBtn.disabled = false;
+                arenaBtn.className = "py-5 btn-arena-ready rounded-xl font-chirp btn-text-tight uppercase";
+            } else {
+                arenaBtn.innerText = "Arena Closed";
+                arenaBtn.disabled = true;
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+            }
         }
 
-        async function saveSchedule() {
-            const open = document.getElementById('open_time').value;
-            const close = document.getElementById('close_time').value;
+        function handleCountdown(target) {
+            if (timerRef) clearInterval(timerRef);
+            const arenaBtn = document.getElementById('arenaBtn');
+            arenaBtn.disabled = true;
+            arenaBtn.className = "py-5 btn-arena-locked text-red-500 rounded-xl font-chirp btn-text-tight uppercase orbitron";
 
-            const { error } = await sb.from('Leagues_Registry').update({
-                start_time: open ? new Date(open).toISOString() : null,
-                closing_time: close ? new Date(close).toISOString() : null,
-                is_active: true
-            }).eq('id', '1in2');
-
-            if (!error) alert("Schedule Deployed.");
-            refreshCommander();
+            timerRef = setInterval(() => {
+                const diff = target - new Date();
+                if (diff <= 0) {
+                    clearInterval(timerRef);
+                    syncLobby();
+                } else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    arenaBtn.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
         }
 
-        async function toggleActive(state) {
-            await sb.from('Leagues_Registry').update({ is_active: state }).eq('id', '1in2');
-            refreshCommander();
+        async function joinLobby() {
+            if (isProcessing) return;
+            isProcessing = true;
+            const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
+            if (error) { alert("Lobby Entry Failed"); }
+            await syncLobby();
+            isProcessing = false;
         }
 
-        async function nuclearReset() {
-            if (!confirm("CRITICAL: This will wipe the leaderboard and lobby. Continue?")) return;
-
-            // Step 1: Clear Lobby
-            await sb.from('1in2').delete().neq('player_username', '0');
-            
-            // Step 2: Clear Scores
-            await sb.from('league_performances').delete().eq('league_id', '1in2');
-            
-            // Step 3: Deactivate League
-            await toggleActive(false);
-            
-            alert("LEAGUE PURGED.");
-            refreshCommander();
+        function enterArena() {
+            window.location.href = '1in2arena.html';
         }
 
-        // Real-time listener
-        sb.channel('commander_sync')
-          .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, refreshCommander)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, refreshCommander)
-          .subscribe();
-
-        refreshCommander();
+        init();
     </script>
 </body>
 </html>
