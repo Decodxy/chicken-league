@@ -87,17 +87,16 @@
         let timerRef = null;
 
         async function init() {
-            // Use the 'sb' provided by security-bridge.js
             const { data: { session } } = await sb.auth.getSession();
             if (!session) { window.location.href = "login.html"; return; }
             currentUser = session.user.user_metadata.username;
             
             await syncLobby();
             
-            // Subscriptions - Listening for changes from the admin panel
+            // Subscriptions - Hardened for Instant Reset
             sb.channel('lobby_gate')
                 .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, (payload) => {
-                    console.log("Lobby Change Detected:", payload.eventType);
+                    console.log("Lobby Event:", payload.eventType);
                     syncLobby();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, syncLobby)
@@ -105,19 +104,15 @@
         }
 
         async function syncLobby() {
-            // Force fresh fetch to bypass cache
             const { data: players, error } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
             const { data: registry } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
             
-            if (error) {
-                console.error("Sync Error:", error);
-                return;
-            }
+            if (error) { console.error("Sync Error:", error); return; }
 
             cachedPlayers = players || [];
             leagueRegistry = registry;
             
-            // Visual Handshake Update
+            // Pulse Update
             const indicator = document.getElementById('connection-indicator');
             indicator.innerHTML = `<span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span><span class="text-[9px] font-black text-red-600 uppercase">Live Pulse</span>`;
             
@@ -133,6 +128,7 @@
 
             document.getElementById('count_display').innerText = `${total}/2`;
 
+            // Clear visual slots
             for(let i=0; i<2; i++) {
                 const circle = document.getElementById(`slot-${i}`);
                 const nameSpan = document.getElementById(`name-${i}`);
@@ -151,11 +147,11 @@
                 }
             }
 
-            // JOIN BUTTON LOGIC
+            // JOIN BUTTON - RESET SENSITIVE
             if (isUserIn) {
                 joinBtn.innerText = "Lobby Joined";
                 joinBtn.disabled = true;
-                joinBtn.className = "py-5 bg-zinc-900 text-zinc-400 rounded-xl font-chirp btn-text-tight uppercase border border-white/5";
+                joinBtn.className = "py-5 bg-zinc-900 text-white/20 border border-white/5 rounded-xl font-chirp btn-text-tight uppercase";
             } else if (total >= 2) {
                 joinBtn.innerText = "Lobby Full";
                 joinBtn.disabled = true;
@@ -166,12 +162,12 @@
                 joinBtn.className = "py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase hover:bg-zinc-200";
             }
 
-            // ARENA BUTTON LOGIC
+            // ARENA BUTTON - KILL SWITCH SENSITIVE
             if (!isUserIn) {
                 arenaBtn.innerText = "Lobby First";
                 arenaBtn.disabled = true;
                 arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
-                if (timerRef) clearInterval(timerRef);
+                if (timerRef) { clearInterval(timerRef); timerRef = null; }
                 return;
             }
 
@@ -196,13 +192,14 @@
         }
 
         function handleCountdown(target) {
-            if (timerRef) clearInterval(timerRef);
+            if (timerRef) return; // Don't restart if already running
             const arenaBtn = document.getElementById('arenaBtn');
             
             const runTimer = () => {
                 const diff = target - new Date();
                 if (diff <= 0) {
                     clearInterval(timerRef);
+                    timerRef = null;
                     syncLobby();
                 } else {
                     const m = Math.floor(diff / 60000);
@@ -221,17 +218,21 @@
             if (isProcessing) return;
             isProcessing = true;
             
-            const { data } = await sb.from('1in2').select('id');
-            if (data && data.length >= 2) {
-                alert("Lobby just filled up!");
+            // 1. Strict Concurrency Check
+            const { data: countCheck } = await sb.from('1in2').select('id');
+            if (countCheck && countCheck.length >= 2) {
+                alert("ARENA FULL");
                 isProcessing = false;
                 return;
             }
 
+            // 2. Attempt Entry
             const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
+            
             if (error) { 
                 console.error(error);
-                alert("Lobby Entry Failed"); 
+                // If you implemented the SQL trigger, this catches the 'ARENA_FULL' exception
+                alert(error.message.includes('ARENA_FULL') ? "TOO SLOW - FULL" : "ENTRY FAILED"); 
             }
             
             await syncLobby();
