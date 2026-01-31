@@ -1,84 +1,103 @@
-<div class="glass p-8 rounded-[2rem] border border-red-900/30 text-center bg-black">
-    <h3 class="orbitron text-red-600 text-[10px] font-black uppercase tracking-widest mb-4 italic">Security Level: Master</h3>
-    
-    <div id="connection-status" class="mb-4 py-2 bg-zinc-900/50 rounded-lg border border-white/5">
-        <p class="text-[8px] text-zinc-500 uppercase font-black">Link Status: <span id="link-text" class="text-yellow-500">Authenticating...</span></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1in2 Master Control | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+        body { background: #000; color: #fff; font-family: sans-serif; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .btn-nuclear { background: #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.3); transition: all 0.3s; }
+        .btn-nuclear:hover { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="glass w-full max-w-sm p-10 rounded-[3rem] text-center">
+        <div class="mb-8">
+            <h1 class="orbitron text-2xl font-black italic tracking-tighter text-white">ARENA <span class="text-red-600">RESET</span></h1>
+            <p class="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">1in2.html | Admin Override</p>
+        </div>
+
+        <button id="purge-btn" onclick="executeNuclearPurge()" 
+            class="btn-nuclear w-full py-6 rounded-2xl font-black uppercase italic tracking-widest text-sm active:scale-95 disabled:opacity-50">
+            Execute Nuclear Reset
+        </button>
+
+        <div class="mt-8 space-y-2">
+            <div id="status-line" class="flex items-center justify-center gap-2">
+                <span id="status-dot" class="w-1.5 h-1.5 bg-zinc-800 rounded-full"></span>
+                <p id="status-text" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Ready for Command</p>
+            </div>
+            <p id="debug-log" class="text-[8px] text-zinc-800 font-mono"></p>
+        </div>
     </div>
 
-    <button id="purge-btn" onclick="executeNuclearPurge()" 
-        class="w-full py-6 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/40 transition-all active:scale-95 group border border-red-500/50">
-        <span class="group-hover:scale-110 transition-transform inline-block">Nuclear Reset 1in2</span>
-    </button>
-    
-    <p id="purge-status" class="text-[9px] text-zinc-500 mt-4 font-bold uppercase tracking-widest">Awaiting Command</p>
-</div>
+    <script>
+        // CRITICAL CONFIGURATION
+        const PROJECT_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const MASTER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzk4ODAyNCwiZXhwIjoyMDgzNTY0MDI0fQ.XmCY_EFQSxBhzt4ZcFJBb9Ohi2JaF5dPAVXXV4sd13c';
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // 1. THE DEPLOYED HANDSHAKE
-    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-    // This is the EXACT key you provided. I have stripped any potential hidden whitespace.
-    const SB_KEY = 'EyjhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzk4ODAyNCwiZXhwIjoyMDgzNTY0MDI0fQ.XmCY_EFQSxBhzt4ZcFJBb9Ohi2JaF5dPAVXXV4sd13c'.trim(); 
+        // Initialize with sanitization
+        const sb = window.supabase.createClient(PROJECT_URL, MASTER_KEY.trim());
 
-    const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        async function executeNuclearPurge() {
+            const btn = document.getElementById('purge-btn');
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
+            const debugLog = document.getElementById('debug-log');
 
-    // 2. DIAGNOSTIC HANDSHAKE (Runs on Load)
-    async function checkAuth() {
-        const linkText = document.getElementById('link-text');
-        try {
-            const { data, error } = await sb.from('1in2').select('count', { count: 'exact', head: true });
-            if (error) throw error;
-            linkText.innerText = "SECURE";
-            linkText.className = "text-green-500";
-        } catch (e) {
-            linkText.innerText = "INVALID KEY";
-            linkText.className = "text-red-600";
-            console.error("Auth Fail:", e.message);
+            if (!confirm("CONFIRM TOTAL PURGE? Players will be kicked from 1in2arena.html")) return;
+
+            // UI Feedback
+            btn.disabled = true;
+            statusText.innerText = "AUTHENTICATING...";
+            statusDot.className = "w-1.5 h-1.5 bg-yellow-500 animate-pulse rounded-full";
+
+            try {
+                // STEP 1: TEST CONNECTION
+                debugLog.innerText = "Pinging Database...";
+                const { count, error: testError } = await sb.from('1in2').select('*', { count: 'exact', head: true });
+                
+                if (testError) throw testError;
+                debugLog.innerText = `Connected. Found ${count} records.`;
+
+                // STEP 2: DELETE ALL ENTRIES
+                statusText.innerText = "PURGING TABLE...";
+                const { error: deleteError } = await sb
+                    .from('1in2')
+                    .delete()
+                    .neq('player_username', 'VOID_RESERVED_SIGNAL'); // Deletes everything
+
+                if (deleteError) throw deleteError;
+
+                // STEP 3: RESET LEAGUE REGISTRY
+                statusText.innerText = "RESETTING REGISTRY...";
+                await sb.from('Leagues_Registry').update({ is_active: false, start_time: null }).eq('id', '1in2');
+
+                // FINAL SUCCESS
+                statusText.innerText = "ARENA CLEARED (0/2)";
+                statusText.className = "text-[10px] font-black text-green-500 uppercase tracking-widest";
+                statusDot.className = "w-1.5 h-1.5 bg-green-500 rounded-full";
+                btn.innerText = "SUCCESS";
+                btn.className = "w-full py-6 rounded-2xl font-black uppercase italic tracking-widest text-sm bg-white text-black";
+                
+                debugLog.innerText = "Handshake complete. Clients notified.";
+
+            } catch (err) {
+                console.error("Critical Failure:", err);
+                statusText.innerText = "ERROR: " + (err.message || "Unknown Failure");
+                statusText.className = "text-[10px] font-black text-red-600 uppercase tracking-widest";
+                statusDot.className = "w-1.5 h-1.5 bg-red-600 rounded-full";
+                debugLog.innerText = "Check Console (F12) for JWT details.";
+                btn.disabled = false;
+                btn.innerText = "RETRY RESET";
+            }
         }
-    }
-    checkAuth();
-
-    // 3. THE NUCLEAR PURGE
-    async function executeNuclearPurge() {
-        const btn = document.getElementById('purge-btn');
-        const status = document.getElementById('purge-status');
-        
-        if (!confirm("EJECT ALL PLAYERS AND CLEAR ARENA?")) return;
-
-        btn.disabled = true;
-        status.innerText = "PURGING...";
-        status.className = "text-[9px] text-red-500 font-black animate-pulse";
-
-        try {
-            // STEP 1: FORCE DELETE (No Filters)
-            const { error: deleteError } = await sb
-                .from('1in2')
-                .delete()
-                .neq('player_username', 'RESERVED_VOID_CHECK');
-
-            if (deleteError) throw deleteError;
-
-            // STEP 2: RESET THE REGISTRY (Lock the door)
-            const { error: regError } = await sb
-                .from('Leagues_Registry')
-                .update({ is_active: false, start_time: null })
-                .eq('id', '1in2');
-
-            if (regError) throw regError;
-
-            status.innerText = "SUCCESS: ARENA CLEARED";
-            status.className = "text-[9px] text-green-500 font-black";
-            btn.className = "w-full py-6 bg-green-600 text-white rounded-2xl font-black uppercase italic";
-            btn.innerText = "WIPE COMPLETE";
-
-            setTimeout(() => { location.reload(); }, 2000);
-
-        } catch (err) {
-            status.innerText = "ERROR: " + err.message;
-            status.className = "text-[9px] text-red-600 font-black";
-            btn.disabled = false;
-            btn.innerText = "RETRY OVERRIDE";
-            console.error("Critical Failure:", err);
-        }
-    }
-</script>
+    </script>
+</body>
+</html>
