@@ -1,176 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1in2 Commander | Chicken League</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-        /* Brand Colors */
-        .border-blue { border-color: #3b82f6; }
-        .text-blue { color: #3b82f6; }
-        .bg-blue { background-color: #3b82f6; }
-        .bg-red { background-color: #ff0000; }
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-    </style>
-</head>
-<body class="p-6">
+<div class="glass p-8 rounded-[2rem] border border-red-900/30 text-center">
+    <h3 class="orbitron text-red-500 text-xs font-black uppercase tracking-widest mb-4 italic">Arena Security</h3>
+    
+    <button id="purge-btn" onclick="executeNuclearPurge()" 
+        class="w-full py-6 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase italic tracking-tighter shadow-lg shadow-red-900/20 transition-all active:scale-95 group">
+        <span class="group-hover:scale-110 transition-transform inline-block">Reset 1in2 Lobby</span>
+    </button>
+    
+    <p id="purge-status" class="text-[9px] text-zinc-600 mt-4 font-bold uppercase tracking-widest">System Ready</p>
+</div>
 
-    <div class="max-w-3xl mx-auto">
-        <div class="flex items-center justify-between mb-8">
-            <a href="admin_panel.html?key=CL_BOSS_2026" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-blue-500 transition">← Back to Hub</a>
-            <div id="global-status" class="flex items-center gap-2 px-4 py-1 rounded-full border border-white/5 glass">
-                <span id="state-dot" class="status-dot bg-zinc-600"></span>
-                <span id="state-text" class="text-[10px] font-black uppercase text-zinc-500">Standby</span>
-            </div>
-        </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // 1. CONFIGURATION (Ensure these are your actual credentials)
+    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+    const SB_KEY = 'YOUR_SUPABASE_SERVICE_ROLE_KEY'; // Use Service Role for bypass power
+    const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-        <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2 orbitron">1in2 <span class="text-blue">Arena</span></h1>
-        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-10">League Deployment & Real-Time Sync Control</p>
+    async function executeNuclearPurge() {
+        const btn = document.getElementById('purge-btn');
+        const status = document.getElementById('purge-status');
+        
+        if (!confirm("CONFIRM TOTAL PURGE? All players will be ejected.")) return;
 
-        <div class="glass p-8 rounded-[2.5rem] border-t-4 border-blue mb-6">
-            <h2 class="text-xs font-black uppercase tracking-widest text-blue mb-6 italic">Tournament Scheduling</h2>
+        // Visual Feedback: Loading State
+        btn.disabled = true;
+        btn.innerText = "PURGING...";
+        status.innerText = "EXECUTING DELETE COMMAND...";
+        status.className = "text-[9px] text-blue-500 mt-4 font-black animate-pulse";
+
+        try {
+            // STEP 1: Wipe the 1in2 Lobby Table
+            const { error: deleteError } = await sb
+                .from('1in2')
+                .delete()
+                .not('player_username', 'is', null);
+
+            if (deleteError) throw deleteError;
+
+            // STEP 2: Optional - Reset Arena Flags in Registry
+            await sb.from('Leagues_Registry')
+                .update({ is_active: false })
+                .eq('id', '1in2');
+
+            // STEP 3: Verification
+            const { data: verify } = await sb.from('1in2').select('id');
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div>
-                    <label class="text-[9px] font-black text-zinc-500 uppercase mb-2 block ml-1">Arena Opens (Start)</label>
-                    <input type="datetime-local" id="open_time" class="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-sm font-bold focus:border-blue outline-none transition-all">
-                </div>
-                <div>
-                    <label class="text-[9px] font-black text-zinc-500 uppercase mb-2 block ml-1">Arena Closes (Auto-Lock)</label>
-                    <input type="datetime-local" id="close_time" class="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-sm font-bold focus:border-red-600 outline-none transition-all">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="saveSchedule()" class="bg-blue hover:bg-blue-500 py-5 rounded-2xl font-black italic uppercase tracking-tighter transition-all active:scale-95 shadow-lg shadow-blue/20">
-                    Apply Schedule
-                </button>
-                <button onclick="toggleActive(false)" class="bg-zinc-900 hover:bg-zinc-800 py-5 rounded-2xl font-black italic uppercase tracking-tighter transition-all border border-white/5 text-zinc-400">
-                    Emergency Lock
-                </button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div class="glass p-6 rounded-[2rem]">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-[10px] font-black uppercase text-zinc-500">Lobby Pulse</h3>
-                    <span id="player-count" class="orbitron text-[10px] text-blue font-black">0/2</span>
-                </div>
+            if (verify.length === 0) {
+                status.innerText = "SUCCESS: ARENA IS EMPTY";
+                status.className = "text-[9px] text-green-500 mt-4 font-black";
+                btn.classList.replace('bg-red-600', 'bg-green-600');
+                btn.innerText = "LOBBY CLEARED";
                 
-                <div id="player_list" class="space-y-2 mb-6 min-h-[80px]">
-                    </div>
-
-                <button onclick="resetLobbyOnly()" class="w-full py-3 bg-white/5 hover:bg-white/10 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border border-white/10 transition-all">
-                    Reset Lobby Only
-                </button>
-            </div>
-
-            <div class="glass p-6 rounded-[2rem] border border-red-900/20">
-                <h3 class="text-[10px] font-black uppercase text-red-500 mb-4 italic">Nuclear Reset Zone</h3>
-                <p class="text-[9px] text-zinc-500 mb-6 font-bold uppercase leading-relaxed">Clears 1in2 lobby AND wipes all player performance records.</p>
-                <button onclick="nuclearReset()" class="w-full py-4 bg-red-600/10 hover:bg-red-600 text-red-600 hover:text-white rounded-xl font-black uppercase text-[10px] border border-red-600/20 transition-all">
-                    Wipe League Data
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Use your existing working config
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_SUPABASE_KEY'; // MUST match your working security-bridge key
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
-
-        // Security Check - Base Logic
-        if (new URLSearchParams(window.location.search).get('key') !== "CL_BOSS_2026") {
-            window.location.href = "index.html";
-        }
-
-        async function refreshCommander() {
-            try {
-                const { data: league } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
-                const { data: players } = await sb.from('1in2').select('player_username');
-                
-                const dot = document.getElementById('state-dot');
-                const text = document.getElementById('state-text');
-                const pCount = document.getElementById('player-count');
-
-                if (league && league.is_active) {
-                    dot.className = "status-dot bg-green-500 animate-pulse";
-                    text.innerText = "Arena Live";
-                    text.className = "text-[10px] font-black uppercase text-green-500";
-                } else {
-                    dot.className = "status-dot bg-zinc-600";
-                    text.innerText = "Locked";
-                    text.className = "text-[10px] font-black uppercase text-zinc-500";
-                }
-
-                pCount.innerText = `${players ? players.length : 0}/2`;
-
-                const list = document.getElementById('player_list');
-                list.innerHTML = (players && players.length) ? players.map(p => `
-                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                        <span class="text-xs font-bold orbitron italic uppercase">${p.player_username}</span>
-                        <span class="h-1.5 w-1.5 bg-green-500 rounded-full shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span>
-                    </div>
-                `).join('') : '<p class="text-zinc-800 italic text-[10px] py-4 uppercase font-black text-center">Zero connections...</p>';
-            } catch (e) { console.error("Sync Error:", e); }
-        }
-
-        async function saveSchedule() {
-            const open = document.getElementById('open_time').value;
-            const close = document.getElementById('close_time').value;
-
-            const { error } = await sb.from('Leagues_Registry').update({
-                start_time: open ? new Date(open).toISOString() : null,
-                closing_time: close ? new Date(close).toISOString() : null,
-                is_active: true
-            }).eq('id', '1in2');
-
-            if (!error) {
-                alert("ARENA PROTOCOL DEPLOYED.");
-                refreshCommander();
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = "Reset 1in2 Lobby";
+                    btn.classList.replace('bg-green-600', 'bg-red-600');
+                    status.innerText = "System Ready";
+                    status.className = "text-[9px] text-zinc-600 mt-4 font-bold uppercase";
+                }, 3000);
+            } else {
+                throw new Error("GHOST DATA PERSISTS");
             }
+
+        } catch (err) {
+            console.error("Purge Failed:", err);
+            status.innerText = "ERROR: " + err.message;
+            status.className = "text-[9px] text-red-500 mt-4 font-black";
+            btn.disabled = false;
+            btn.innerText = "Retry Purge";
         }
-
-        async function toggleActive(state) {
-            await sb.from('Leagues_Registry').update({ is_active: state }).eq('id', '1in2');
-            refreshCommander();
-        }
-The "Limitless" Diagnostic Script
-
-        async function nuclearReset() {
-            if (!confirm("CRITICAL: Wipe lobby and all performance history?")) return;
-
-            // Step 1: Force Clear Lobby
-            await sb.from('1in2').delete().not('player_username', 'is', null);
-            
-            // Step 2: Clear Scores
-            await sb.from('league_performances').delete().eq('league_id', '1in2');
-            
-            // Step 3: Deactivate League
-            await toggleActive(false);
-            
-            alert("LEAGUE PURGED AND RE-INITIALIZED.");
-            refreshCommander();
-        }
-
-        // Real-time listener
-        sb.channel('commander_sync')
-          .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, refreshCommander)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, refreshCommander)
-          .subscribe();
-
-        refreshCommander();
-    </script>
-
-</body>
-</html>
+    }
+</script>
