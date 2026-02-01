@@ -31,6 +31,85 @@
     </button>
 </div>
 
+
+<div class="glass p-8 rounded-[2rem] border border-red-900/20 bg-black shadow-2xl mt-6 relative overflow-hidden">
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-red-600/10 blur-[100px] rounded-full"></div>
+
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h3 class="orbitron text-white text-[10px] font-black uppercase tracking-[0.5em] italic">Arena 1in2</h3>
+            <p class="text-[9px] text-zinc-500 font-black uppercase mt-1">Status: <span id="lobby-status" class="text-zinc-700 italic">Standby</span></p>
+        </div>
+        <div id="status-light" class="w-2 h-2 bg-zinc-800 rounded-full"></div>
+    </div>
+
+    <button onclick="activateLobby()" 
+        class="group relative w-full py-5 bg-white hover:bg-red-600 transition-all duration-300 rounded-xl overflow-hidden">
+        <span class="relative z-10 orbitron text-black group-hover:text-white font-black uppercase text-[12px] tracking-widest">
+            Open Lobby & Start Timer
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+    </button>
+</div>
+
+<script>
+    async function activateLobby() {
+        if(!confirm("START ARENA COUNTDOWN?")) return;
+
+        // UI Feedback
+        const btn = event.currentTarget;
+        const statusText = document.getElementById('lobby-status');
+        const light = document.getElementById('status-light');
+        
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        statusText.innerText = "COMMAND SENT...";
+
+        try {
+            const { error } = await sb.rpc('open_lobby_1in2');
+            
+            if (error) throw error;
+
+            // Success Visuals
+            statusText.innerText = "ARENA LIVE";
+            statusText.className = "text-red-600 italic animate-pulse";
+            light.className = "w-2 h-2 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)]";
+            
+            console.log("Lobby is now open. Countdown started.");
+
+        } catch (err) {
+            alert("ACTIVATION FAILED: " + err.message);
+            statusText.innerText = "OFFLINE";
+        } finally {
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+            }, 2000);
+        }
+    }
+
+    // Optional: Real-time listener to keep Admin UI in sync
+    sb.channel('admin_registry_sync')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Leagues_Registry' }, payload => {
+            const reg = payload.new;
+            if(reg.id === '1in2') {
+                const statusText = document.getElementById('lobby-status');
+                const light = document.getElementById('status-light');
+                if(reg.is_active) {
+                    statusText.innerText = "ARENA LIVE";
+                    statusText.className = "text-red-600 italic";
+                    light.className = "w-2 h-2 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)]";
+                }
+            }
+        }).subscribe();
+</script>
+
+
+
+    
+
+
+
 <script>
     // USES YOUR EXISTING 'sb' CLIENT
     async function syncRegistry() {
