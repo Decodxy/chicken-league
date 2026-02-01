@@ -39,7 +39,7 @@
             <h2 class="font-chirp text-xl uppercase italic tracking-tighter">Arena <span class="text-red-600">Lobby</span></h2>
             <div id="connection-indicator" class="flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-white/5">
                 <span class="w-1.5 h-1.5 bg-zinc-600 rounded-full"></span>
-                <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Handshake...</span>
+                <span id="indicator-text" class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Handshake...</span>
             </div>
         </div>
 
@@ -79,84 +79,189 @@
         </div>
     </main>
 
-
-
-
-    
-
-    
-
     <script>
-        // ... [Keep your variable declarations at the top]
+        let currentUser = null;
+        let cachedPlayers = [];
+        let leagueRegistry = null;
+        let isProcessing = false;
+        let timerRef = null;
 
-async function joinLobby() {
-    if (isProcessing) return;
-    isProcessing = true;
-    
-    const joinBtn = document.getElementById('joinBtn');
-    const originalText = joinBtn.innerText;
-    
-    // 1. UI FEEDBACK - SHOW "SIGNALING" STATE
-    joinBtn.innerText = "LINKING TO ARENA...";
-    joinBtn.disabled = true;
-
-    try {
-        // 2. ATOMIC EXECUTION - CALL THE SQL PROGRAM
-        const { error } = await sb.rpc('join_league_1in2', { 
-            player_name: currentUser 
-        });
-
-        if (error) {
-            // RUTHLESS ERROR HANDLING
-            if (error.message.includes('ARENA_FULL')) {
-                alert("ARENA FULL: Your rival beat you to the slot.");
-            } else if (error.message.includes('ALREADY_JOINED')) {
-                alert("DENIED: You are already in this lobby.");
-            } else {
-                alert("COMMUNICATION ERROR: Check your internet or Supabase RLS.");
+        // UPDATED: Robust Initialization
+        async function init() {
+            const { data: { session }, error: authError } = await sb.auth.getSession();
+            
+            if (authError || !session) { 
+                window.location.href = "login.html"; 
+                return; 
             }
-            throw error;
+            
+            currentUser = session.user.user_metadata.username;
+            console.log("Welcome Pilot:", currentUser);
+            
+            // Initial Data Fetch
+            await syncLobby();
+            
+            // Real-time Subscriptions (The Heartbeat)
+            sb.channel('lobby_gate')
+                .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, (payload) => {
+                    console.log("Registry Update:", payload.eventType);
+                    syncLobby();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'Leagues_Registry' }, syncLobby)
+                .subscribe();
         }
 
-        // 3. CONFIRMATION
-        console.log("DATABASE SYNC SUCCESSFUL");
-        await syncLobby(); // Re-fetch the truth from the server
+        async function syncLobby() {
+            const { data: players, error } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
+            const { data: registry } = await sb.from('Leagues_Registry').select('*').eq('id', '1in2').single();
+            
+            if (error) { 
+                console.error("Critical Sync Error:", error); 
+                return; 
+            }
 
-    } catch (err) {
-        console.error("Join Sequence Failed:", err);
-        joinBtn.innerText = originalText;
-        joinBtn.disabled = false;
-    } finally {
-        isProcessing = false;
-        updateUI();
-    }
-}
+            cachedPlayers = players || [];
+            leagueRegistry = registry;
+            
+            const indicator = document.getElementById('connection-indicator');
+            indicator.innerHTML = `<span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span><span class="text-[9px] font-black text-red-600 uppercase">Live Pulse</span>`;
+            
+            updateUI();
+        }
 
-// Ensure the real-time subscription is actually listening for the TRUTH
-async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = "login.html"; return; }
-    currentUser = session.user.user_metadata.username;
-    
-    await syncLobby();
-    
-    // THE REAL-TIME HEARTBEAT
-    sb.channel('lobby_gate')
-        .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public', 
-            table: '1in2' 
-        }, (payload) => {
-            console.log("DATABASE UPDATE DETECTED:", payload.eventType);
-            syncLobby(); // Trigger UI refresh from server truth
-        })
-        .subscribe();
-}
+        function updateUI() {
+            const total = cachedPlayers.length;
+            const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
+            
+            const joinBtn = document.getElementById('joinBtn');
+            const arenaBtn = document.getElementById('arenaBtn');
 
+            document.getElementById('count_display').innerText = `${total}/2`;
+
+            for(let i=0; i<2; i++) {
+                const circle = document.getElementById(`slot-${i}`);
+                const nameSpan = document.getElementById(`name-${i}`);
+                const p = cachedPlayers[i];
+
+                if(p) {
+                    circle.classList.add('slot-filled');
+                    circle.innerHTML = `<span class="text-black font-black text-2xl orbitron">${p.player_username[0].toUpperCase()}</span>`;
+                    nameSpan.innerText = p.player_username;
+                    nameSpan.className = "text-[10px] font-black text-white uppercase";
+                } else {
+                    circle.classList.remove('slot-filled');
+                    circle.innerHTML = `<div class="w-2 h-2 bg-zinc-800 rounded-full"></div>`;
+                    nameSpan.innerText = "OPEN SLOT";
+                    nameSpan.className = "text-[10px] font-black text-zinc-600 uppercase";
+                }
+            }
+
+            if (isUserIn) {
+                joinBtn.innerText = "Lobby Joined";
+                joinBtn.disabled = true;
+                joinBtn.className = "py-5 bg-zinc-900 text-white/20 border border-white/5 rounded-xl font-chirp btn-text-tight uppercase";
+            } else if (total >= 2) {
+                joinBtn.innerText = "Lobby Full";
+                joinBtn.disabled = true;
+                joinBtn.className = "py-5 bg-zinc-900 text-zinc-600 rounded-xl font-chirp btn-text-tight uppercase";
+            } else {
+                joinBtn.innerText = "Join Lobby";
+                joinBtn.disabled = false;
+                joinBtn.className = "py-5 btn-join rounded-xl font-chirp btn-text-tight uppercase hover:bg-zinc-200";
+            }
+
+            if (!isUserIn) {
+                arenaBtn.innerText = "Lobby First";
+                arenaBtn.disabled = true;
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+                if (timerRef) { clearInterval(timerRef); timerRef = null; }
+                return;
+            }
+
+            const now = new Date();
+            const start = leagueRegistry?.start_time ? new Date(leagueRegistry.start_time) : null;
+
+            if (!start) {
+                arenaBtn.innerText = "Wait Time";
+                arenaBtn.disabled = true;
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+            } else if (now < start) {
+                handleCountdown(start);
+            } else if (leagueRegistry.is_active) {
+                arenaBtn.innerText = "Enter Arena";
+                arenaBtn.disabled = false;
+                arenaBtn.className = "py-5 btn-arena-ready rounded-xl font-chirp btn-text-tight uppercase";
+            } else {
+                arenaBtn.innerText = "Arena Closed";
+                arenaBtn.disabled = true;
+                arenaBtn.className = "py-5 btn-arena-locked rounded-xl font-chirp btn-text-tight uppercase";
+            }
+        }
+
+        function handleCountdown(target) {
+            if (timerRef) return;
+            const arenaBtn = document.getElementById('arenaBtn');
+            const runTimer = () => {
+                const diff = target - new Date();
+                if (diff <= 0) {
+                    clearInterval(timerRef);
+                    timerRef = null;
+                    syncLobby();
+                } else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    arenaBtn.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+                    arenaBtn.disabled = true;
+                    arenaBtn.className = "py-5 btn-arena-locked text-red-500 rounded-xl font-chirp btn-text-tight uppercase orbitron";
+                }
+            };
+            runTimer();
+            timerRef = setInterval(runTimer, 1000);
+        }
+
+        // UPDATED: ATOMIC RPC JOIN LOGIC
+        async function joinLobby() {
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            const joinBtn = document.getElementById('joinBtn');
+            joinBtn.innerText = "SIGNALLING...";
+            joinBtn.disabled = true;
+
+            try {
+                // EXECUTING THE DATABASE PROGRAM
+                const { error } = await sb.rpc('join_league_1in2', { 
+                    player_name: currentUser 
+                });
+
+                if (error) {
+                    if (error.message.includes('ARENA_FULL')) {
+                        alert("FAILED: ARENA FULL");
+                    } else if (error.message.includes('ALREADY_JOINED')) {
+                        alert("DENIED: YOU ARE ALREADY IN");
+                    } else {
+                        alert("SYSTEM ERROR: " + error.message);
+                    }
+                    throw error;
+                }
+
+                // SUCCESS: Database confirmed entry
+                console.log("Registry Entry Confirmed");
+                await syncLobby();
+
+            } catch (err) {
+                console.error("Handshake Failed:", err);
+            } finally {
+                isProcessing = false;
+                updateUI();
+            }
+        }
+
+        function enterArena() {
+            window.location.href = '1in2arena.html';
+        }
+
+        init();
     </script>
-
-
-
-    
 </body>
 </html>
