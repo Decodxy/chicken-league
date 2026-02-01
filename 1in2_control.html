@@ -16,134 +16,66 @@
 </head>
 <body class="flex items-center justify-center min-h-screen">
 
-    <div class="glass p-12 rounded-[3rem] text-center max-w-sm w-full glow-red">
-        <h3 class="orbitron text-red-600 text-[10px] font-black uppercase tracking-[0.5em] mb-2">Security Level 01</h3>
-        <h1 class="orbitron text-white text-2xl font-black italic mb-8 tracking-tighter">ARENA <span class="text-red-600">OVERRIDE</span></h1>
-        
-        <button id="purge-btn" onclick="executeNuclearReset()" 
-            class="w-full py-8 bg-red-600 hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase italic tracking-tighter transition-all active:scale-95 shadow-xl shadow-red-900/40 group">
-            <span class="group-hover:scale-110 inline-block transition-transform">Execute Nuclear Reset</span>
-        </button>
-        
-        <div class="mt-8 flex flex-col items-center gap-2">
-            <div id="status-dot" class="w-2 h-2 bg-zinc-800 rounded-full"></div>
-            <p id="status-text" class="text-[9px] text-zinc-500 font-black uppercase tracking-[0.2em]">Link Status: Standby</p>
-        </div>
+<div class="glass p-6 rounded-[2rem] border border-white/5 bg-black text-white max-w-sm mx-auto shadow-2xl">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="orbitron text-[10px] font-black uppercase tracking-[0.4em] text-red-600">Lobby Registry</h3>
+        <span id="reg-count" class="text-xs font-black bg-white/10 px-2 py-1 rounded">0/2</span>
     </div>
 
-<div class="glass p-8 rounded-[2rem] border border-red-900/30 bg-black shadow-2xl mt-6">
-    <div class="mb-6 flex justify-between items-center">
-        <h3 class="orbitron text-white text-[10px] font-black uppercase tracking-[0.4em] italic">Admin Execution</h3>
-        <div class="flex gap-2">
-            <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
-            <span class="text-[8px] text-zinc-500 font-black uppercase">Live Link</span>
-        </div>
-    </div>
-
-    <div id="admin-player-list" class="space-y-2 mb-6 min-h-[100px]">
+    <div id="registry-list" class="space-y-2 mb-6">
         </div>
 
-    <button onclick="triggerTotalPurge()" 
-        class="w-full py-4 bg-zinc-950 hover:bg-red-950 text-red-600 border border-red-900/40 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">
-        Purge All (Reset Arena)
+    <button onclick="executeNuclearOffload()" 
+        class="w-full py-4 bg-red-600 hover:bg-white hover:text-black text-white rounded-xl font-black uppercase italic text-[10px] tracking-widest transition-all active:scale-95 shadow-lg shadow-red-900/20">
+        Purge All & Reset Arena
     </button>
 </div>
 
 <script>
-    // AUTOMATIC SYNC: Keep the admin list updated
-    async function syncAdminPanel() {
+    // USES YOUR EXISTING 'sb' CLIENT
+    async function syncRegistry() {
         const { data: players } = await sb.from('1in2').select('player_username').order('created_at');
-        const list = document.getElementById('admin-player-list');
+        const list = document.getElementById('registry-list');
+        const count = document.getElementById('reg-count');
+        
+        count.innerText = `${players?.length || 0}/2`;
         
         if (!players || players.length === 0) {
-            list.innerHTML = `<div class="border border-zinc-900 p-4 rounded-xl text-center text-[9px] text-zinc-700 uppercase italic">Arena Empty</div>`;
+            list.innerHTML = `<p class="text-[9px] text-zinc-600 text-center py-4 uppercase font-black italic border border-zinc-900 rounded-xl">Registry Empty</p>`;
             return;
         }
 
         list.innerHTML = players.map(p => `
-            <div class="flex justify-between items-center bg-zinc-900/30 p-3 rounded-xl border border-white/5">
-                <span class="text-[11px] font-black text-white uppercase italic">${p.player_username}</span>
-                <button onclick="executeUnlist('${p.player_username}')" 
-                    class="text-[9px] font-black text-red-500 hover:text-white uppercase tracking-tighter">
-                    [ UNLIST ]
+            <div class="flex justify-between items-center bg-zinc-900/50 p-3 rounded-xl border border-white/5">
+                <span class="text-[11px] font-black uppercase tracking-tighter">${p.player_username}</span>
+                <button onclick="executeSurgicalOffload('${p.player_username}')" 
+                    class="text-[9px] font-black text-red-500 hover:text-white uppercase">
+                    [ Offload ]
                 </button>
             </div>
         `).join('');
     }
 
-    // EXECUTION CODE: The direct "Unlist" command
-    async function executeUnlist(name) {
-        if (!confirm(`UNLIST ${name}?`)) return;
-        // This triggers the SQL 'admin_unlist_player' program
-        const { error } = await sb.rpc('admin_unlist_player', { target_name: name });
-        if (error) console.error("Execution Failed:", error.message);
-        syncAdminPanel();
+    // Surgical Execution
+    async function executeSurgicalOffload(username) {
+        if (!confirm(`OFFLOAD ${username}?`)) return;
+        const { error } = await sb.rpc('offload_player_1in2', { target_username: username });
+        if (error) alert("Error: " + error.message);
+        syncRegistry();
     }
 
-    async function triggerTotalPurge() {
-        if (!confirm("PURGE ALL?")) return;
-        // This triggers the SQL 'admin_purge_league' program
-        const { error } = await sb.rpc('admin_purge_league');
-        if (error) console.error("Purge Failed:", error.message);
-        syncAdminPanel();
+    // Nuclear Execution
+    async function executeNuclearOffload() {
+        if (!confirm("PURGE ALL REGISTRY DATA?")) return;
+        const { error } = await sb.rpc('nuclear_offload_1in2');
+        if (error) alert("Error: " + error.message);
+        syncRegistry();
     }
 
-    // Subscribe to changes so the admin panel is "Limitless" and real-time
-    sb.channel('admin_room').on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncAdminPanel).subscribe();
-    syncAdminPanel();
+    // Live Pulse Listener
+    sb.channel('admin_registry').on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncRegistry).subscribe();
+    syncRegistry();
 </script>
 
-
-
-
-
-    
-
-    <script>
-        const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        // Your verified Anon Key
-        const SB_KEY = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-        
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
-
-        async function executeNuclearReset() {
-            const btn = document.getElementById('purge-btn');
-            const statusText = document.getElementById('status-text');
-            const statusDot = document.getElementById('status-dot');
-
-            if (!confirm("EJECT ALL PLAYERS & RESET 1in2 ARENA?")) return;
-
-            btn.disabled = true;
-            btn.innerText = "SIGNALING...";
-            statusText.innerText = "TRANSMITTING OVERRIDE...";
-            statusDot.className = "w-2 h-2 bg-red-600 animate-ping rounded-full";
-
-            try {
-                // CALLING THE DATABASE BRAIN (The RPC)
-                const { error } = await sb.rpc('nuclear_reset_1in2');
-
-                if (error) throw error;
-
-                // SUCCESS STATE
-                statusText.innerText = "ARENA PURGED // 0 PLAYERS";
-                statusText.className = "text-[9px] text-green-500 font-black uppercase tracking-[0.2em]";
-                statusDot.className = "w-2 h-2 bg-green-500 rounded-full";
-                btn.className = "w-full py-8 bg-green-600 text-white rounded-2xl font-black uppercase italic tracking-tighter";
-                btn.innerText = "SUCCESS";
-
-                setTimeout(() => {
-                    location.reload();
-                }, 3000);
-
-            } catch (err) {
-                console.error(err);
-                statusText.innerText = "CRITICAL ERROR: " + err.message;
-                statusText.className = "text-[9px] text-red-600 font-black";
-                statusDot.className = "w-2 h-2 bg-red-600 rounded-full";
-                btn.disabled = false;
-                btn.innerText = "RETRY RESET";
-            }
-        }
-    </script>
 </body>
 </html>
