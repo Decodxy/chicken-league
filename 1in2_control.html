@@ -16,6 +16,57 @@
 </head>
 <body class="flex items-center justify-center min-h-screen">
 
+
+<div class="glass p-6 rounded-[2rem] border border-red-600/30 bg-black shadow-2xl mt-6">
+    <div class="flex items-center gap-4 mb-6">
+        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        </div>
+        <div>
+            <h3 class="orbitron text-white text-[11px] font-black uppercase tracking-widest italic leading-tight">Instant Launch</h3>
+            <p class="text-[8px] text-zinc-500 font-bold uppercase tracking-tighter">Force Arena State: LIVE</p>
+        </div>
+    </div>
+
+    <button onclick="triggerInstantOpen()" 
+        class="w-full py-5 bg-red-600 hover:bg-white text-white hover:text-black rounded-xl font-black uppercase italic text-[12px] tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-red-900/20 border border-red-500/20">
+        ACTIVATE 1in2 ARENA
+    </button>
+</div>
+
+<script>
+    async function triggerInstantOpen() {
+        // No confirmation needed since you want speed, but let's log for safety
+        console.log("SENDING INSTANT ACTIVATION SIGNAL...");
+        
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerText = "OPENING...";
+
+        try {
+            const { error } = await sb.rpc('open_arena_instant_1in2');
+            
+            if (error) {
+                console.error("Launch Failed:", error.message);
+                alert("ARENA FAILED TO OPEN: " + error.message);
+                btn.innerText = "RETRY ACTIVATION";
+                btn.disabled = false;
+            } else {
+                btn.innerText = "ARENA IS LIVE";
+                btn.className = "w-full py-5 bg-zinc-900 text-green-500 rounded-xl font-black uppercase italic text-[12px] tracking-[0.2em] border border-green-900/50 cursor-default";
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+</script>
+
+
+
+    
+
 <div class="glass p-6 rounded-[2rem] border border-white/5 bg-black text-white max-w-sm mx-auto shadow-2xl">
     <div class="flex justify-between items-center mb-6">
         <h3 class="orbitron text-[10px] font-black uppercase tracking-[0.4em] text-red-600">Lobby Registry</h3>
