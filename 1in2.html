@@ -68,16 +68,23 @@ body { background:#000;color:#eff3f4;font-family:'Inter',sans-serif;-webkit-font
 </main>
 
 <script>
+// === INIT SUPABASE CLIENT ===
+const sb = supabase.createClient(
+  "YOUR_SUPABASE_URL",
+  "YOUR_SUPABASE_ANON_KEY"
+);
+
 const LEAGUE_NAME = "1in2";
 let league = null;
 let players = [];
 let currentUser = null;
 let isProcessing = false;
+let subscription = null;
 
 /* INIT */
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { location.href="login.html"; return; }
+  if (!session) { location.href = "login.html"; return; }
 
   currentUser = {
     id: session.user.id,
@@ -90,15 +97,18 @@ async function init() {
 
 /* LOAD DATA */
 async function loadLobby() {
-  const { data: lg } = await sb.from('leagues').select('*').eq('name', LEAGUE_NAME).single();
+  const { data: lg, error: lgError } = await sb.from('leagues').select('*').eq('name', LEAGUE_NAME).single();
+  if (lgError) { console.error("League Load Error:", lgError); return; }
   league = lg;
 
-  const { data } = await sb.from('league_players')
+  const { data: pls, error: plError } = await sb.from('league_players')
     .select('*')
     .eq('league_id', league.id)
     .order('joined_at', { ascending: true });
-  
-  players = data || [];
+
+  if(plError) { console.error("Players Load Error:", plError); return; }
+  players = pls || [];
+
   render();
   subscribeRealtime();
 }
@@ -116,18 +126,18 @@ function render() {
       slot.classList.add("slot-filled");
       slot.innerHTML = `<span class="text-black font-black text-2xl">${p.username[0].toUpperCase()}</span>`;
       name.innerText = p.username;
-      name.className="text-[10px] uppercase text-white";
+      name.className = "text-[10px] uppercase text-white";
     } else {
       slot.classList.remove("slot-filled");
-      slot.innerHTML="";
-      name.innerText="OPEN SLOT";
-      name.className="text-[10px] uppercase text-zinc-500";
+      slot.innerHTML = "";
+      name.innerText = "OPEN SLOT";
+      name.className = "text-[10px] uppercase text-zinc-500";
     }
   }
 
   const joined = players.some(p=>p.user_id===currentUser.id);
   const joinBtn = document.getElementById("joinBtn");
-  joinBtn.disabled = joined || players.length>=league.max_players;
+  joinBtn.disabled = joined || players.length >= league.max_players;
   joinBtn.innerText = joined ? "Lobby Joined" : (players.length>=league.max_players ? "Lobby Full" : "Join Lobby");
 
   const arenaBtn = document.getElementById("arenaBtn");
@@ -136,13 +146,14 @@ function render() {
 }
 
 /* JOIN */
-function setupJoinButton(){
-  document.getElementById("joinBtn").addEventListener("click", async () => {
-    if(isProcessing) return;
+function setupJoinButton() {
+  const joinBtn = document.getElementById("joinBtn");
+  joinBtn.addEventListener("click", async () => {
+    if (isProcessing) return;
     isProcessing = true;
 
     if(players.some(p=>p.user_id===currentUser.id)) { isProcessing=false; return; }
-    if(players.length>=league.max_players) { alert("Lobby Full"); isProcessing=false; return; }
+    if(players.length >= league.max_players) { alert("Lobby Full"); isProcessing=false; return; }
 
     const { error } = await sb.from('league_players').insert({
       league_id: league.id,
@@ -157,16 +168,17 @@ function setupJoinButton(){
   });
 }
 
-/* REALTIME */
-let subscription = null;
-function subscribeRealtime(){
+/* REALTIME SUBSCRIPTION */
+function subscribeRealtime() {
+  if(!league) return;
   if(subscription) { subscription.unsubscribe(); subscription=null; }
-  subscription = sb.channel("league-"+LEAGUE_NAME)
+
+  subscription = sb.channel("league-" + LEAGUE_NAME)
     .on('postgres_changes', {
-      event:'*',
-      schema:'public',
-      table:'league_players',
-      filter:`league_id=eq.${league.id}`
+      event: '*',
+      schema: 'public',
+      table: 'league_players',
+      filter: `league_id=eq.${league.id}`
     }, loadLobby)
     .subscribe();
 }
