@@ -18,138 +18,102 @@
             --cl-white: #ffffff;
         }
 
-        body { 
-            background: var(--cl-black); 
-            color: #eff3f4; 
-            font-family: 'Inter', sans-serif; 
-            -webkit-font-smoothing: antialiased; 
-        }
-
+        body { background: var(--cl-black); color: var(--cl-white); font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .font-chirp { font-weight: 900; letter-spacing: -0.04em; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
         
+        /* Premium Glass Design */
         .glass-panel { 
             background: rgba(255, 255, 255, 0.02); 
             border: 1px solid rgba(255, 255, 255, 0.05); 
-            border-radius: 1.5rem; 
+            border-radius: 2rem; 
         }
 
         .slot-circle { 
-            width: 85px; height: 85px; 
-            border-radius: 1.2rem; 
+            width: 80px; height: 80px; border-radius: 1.2rem; 
             border: 1px solid rgba(255,255,255,0.08); 
             display: flex; align-items: center; justify-content: center; 
             background: rgba(255,255,255,0.01); 
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
+        
         .slot-filled { 
-            background: var(--cl-white); 
-            border-color: var(--cl-white); 
-            box-shadow: 0 0 30px rgba(255,255,255,0.1); 
-            transform: scale(1.05);
+            background: var(--cl-white); border-color: var(--cl-white); 
+            box-shadow: 0 0 30px rgba(255,255,255,0.15); 
         }
+
+        /* Responsive Buttons */
+        .btn-main { padding: 1.25rem; border-radius: 1rem; font-family: 'Orbitron'; font-size: 0.75rem; text-transform: uppercase; transition: 0.3s; }
+        .btn-join { background: var(--cl-white); color: var(--cl-black); }
+        .btn-join:disabled { background: #111; color: #444; border: 1px solid #222; }
+        .btn-joined { background: var(--cl-blue) !important; color: white !important; box-shadow: 0 0 20px rgba(0, 102, 255, 0.4); }
+        .btn-arena { background: var(--cl-red); color: white; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4); }
         
-        .btn-join { 
-            background: var(--cl-white); 
-            color: var(--cl-black); 
-            box-shadow: 0 4px 15px rgba(255,255,255,0.1);
-        }
-        
-        .btn-join:disabled {
-            background: #111;
-            color: #444;
-            border: 1px solid #222;
-        }
-
-        .btn-joined-status {
-            background: var(--cl-blue) !important;
-            color: white !important;
-            box-shadow: 0 0 20px rgba(0, 102, 255, 0.3);
-        }
-
-        .btn-arena-ready { 
-            background: var(--cl-red); 
-            color: var(--cl-white); 
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.5); 
-            animation: pulse-red 2s infinite; 
-        }
-
-        @keyframes pulse-red {
-            0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.4); }
-            50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(255, 0, 0, 0.7); }
-            100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.4); }
-        }
-
-        .blue-glow {
-            box-shadow: 0 0 15px var(--cl-blue);
+        #loading-overlay {
+            position: fixed; inset: 0; background: black; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s;
         }
     </style>
 </head>
-<body class="pt-16 pb-32">
+<body class="pt-12 pb-24">
+
+    <div id="loading-overlay">
+        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="orbitron text-[10px] tracking-[0.3em] text-blue-500 animate-pulse">Syncing Neural Link...</p>
+    </div>
 
     <main class="max-w-md mx-auto px-6">
         <div class="flex justify-between items-center mb-8">
-            <h2 class="font-chirp text-xl uppercase italic tracking-tighter">Arena <span class="text-red-600">Lobby</span></h2>
-            <div id="status-tag" class="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 rounded-full border border-white/5">
-                <span class="w-1.5 h-1.5 bg-zinc-600 rounded-full"></span>
-                <span class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Establishing...</span>
+            <h2 class="font-chirp text-xl uppercase italic">Arena <span class="text-red-600">Lobby</span></h2>
+            <div class="flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-white/5">
+                <span id="pulse-dot" class="w-1.5 h-1.5 bg-zinc-600 rounded-full"></span>
+                <span id="pulse-text" class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Offline</span>
             </div>
         </div>
 
-        <div class="mb-8 relative">
-            <div class="h-44 bg-cover bg-center rounded-3xl border-b-4 border-red-600 shadow-2xl overflow-hidden" 
+        <div class="mb-8 relative group">
+            <div class="h-44 bg-cover bg-center rounded-[2.5rem] border-b-4 border-red-600 shadow-2xl overflow-hidden" 
                  style="background-image: url('https://i.ibb.co/FbCS1n9p/IMG-2638.jpg');">
                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
             </div>
             <div class="mt-4 flex justify-between items-end">
                 <div>
-                    <h1 class="text-3xl font-chirp uppercase leading-none italic tracking-tighter">Trial Broiler</h1>
-                    <p class="text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">League ID: 1in2</p>
+                    <h1 class="text-3xl font-chirp uppercase italic leading-none">Trial Broiler</h1>
+                    <p class="text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">1v1 Weight Duel</p>
                 </div>
-                <div class="text-right">
-                    <span id="count_display" class="orbitron text-lg font-black text-white italic">0/2</span>
-                </div>
+                <div id="count_display" class="orbitron text-lg font-black italic">0/2</div>
             </div>
         </div>
 
         <div class="glass-panel p-10 mb-8 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
-            <div class="flex gap-10 justify-center items-center">
+            <div class="flex gap-8 justify-center items-center">
                 <div class="flex flex-col items-center gap-4">
-                    <div id="slot-0" class="slot-circle"><span class="text-zinc-800 font-black">?</span></div>
-                    <span id="name-0" class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Searching...</span>
+                    <div id="slot-0" class="slot-circle"><span class="text-zinc-800 font-black orbitron">?</span></div>
+                    <span id="name-0" class="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">Searching...</span>
                 </div>
-                
-                <div class="flex flex-col items-center">
-                    <div class="text-red-600 font-black italic orbitron text-2xl animate-pulse">VS</div>
-                </div>
-
+                <div class="text-red-600 font-black italic orbitron text-2xl animate-pulse">VS</div>
                 <div class="flex flex-col items-center gap-4">
-                    <div id="slot-1" class="slot-circle"><span class="text-zinc-800 font-black">?</span></div>
-                    <span id="name-1" class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Searching...</span>
+                    <div id="slot-1" class="slot-circle"><span class="text-zinc-800 font-black orbitron">?</span></div>
+                    <span id="name-1" class="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">Searching...</span>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <button id="joinBtn" onclick="joinLobby()" class="py-5 btn-join rounded-2xl font-chirp text-[11px] uppercase transition-all duration-300 transform active:scale-95">
-                Join Lobby
-            </button>
-            <button id="arenaBtn" onclick="enterArena()" class="py-5 bg-zinc-900 text-zinc-700 rounded-2xl font-chirp text-[11px] uppercase transition-all duration-300" disabled>
-                Arena Locked
-            </button>
+            <button id="joinBtn" onclick="joinLobby()" class="btn-main btn-join">Join Lobby</button>
+            <button id="arenaBtn" onclick="enterArena()" disabled class="btn-main bg-zinc-900 text-zinc-700">Arena Locked</button>
         </div>
     </main>
 
     <script>
-        // CLIENT INITIALIZATION
         const sb = supabase.createClient(
             "https://tbvmgcknkwsucstedigd.supabase.co",
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q"
         );
 
         const LEAGUE_NAME = "1in2";
+        const ARENA_URL = "1in2arena.html"; // Explicitly defined per your instruction
         let leagueData = null;
         let players = [];
         let currentUser = null;
@@ -158,60 +122,61 @@
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) { window.location.href = "login.html"; return; }
-            
-            currentUser = {
-                username: session.user.user_metadata.username,
-                id: session.user.id
-            };
+            currentUser = { username: session.user.user_metadata.username, id: session.user.id };
 
             await syncData();
             
-            // REALTIME CORE
+            // Start Realtime
             sb.channel('lobby-sync')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'league_players' }, syncData)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'leagues' }, syncData)
                 .subscribe();
+
+            // Hide Loading Overlay
+            setTimeout(() => { 
+                document.getElementById('loading-overlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-overlay').remove(), 500);
+            }, 1000);
         }
 
         async function syncData() {
-            try {
-                const { data: league } = await sb.from('leagues').select('*').eq('name', LEAGUE_NAME).single();
-                if (!league) return;
-                leagueData = league;
-
-                const { data: pls } = await sb.from('league_players')
-                    .select('*')
-                    .eq('league_id', league.id)
-                    .order('joined_at', { ascending: true });
-
-                players = pls || [];
-                
-                // Update Blue "Live" Status
-                const tag = document.getElementById('status-tag');
-                tag.innerHTML = `<span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span><span class="text-[8px] font-black text-blue-500 uppercase tracking-widest">Neural Link Active</span>`;
-                
-                render();
-            } catch (e) {
-                console.error("Sync Failed:", e);
+            // CRITICAL: Finding the ID in the leagues table
+            const { data: league, error } = await sb.from('leagues').select('*').eq('name', LEAGUE_NAME).single();
+            
+            if (error || !league) {
+                console.error("CRITICAL: League row not found in database. Run the SQL Insert!");
+                document.getElementById('pulse-text').innerText = "DB Link Failed";
+                document.getElementById('pulse-dot').className = "w-1.5 h-1.5 bg-red-600 rounded-full";
+                return;
             }
+
+            leagueData = league;
+
+            const { data: pls } = await sb.from('league_players')
+                .select('*')
+                .eq('league_id', leagueData.id)
+                .order('joined_at', { ascending: true });
+
+            players = pls || [];
+            
+            // Visual Update: Connected
+            document.getElementById('pulse-text').innerText = "Neural Link Active";
+            document.getElementById('pulse-text').classList.replace('text-zinc-500', 'text-blue-500');
+            document.getElementById('pulse-dot').className = "w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping";
+            
+            render();
         }
 
         function render() {
-            const joinBtn = document.getElementById('joinBtn');
-            const arenaBtn = document.getElementById('arenaBtn');
-            const countDisplay = document.getElementById('count_display');
-            
             const isUserIn = players.some(p => p.player_username === currentUser.username);
             const isFull = players.length >= (leagueData?.max_players || 2);
 
-            countDisplay.innerText = `${players.length}/${leagueData?.max_players || 2}`;
+            document.getElementById('count_display').innerText = `${players.length}/${leagueData?.max_players || 2}`;
 
-            // Visual Slot Mapping
             for(let i=0; i<2; i++) {
+                const p = players[i];
                 const slot = document.getElementById(`slot-${i}`);
                 const name = document.getElementById(`name-${i}`);
-                const p = players[i];
-
                 if(p) {
                     slot.className = "slot-circle slot-filled";
                     slot.innerHTML = `<span class="text-black font-black text-3xl orbitron">${p.player_username[0].toUpperCase()}</span>`;
@@ -219,69 +184,61 @@
                     name.className = "text-[9px] font-black text-white uppercase tracking-widest";
                 } else {
                     slot.className = "slot-circle";
-                    slot.innerHTML = `<span class="text-zinc-800 font-black">?</span>`;
+                    slot.innerHTML = `<span class="text-zinc-800 font-black orbitron">?</span>`;
                     name.innerText = "OPEN SLOT";
-                    name.className = "text-[9px] font-black text-zinc-600 uppercase tracking-widest";
+                    name.className = "text-[9px] font-black text-zinc-500 uppercase";
                 }
             }
 
-            // JOIN BUTTON: Blue when joined
+            const joinBtn = document.getElementById('joinBtn');
+            const arenaBtn = document.getElementById('arenaBtn');
+
             if (isUserIn) {
                 joinBtn.disabled = true;
                 joinBtn.innerText = "Lobby Joined";
-                joinBtn.classList.add('btn-joined-status');
+                joinBtn.classList.add('btn-joined');
             } else if (isFull) {
                 joinBtn.disabled = true;
                 joinBtn.innerText = "Lobby Full";
-                joinBtn.classList.remove('btn-joined-status');
             } else {
                 joinBtn.disabled = false;
                 joinBtn.innerText = "Join Lobby";
-                joinBtn.classList.remove('btn-joined-status');
+                joinBtn.classList.remove('btn-joined');
             }
 
-            // ARENA BUTTON: Red when active
-            if (isUserIn && leagueData?.is_active) {
+            if (isUserIn && leagueData.is_active) {
                 arenaBtn.disabled = false;
                 arenaBtn.innerText = "Enter Arena";
-                arenaBtn.className = "py-5 btn-arena-ready rounded-2xl font-chirp text-[11px] uppercase transition-all duration-300";
+                arenaBtn.className = "btn-main btn-arena";
             } else {
                 arenaBtn.disabled = true;
-                arenaBtn.innerText = isUserIn ? "Wait for Admin" : "Lobby First";
-                arenaBtn.className = "py-5 bg-zinc-900 text-zinc-700 rounded-2xl font-chirp text-[11px] uppercase";
+                arenaBtn.innerText = isUserIn ? "Waiting for Start" : "Arena Locked";
+                arenaBtn.className = "btn-main bg-zinc-900 text-zinc-700";
             }
         }
 
         async function joinLobby() {
-            if (isProcessing) return;
+            if (!leagueData || isProcessing) return;
             isProcessing = true;
-            
-            const joinBtn = document.getElementById('joinBtn');
-            joinBtn.innerText = "CONNECTING...";
+            document.getElementById('joinBtn').innerText = "LINKING...";
 
             try {
-                // EXPLICIT RPC CALL
                 const { error } = await sb.rpc('join_league_universal', { 
                     p_name: currentUser.username,
-                    l_id: leagueData.id, // This is a String that the SQL now casts to UUID
+                    l_id: leagueData.id, 
                     l_limit: parseInt(leagueData.max_players)
                 });
-
                 if (error) throw error;
-                
-                console.log("Entry Authorized.");
             } catch (err) {
-                console.error("Detailed Error:", err);
-                // Reveal the ACTUAL error message from Supabase
-                alert("SYSTEM ERROR: " + (err.details || err.message || "Check SQL Function"));
+                alert("ERROR: " + err.message);
             } finally {
                 isProcessing = false;
-                await syncData();
+                syncData();
             }
         }
 
         function enterArena() {
-            window.location.href = '1in2arena.html';
+            window.location.href = ARENA_URL;
         }
 
         init();
