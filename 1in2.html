@@ -3,175 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>1 IN 2 Duel | Chicken League</title>
+    <title>1in2 Arena | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 160px; }
-        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .slot-circle { width: 60px; height: 60px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .slot-filled { background: #fbbf24; border: 2px solid #fbbf24; box-shadow: 0 0 25px #fbbf24; transform: scale(1.1); color: black; }
-        .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; z-index: 1000; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.4); text-decoration: none; }
-        .nav-item.active { color: #fbbf24; }
-        .pulse-green { animation: pulseG 1.5s infinite; }
-        @keyframes pulseG { 0% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
+        
+        body { background: #000; color: #fff; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
+        .brand-red { color: #ff0000; }
+        .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        
+        #arena-container {
+            position: relative;
+            width: 360px;
+            height: 360px;
+            margin: 0 auto;
+            border-radius: 1.5rem;
+            background: #050505;
+            border: 1px solid #111;
+        }
+
+        #touch-mask {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 100;
+            touch-action: none;
+        }
+
+        #grid-bg {
+            position: absolute;
+            display: grid;
+            grid-template-columns: repeat(6, 60px);
+            z-index: 1;
+        }
+
+        .grid-cell {
+            width: 60px; height: 60px;
+            border: 0.5px dotted rgba(255, 255, 255, 0.1);
+        }
+
+        .item {
+            position: absolute;
+            width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .match-vanish { transform: scale(0) !important; opacity: 0; }
+        .score-box { border-left: 4px solid #ff0000; }
+        .timer-font { font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
-<body>
+<body class="flex flex-col items-center py-6">
 
-    <div id="battle_alert" class="hidden sticky top-0 z-50 w-full p-4 bg-green-600 text-center animate-bounce">
-        <span class="text-xs font-black uppercase tracking-tighter">🔥 ARENA UNLOCKED: START THE DUEL NOW!</span>
+    <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
+        <div class="glass-ui p-4 rounded-2xl score-box">
+            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
+            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
+        </div>
+
+        <div class="flex-1 flex justify-center px-2">
+            <button onclick="location.href='1in2leaderboard.html'" 
+                    style="z-index: 101;"
+                    class="bg-white text-black text-[8px] font-black uppercase tracking-tighter px-3 py-2 rounded-md border border-white hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-[0_0_10px_rgba(255,255,255,0.1)] whitespace-nowrap">
+                View Leader Board
+            </button>
+        </div>
+
+        <div class="text-center">
+            <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
+            <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds</p>
+        </div>
     </div>
 
-    <main class="p-6">
-        <div class="mb-6 flex items-center justify-between">
-            <a href="dashboard.html" class="text-gray-400 text-xs font-bold uppercase tracking-widest">← Exit Lobby</a>
-            <span class="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">1v1 High Stakes</span>
-        </div>
+    <div id="arena-container">
+        <div id="grid-bg"></div>
+        <div id="item-layer"></div>
+        <div id="touch-mask"></div> 
+    </div>
 
-        <div class="glass-panel rounded-[2.5rem] overflow-hidden mb-8 border-b-4 border-orange-600">
-            <div class="h-48 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png');"></div>
-            <div class="p-5 text-center">
-                <h1 class="text-2xl font-black italic uppercase tracking-tighter text-orange-500">The Trial Broiler</h1>
-                <p class="text-gray-400 text-[10px] font-bold uppercase">Winner Takes All • 2.5kg Target</p>
-            </div>
-        </div>
-
-        <div class="glass-panel p-8 rounded-[2.5rem] mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500">Lobby Status</h3>
-                <span id="count_display" class="text-xs font-black text-orange-500">0 / 2 READY</span>
-            </div>
-            <div id="grid_container" class="flex gap-8 justify-center"></div>
-        </div>
-
-        <button id="joinBtn" onclick="joinLobby()" class="w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl transition-all duration-300">
-            Join Duel
-        </button>
-    </main>
-
-    <nav class="bottom-nav glass-panel">
-        <a href="dashboard.html" class="nav-item"><i>🏠</i><span class="text-[9px] font-black uppercase mt-1">Home</span></a>
-        <a href="#" class="nav-item"><i>🏆</i><span class="text-[9px] font-black uppercase mt-1">Ranks</span></a>
-        <a href="#" class="nav-item"><i>👤</i><span class="text-[9px] font-black uppercase mt-1">Profile</span></a>
-    </nav>
+    <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
+        <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]"></div>
+        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Match 3 to Earn points</span>
+    </div>
 
     <script>
+        // SUPABASE INITIALIZATION
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
-        const SB_KEY = 'YOUR_ACTUAL_KEY'; 
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
-        const user = localStorage.getItem('league_user');
-        let countdownInterval = null;
 
-        function initGrid() {
-            const container = document.getElementById('grid_container');
-            container.innerHTML = '';
-            for(let i=0; i<2; i++) {
-                const div = document.createElement('div');
-                div.className = 'slot-circle';
-                div.id = `slot-${i}`;
-                div.innerHTML = '🥚';
-                container.appendChild(div);
+        const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
+        const rows = 6, cols = 6, size = 60;
+        let board = [], score = 0, timeLeft = 60, isProcessing = false;
+        let startR, startC, startX, startY;
+
+        const itemLayer = document.getElementById('item-layer');
+        const touchMask = document.getElementById('touch-mask');
+
+        function init() {
+            const gridBg = document.getElementById('grid-bg');
+            for (let i = 0; i < 36; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                gridBg.appendChild(cell);
             }
-            syncLobby();
+
+            for (let r = 0; r < rows; r++) {
+                board[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    spawnItem(r, c);
+                }
+            }
+            startTimer();
+            setTimeout(checkMatches, 500);
         }
 
-        async function syncLobby() {
-            const { data: players, error } = await sb.from('Battle_Royale_2').select('*');
-            const { data: signal } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').single();
-            if (error) return;
+        function spawnItem(r, c) {
+            const type = items[Math.floor(Math.random() * items.length)];
+            const el = document.createElement('div');
+            el.className = 'item';
+            el.innerHTML = type;
+            el.style.transform = `translate(${c * size}px, ${r * size}px)`;
+            itemLayer.appendChild(el);
+            board[r][c] = { type, el };
+        }
 
-            const total = players.length;
-            document.getElementById('count_display').innerText = `${total} / 2 READY`;
+        // --- ZERO-BUG TOUCH LOGIC ---
+        touchMask.addEventListener('touchstart', (e) => {
+            if (isProcessing) return;
+            const rect = touchMask.getBoundingClientRect();
+            startX = e.touches[0].clientX - rect.left;
+            startY = e.touches[0].clientY - rect.top;
+            startC = Math.floor(startX / size);
+            startR = Math.floor(startY / size);
+        });
 
-            // Visual Reset/Fill
-            for(let i=0; i<2; i++) {
-                const slot = document.getElementById(`slot-${i}`);
-                slot.classList.remove('slot-filled');
-                slot.innerHTML = '🥚';
-            }
-            players.forEach((p, i) => {
-                if(i < 2) {
-                    const slot = document.getElementById(`slot-${i}`);
-                    slot.classList.add('slot-filled');
-                    slot.innerHTML = '🐔';
-                }
-            });
+        touchMask.addEventListener('touchend', (e) => {
+            if (isProcessing || startR === undefined) return;
+            const rect = touchMask.getBoundingClientRect();
+            const endX = e.changedTouches[0].clientX - rect.left;
+            const endY = e.changedTouches[0].clientY - rect.top;
 
-            const btn = document.getElementById('joinBtn');
-            const isUserIn = players.some(p => p.player_username === user);
+            const dx = endX - startX, dy = endY - startY;
+            const threshold = 25;
 
-            if (total >= 2) {
-                // TIMER & SIGNAL LOGIC
-                const now = new Date().getTime();
-                const target = signal?.target_time ? new Date(signal.target_time).getTime() : null;
-                const isLive = signal?.is_live;
-
-                if (isLive || (target && now >= target)) {
-                    // ARENA IS ACTIVE
-                    if(countdownInterval) clearInterval(countdownInterval);
-                    document.getElementById('battle_alert').classList.remove('hidden');
-                    if (isUserIn) {
-                        btn.innerText = "Enter Arena ⚔️";
-                        btn.className = "w-full py-6 bg-green-600 rounded-3xl font-black uppercase italic tracking-tighter shadow-2xl pulse-green";
-                        btn.disabled = false;
-                        btn.onclick = () => window.location.href = '1in2arena.html';
-                    } else {
-                        btn.innerText = "Lobby Full";
-                        btn.disabled = true;
-                        btn.className = "w-full py-6 bg-gray-800 rounded-3xl font-black uppercase italic opacity-50";
-                    }
-                } else if (target && now < target) {
-                    // COUNTDOWN IN PROGRESS
-                    if (isUserIn) {
-                        if(!countdownInterval) countdownInterval = setInterval(syncLobby, 1000);
-                        const diff = target - now;
-                        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                        const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                        btn.innerText = `STARTING IN ${mins}m ${secs}s`;
-                        btn.disabled = true;
-                        btn.className = "w-full py-6 bg-blue-900 rounded-3xl font-black uppercase italic opacity-80";
-                    }
-                } else {
-                    // WAITING FOR ADMIN MANUAL PUSH
-                    if (isUserIn) {
-                        btn.innerText = "Awaiting Admin Start...";
-                        btn.disabled = true;
-                        btn.className = "w-full py-6 bg-orange-900 rounded-3xl font-black uppercase italic opacity-70";
-                    }
-                }
+            let tr = startR, tc = startC;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > threshold) tc += dx > 0 ? 1 : -1;
             } else {
-                // LOBBY NOT FULL
-                if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-                document.getElementById('battle_alert').classList.add('hidden');
-                if (isUserIn) {
-                    btn.innerText = "Waiting for Rival...";
-                    btn.disabled = true;
-                    btn.className = "w-full py-6 bg-orange-900 rounded-3xl font-black uppercase italic opacity-70";
+                if (Math.abs(dy) > threshold) tr += dy > 0 ? 1 : -1;
+            }
+
+            if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== startR || tc !== startC)) {
+                trySwap(startR, startC, tr, tc);
+            }
+            startR = undefined;
+        });
+
+        function trySwap(r1, c1, r2, c2) {
+            isProcessing = true;
+            const item1 = board[r1][c1];
+            const item2 = board[r2][c2];
+
+            item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
+            item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
+
+            board[r1][c1] = item2;
+            board[r2][c2] = item1;
+
+            setTimeout(() => {
+                if (!checkMatches()) {
+                    item1.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
+                    item2.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
+                    board[r1][c1] = item1;
+                    board[r2][c2] = item2;
+                    setTimeout(() => { isProcessing = false; }, 250);
                 } else {
-                    btn.innerText = "Join Duel";
-                    btn.disabled = false;
-                    btn.className = "w-full py-6 bg-orange-600 rounded-3xl font-black uppercase italic";
-                    btn.onclick = joinLobby;
+                    isProcessing = false;
                 }
+            }, 300);
+        }
+
+        function checkMatches() {
+            let matches = new Set();
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols - 2; c++) {
+                    if (board[r][c] && board[r][c+1] && board[r][c+2] &&
+                        board[r][c].type === board[r][c+1].type && board[r][c].type === board[r][c+2].type) {
+                        matches.add(`${r},${c}`); matches.add(`${r},${c+1}`); matches.add(`${r},${c+2}`);
+                    }
+                }
+            }
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows - 2; r++) {
+                    if (board[r][c] && board[r+1][c] && board[r+2][c] &&
+                        board[r][c].type === board[r+1][c].type && board[r][c].type === board[r+2][c].type) {
+                        matches.add(`${r},${c}`); matches.add(`${r+1},${c}`); matches.add(`${r+2},${c}`);
+                    }
+                }
+            }
+
+            if (matches.size > 0) {
+                isProcessing = true;
+                score += (matches.size * 0.1);
+                document.getElementById('score').innerText = score.toFixed(1) + 'kg';
+                matches.forEach(coord => {
+                    const [r, c] = coord.split(',').map(Number);
+                    if(board[r][c]) {
+                        board[r][c].el.classList.add('match-vanish');
+                        const el = board[r][c].el;
+                        setTimeout(() => el.remove(), 250);
+                        board[r][c] = null;
+                    }
+                });
+                setTimeout(applyGravity, 300);
+                return true;
+            }
+            return false;
+        }
+
+        function applyGravity() {
+            for (let c = 0; c < cols; c++) {
+                let empty = 0;
+                for (let r = rows - 1; r >= 0; r--) {
+                    if (board[r][c] === null) empty++;
+                    else if (empty > 0) {
+                        const item = board[r][c];
+                        board[r + empty][c] = item;
+                        board[r][c] = null;
+                        item.el.style.transform = `translate(${c * size}px, ${(r + empty) * size}px)`;
+                    }
+                }
+                for (let i = 0; i < empty; i++) {
+                    const r = i;
+                    const type = items[Math.floor(Math.random() * items.length)];
+                    const el = document.createElement('div');
+                    el.className = 'item';
+                    el.innerHTML = type;
+                    el.style.transform = `translate(${c * size}px, -60px)`;
+                    itemLayer.appendChild(el);
+                    board[r][c] = { type, el };
+                    setTimeout(() => { el.style.transform = `translate(${c * size}px, ${r * size}px)`; }, 50);
+                }
+            }
+            setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
+        }
+
+        // --- GAME END & DATA SYNC ---
+        function startTimer() {
+            const int = setInterval(async () => {
+                timeLeft--;
+                const timerEl = document.getElementById('timer');
+                if (timerEl) timerEl.innerText = timeLeft;
+                
+                if (timeLeft <= 0) { 
+                    clearInterval(int); 
+                    isProcessing = true; // Lock interaction
+                    await saveGamePerformance(); 
+                }
+            }, 1000);
+        }
+
+        async function saveGamePerformance() {
+            try {
+                // Fetch authenticated user
+                const { data: { user } } = await sb.auth.getUser();
+                const activeUsername = user?.user_metadata?.username || user?.email || "Elite_Chicken";
+
+                // Sync with league_performances table
+                const { error } = await sb
+                    .from('league_performances')
+                    .insert([{ 
+                        username: activeUsername, 
+                        score: parseFloat(score.toFixed(1)), 
+                        league_id: '1in2' 
+                    }]);
+
+                if (error) throw error;
+                window.location.href = '1in2leaderboard.html';
+
+            } catch (err) {
+                console.error("Combat Sync Failed:", err.message);
+                alert("Sync Failed: " + err.message);
+
+                window.location.href = '1in2leaderboard.html';
             }
         }
 
-        async function joinLobby() {
-            const { error } = await sb.from('Battle_Royale_2').insert([{ player_username: user }]);
-            if (error) alert("Sync Error or Already Joined");
-            syncLobby();
-        }
-
-        // Real-time Subscriptions (Listen to both Table and Admin Signals)
-        sb.channel('lobby_updates')
-          .on('postgres_changes', { event: '*', table: 'Battle_Royale_2' }, syncLobby)
-          .on('postgres_changes', { event: '*', table: 'Lobby_Signals' }, syncLobby)
-          .subscribe();
-
-        if(!user) window.location.href = 'index.html';
-        else initGrid();
+        init();
     </script>
 </body>
 </html>
