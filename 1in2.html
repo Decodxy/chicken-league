@@ -3,299 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>1in2 Arena | Chicken League</title>
+    <title>1in2 Lobby | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@400;900&display=swap');
-        
-        body { background: #000; color: #fff; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
-        .brand-red { color: #ff0000; }
-        .glass-ui { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        #arena-container {
+        :root {
+            --arena-gold: #fbbf24;
+            --arena-glow: rgba(251, 191, 36, 0.5);
+            --bg-dark: #050505;
+        }
+
+        body { 
+            background: var(--bg-dark); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh; 
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+
+        .slot-circle { 
+            width: 80px; height: 80px; 
+            border-radius: 50%; 
+            border: 2px dashed rgba(255,255,255,0.1); 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; justify-content: center; 
+            background: rgba(255,255,255,0.01);
             position: relative;
-            width: 360px;
-            height: 360px;
-            margin: 0 auto;
-            border-radius: 1.5rem;
-            background: #050505;
-            border: 1px solid #111;
         }
 
-        #touch-mask {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 100;
-            touch-action: none;
+        .slot-filled { 
+            background: rgba(251, 191, 36, 0.1); 
+            border: 2px solid var(--arena-gold); 
+            box-shadow: 0 0 25px var(--arena-glow);
+            transform: scale(1.05);
+            border-style: solid;
         }
 
-        #grid-bg {
-            position: absolute;
-            display: grid;
-            grid-template-columns: repeat(6, 60px);
-            z-index: 1;
-        }
-
-        .grid-cell {
-            width: 60px; height: 60px;
-            border: 0.5px dotted rgba(255, 255, 255, 0.1);
-        }
-
-        .item {
-            position: absolute;
-            width: 60px; height: 60px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem;
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10;
+        .btn-loading {
+            position: relative;
             pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .btn-loading::after {
+            content: "";
+            position: absolute; width: 16px; height: 16px;
+            top: 0; left: 0; right: 0; bottom: 0; margin: auto;
+            border: 2px solid transparent; border-top-color: #000;
+            border-radius: 50%; animation: spin 0.6s linear infinite;
         }
 
-        .match-vanish { transform: scale(0) !important; opacity: 0; }
-        .score-box { border-left: 4px solid #ff0000; }
-        .timer-font { font-family: 'Orbitron', sans-serif; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="flex flex-col items-center py-6">
+<body class="pb-10">
 
-    <div class="w-full max-w-md px-6 flex justify-between items-center mb-8">
-        <div class="glass-ui p-4 rounded-2xl score-box">
-            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Growth Weight</p>
-            <h2 id="score" class="text-3xl font-black text-white">0.0<span class="text-xs brand-red ml-1">kg</span></h2>
-        </div>
+    <!-- Debug Log for Handshake -->
+    <div id="debug-status" class="fixed bottom-4 left-4 right-4 z-50 text-[8px] orbitron text-zinc-500 bg-black/80 p-2 rounded border border-white/5 pointer-events-none">
+        HANDSHAKE: INITIALIZING...
+    </div>
 
-        <div class="flex-1 flex justify-center px-2">
-            <button onclick="location.href='1in2leaderboard.html'" 
-                    style="z-index: 101;"
-                    class="bg-white text-black text-[8px] font-black uppercase tracking-tighter px-3 py-2 rounded-md border border-white hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-[0_0_10px_rgba(255,255,255,0.1)] whitespace-nowrap">
-                View Leader Board
+    <main class="max-w-md mx-auto p-6">
+        <div class="mt-4 mb-6 flex items-center justify-between">
+            <button onclick="exitLobby()" class="text-gray-600 text-[10px] font-black uppercase tracking-widest hover:text-white">
+                ← EXIT LOBBY
             </button>
+            <div id="connection-indicator" class="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full">
+                <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                <span class="text-[9px] font-bold text-red-500 orbitron">DISCONNECTED</span>
+            </div>
         </div>
 
-        <div class="text-center">
-            <div id="timer" class="text-4xl font-black brand-red timer-font italic">60</div>
-            <p class="text-[8px] font-bold text-gray-500 uppercase">Seconds</p>
+        <div class="glass-panel rounded-[2rem] overflow-hidden mb-6">
+            <div class="h-32 bg-cover bg-center" style="background-image: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png'); opacity: 0.6;"></div>
+            <div class="p-5">
+                <h1 class="text-xl font-black italic uppercase orbitron tracking-tighter">Trial Broiler 1v1</h1>
+                <p class="text-zinc-500 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">League Handshake Active</p>
+            </div>
         </div>
-    </div>
 
-    <div id="arena-container">
-        <div id="grid-bg"></div>
-        <div id="item-layer"></div>
-        <div id="touch-mask"></div> 
-    </div>
+        <div class="glass-panel p-6 rounded-[2rem] mb-6">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-[9px] font-black uppercase tracking-widest text-zinc-500 orbitron">Arena Registry</h3>
+                <span id="count_display" class="text-[10px] font-black text-yellow-500 orbitron">SYNCING...</span>
+            </div>
+            
+            <div class="flex gap-10 justify-center items-center">
+                <div class="flex flex-col items-center gap-3">
+                    <div id="slot-0" class="slot-circle"></div>
+                    <span id="name-0" class="text-[9px] font-bold text-zinc-700 orbitron tracking-tighter">---</span>
+                </div>
+                <div class="flex flex-col items-center gap-3">
+                    <div id="slot-1" class="slot-circle"></div>
+                    <span id="name-1" class="text-[9px] font-bold text-zinc-700 orbitron tracking-tighter">---</span>
+                </div>
+            </div>
+        </div>
 
-    <div class="mt-8 glass-ui px-8 py-3 rounded-full flex items-center gap-3">
-        <div class="h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]"></div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em]">Match 3 to Earn points</span>
-    </div>
+        <button id="mainBtn" onclick="handleMainAction()" class="w-full py-5 bg-white text-black rounded-2xl font-black uppercase italic tracking-tighter transition-all active:scale-95">
+            STARTING SYSTEM...
+        </button>
+    </main>
 
     <script>
-        // SUPABASE INITIALIZATION
         const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q'; 
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
-
-        const items = ['🌽', '🍗', '🥚', '🐔', '🌾'];
-        const rows = 6, cols = 6, size = 60;
-        let board = [], score = 0, timeLeft = 60, isProcessing = false;
-        let startR, startC, startX, startY;
-
-        const itemLayer = document.getElementById('item-layer');
-        const touchMask = document.getElementById('touch-mask');
-
-        function init() {
-            const gridBg = document.getElementById('grid-bg');
-            for (let i = 0; i < 36; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell';
-                gridBg.appendChild(cell);
-            }
-
-            for (let r = 0; r < rows; r++) {
-                board[r] = [];
-                for (let c = 0; c < cols; c++) {
-                    spawnItem(r, c);
-                }
-            }
-            startTimer();
-            setTimeout(checkMatches, 500);
+        
+        // Ensure user identity is valid
+        let currentUser = localStorage.getItem('league_user');
+        if(!currentUser) {
+            currentUser = "PILOT_" + Math.random().toString(36).substring(2, 7).toUpperCase();
+            localStorage.setItem('league_user', currentUser);
         }
 
-        function spawnItem(r, c) {
-            const type = items[Math.floor(Math.random() * items.length)];
-            const el = document.createElement('div');
-            el.className = 'item';
-            el.innerHTML = type;
-            el.style.transform = `translate(${c * size}px, ${r * size}px)`;
-            itemLayer.appendChild(el);
-            board[r][c] = { type, el };
+        let cachedPlayers = [];
+        let cachedSignal = null;
+        let isProcessing = false;
+
+        function log(msg) {
+            document.getElementById('debug-status').innerText = `HANDSHAKE: ${msg}`;
+            console.log(msg);
         }
 
-        // --- ZERO-BUG TOUCH LOGIC ---
-        touchMask.addEventListener('touchstart', (e) => {
-            if (isProcessing) return;
-            const rect = touchMask.getBoundingClientRect();
-            startX = e.touches[0].clientX - rect.left;
-            startY = e.touches[0].clientY - rect.top;
-            startC = Math.floor(startX / size);
-            startR = Math.floor(startY / size);
-        });
-
-        touchMask.addEventListener('touchend', (e) => {
-            if (isProcessing || startR === undefined) return;
-            const rect = touchMask.getBoundingClientRect();
-            const endX = e.changedTouches[0].clientX - rect.left;
-            const endY = e.changedTouches[0].clientY - rect.top;
-
-            const dx = endX - startX, dy = endY - startY;
-            const threshold = 25;
-
-            let tr = startR, tc = startC;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                if (Math.abs(dx) > threshold) tc += dx > 0 ? 1 : -1;
-            } else {
-                if (Math.abs(dy) > threshold) tr += dy > 0 ? 1 : -1;
-            }
-
-            if (tr >= 0 && tr < rows && tc >= 0 && tc < cols && (tr !== startR || tc !== startC)) {
-                trySwap(startR, startC, tr, tc);
-            }
-            startR = undefined;
-        });
-
-        function trySwap(r1, c1, r2, c2) {
-            isProcessing = true;
-            const item1 = board[r1][c1];
-            const item2 = board[r2][c2];
-
-            item1.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
-            item2.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
-
-            board[r1][c1] = item2;
-            board[r2][c2] = item1;
-
-            setTimeout(() => {
-                if (!checkMatches()) {
-                    item1.el.style.transform = `translate(${c1 * size}px, ${r1 * size}px)`;
-                    item2.el.style.transform = `translate(${c2 * size}px, ${r2 * size}px)`;
-                    board[r1][c1] = item1;
-                    board[r2][c2] = item2;
-                    setTimeout(() => { isProcessing = false; }, 250);
-                } else {
-                    isProcessing = false;
-                }
-            }, 300);
-        }
-
-        function checkMatches() {
-            let matches = new Set();
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols - 2; c++) {
-                    if (board[r][c] && board[r][c+1] && board[r][c+2] &&
-                        board[r][c].type === board[r][c+1].type && board[r][c].type === board[r][c+2].type) {
-                        matches.add(`${r},${c}`); matches.add(`${r},${c+1}`); matches.add(`${r},${c+2}`);
-                    }
-                }
-            }
-            for (let c = 0; c < cols; c++) {
-                for (let r = 0; r < rows - 2; r++) {
-                    if (board[r][c] && board[r+1][c] && board[r+2][c] &&
-                        board[r][c].type === board[r+1][c].type && board[r][c].type === board[r+2][c].type) {
-                        matches.add(`${r},${c}`); matches.add(`${r+1},${c}`); matches.add(`${r+2},${c}`);
-                    }
-                }
-            }
-
-            if (matches.size > 0) {
-                isProcessing = true;
-                score += (matches.size * 0.1);
-                document.getElementById('score').innerText = score.toFixed(1) + 'kg';
-                matches.forEach(coord => {
-                    const [r, c] = coord.split(',').map(Number);
-                    if(board[r][c]) {
-                        board[r][c].el.classList.add('match-vanish');
-                        const el = board[r][c].el;
-                        setTimeout(() => el.remove(), 250);
-                        board[r][c] = null;
-                    }
-                });
-                setTimeout(applyGravity, 300);
-                return true;
-            }
-            return false;
-        }
-
-        function applyGravity() {
-            for (let c = 0; c < cols; c++) {
-                let empty = 0;
-                for (let r = rows - 1; r >= 0; r--) {
-                    if (board[r][c] === null) empty++;
-                    else if (empty > 0) {
-                        const item = board[r][c];
-                        board[r + empty][c] = item;
-                        board[r][c] = null;
-                        item.el.style.transform = `translate(${c * size}px, ${(r + empty) * size}px)`;
-                    }
-                }
-                for (let i = 0; i < empty; i++) {
-                    const r = i;
-                    const type = items[Math.floor(Math.random() * items.length)];
-                    const el = document.createElement('div');
-                    el.className = 'item';
-                    el.innerHTML = type;
-                    el.style.transform = `translate(${c * size}px, -60px)`;
-                    itemLayer.appendChild(el);
-                    board[r][c] = { type, el };
-                    setTimeout(() => { el.style.transform = `translate(${c * size}px, ${r * size}px)`; }, 50);
-                }
-            }
-            setTimeout(() => { if (!checkMatches()) isProcessing = false; }, 450);
-        }
-
-        // --- GAME END & DATA SYNC ---
-        function startTimer() {
-            const int = setInterval(async () => {
-                timeLeft--;
-                const timerEl = document.getElementById('timer');
-                if (timerEl) timerEl.innerText = timeLeft;
-                
-                if (timeLeft <= 0) { 
-                    clearInterval(int); 
-                    isProcessing = true; // Lock interaction
-                    await saveGamePerformance(); 
-                }
-            }, 1000);
-        }
-
-        async function saveGamePerformance() {
+        async function syncLobby() {
             try {
-                // Fetch authenticated user
-                const { data: { user } } = await sb.auth.getUser();
-                const activeUsername = user?.user_metadata?.username || user?.email || "Elite_Chicken";
+                const { data: players, error: pErr } = await sb.from('1in2').select('*').order('created_at', { ascending: true });
+                const { data: signal, error: sErr } = await sb.from('Lobby_Signals').select('*').eq('lobby_id', '1in2').maybeSingle();
+                
+                if(pErr || sErr) throw (pErr || sErr);
 
-                // Sync with league_performances table
-                const { error } = await sb
-                    .from('league_performances')
-                    .insert([{ 
-                        username: activeUsername, 
-                        score: parseFloat(score.toFixed(1)), 
-                        league_id: '1in2' 
-                    }]);
-
-                if (error) throw error;
-                window.location.href = '1in2leaderboard.html';
-
-            } catch (err) {
-                console.error("Combat Sync Failed:", err.message);
-                alert("Sync Failed: " + err.message);
-
-                window.location.href = '1in2leaderboard.html';
+                cachedPlayers = players || [];
+                cachedSignal = signal;
+                
+                // Update connection indicator
+                const indicator = document.getElementById('connection-indicator');
+                indicator.className = "flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full";
+                indicator.innerHTML = `<span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span class="text-[9px] font-bold text-green-500 orbitron">CONNECTED</span>`;
+                
+                log(`SYNCED ${cachedPlayers.length} PLAYERS`);
+                updateUI();
+            } catch (e) {
+                log(`SYNC ERROR: ${e.message}`);
             }
         }
 
-        init();
+        function updateUI() {
+            const total = cachedPlayers.length;
+            const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
+            const btn = document.getElementById('mainBtn');
+
+            document.getElementById('count_display').innerText = `${total} / 2 ACTIVE`;
+
+            for(let i=0; i<2; i++) {
+                const circle = document.getElementById(`slot-${i}`);
+                const nameSpan = document.getElementById(`name-${i}`);
+                const player = cachedPlayers[i];
+
+                if(player) {
+                    circle.classList.add('slot-filled');
+                    circle.innerHTML = `<span class="text-yellow-500 font-black text-xl orbitron">${player.player_username[0]}</span>`;
+                    nameSpan.innerText = player.player_username;
+                    nameSpan.classList.add('text-yellow-500');
+                    nameSpan.classList.remove('text-zinc-700');
+                } else {
+                    circle.classList.remove('slot-filled');
+                    circle.innerHTML = "";
+                    nameSpan.innerText = "OPEN SLOT";
+                    nameSpan.classList.remove('text-yellow-500');
+                    nameSpan.classList.add('text-zinc-700');
+                }
+            }
+
+            if (isProcessing) return; // Don't flip text while db is writing
+
+            if (total >= 2) {
+                if (cachedSignal?.is_live) {
+                    if (isUserIn) {
+                        btn.innerText = "ENTER ARENA";
+                        btn.className = "w-full py-5 bg-yellow-400 text-black rounded-2xl font-black uppercase italic shadow-[0_0_30px_rgba(251,191,36,0.3)]";
+                        btn.disabled = false;
+                    } else {
+                        btn.innerText = "LOBBY FULL";
+                        btn.disabled = true;
+                        btn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-2xl font-black uppercase italic";
+                    }
+                } else {
+                    btn.innerText = isUserIn ? "WAITING FOR ADMIN..." : "LOBBY FULL";
+                    btn.disabled = true;
+                    btn.className = "w-full py-5 bg-zinc-900 text-zinc-600 rounded-2xl font-black uppercase italic";
+                }
+            } else {
+                if (isUserIn) {
+                    btn.innerText = "SEARCHING FOR OPPONENT...";
+                    btn.disabled = true;
+                    btn.className = "w-full py-5 bg-zinc-900 text-zinc-400 rounded-2xl font-black uppercase italic border border-white/5";
+                } else {
+                    btn.innerText = "JOIN LEAGUE";
+                    btn.disabled = false;
+                    btn.className = "w-full py-5 bg-white text-black rounded-2xl font-black uppercase italic";
+                }
+            }
+        }
+
+        async function handleMainAction() {
+            if(isProcessing) return;
+            const isUserIn = cachedPlayers.some(p => p.player_username === currentUser);
+            const btn = document.getElementById('mainBtn');
+            
+            if (!isUserIn && cachedPlayers.length < 2) {
+                isProcessing = true;
+                btn.innerText = "REGISTERING...";
+                btn.classList.add('btn-loading');
+                log(`SENDING HANDSHAKE FOR ${currentUser}...`);
+
+                const { error } = await sb.from('1in2').insert([{ player_username: currentUser }]);
+                
+                if (error) {
+                    log(`FAILED: ${error.message}`);
+                    isProcessing = false;
+                    btn.classList.remove('btn-loading');
+                    updateUI();
+                } else {
+                    log("HANDSHAKE SUCCESSFUL");
+                    await syncLobby();
+                    isProcessing = false;
+                    btn.classList.remove('btn-loading');
+                }
+            } else if (isUserIn && cachedPlayers.length >= 2 && cachedSignal?.is_live) {
+                log("REDIRECTING TO ARENA...");
+                window.location.href = `1in2arena.html?user=${encodeURIComponent(currentUser)}&league=1in2`;
+            }
+        }
+
+        async function exitLobby() {
+            log("REMOVING HANDSHAKE...");
+            await sb.from('1in2').delete().eq('player_username', currentUser);
+            window.location.href = 'dashboard.html';
+        }
+
+        // Real-time
+        sb.channel('lobby_updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: '1in2' }, syncLobby)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'Lobby_Signals' }, syncLobby)
+            .subscribe();
+
+        syncLobby();
     </script>
 </body>
 </html>
