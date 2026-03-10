@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arena | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #fbbf24;
+            --glow: rgba(251,191,36,0.5);
+            --bg: #050505;
+        }
+        * { box-sizing: border-box; touch-action: none; }
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(251,191,36,0.07) 0%, transparent 60%);
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        #hud {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px 10px; max-width: 420px; margin: 0 auto;
+        }
+        .hud-pill {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 999px; padding: 6px 14px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        #timer-wrap { position: relative; width: 64px; height: 64px; }
+        #timer-wrap svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
+        .arc-bg  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+        .arc-fill {
+            fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round;
+            stroke-dasharray: 176; stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.5s;
+            filter: drop-shadow(0 0 5px var(--gold));
+        }
+        .arc-fill.danger { stroke: #ef4444; filter: drop-shadow(0 0 5px #ef4444); }
+        #timer-text {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: var(--gold);
+        }
+        #timer-text.danger { color: #ef4444; }
+        #board-wrap { max-width: 420px; margin: 6px auto 0; padding: 0 10px; }
+        #board {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px; padding: 10px;
+        }
+        .cell {
+            aspect-ratio: 1; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.12s;
+            position: relative; user-select: none; -webkit-user-select: none;
+        }
+        .cell:active { transform: scale(0.88); }
+        .cell.selected { transform: scale(1.15); box-shadow: 0 0 0 3px white, 0 0 16px rgba(255,255,255,0.4); z-index: 2; }
+        .cell.matched { animation: pop 0.35s ease forwards; }
+        .cell.falling { animation: fall 0.25s ease; }
+        @keyframes pop {
+            0%   { transform: scale(1.2); opacity: 1; }
+            50%  { transform: scale(1.4); opacity: 0.6; }
+            100% { transform: scale(0);   opacity: 0; }
+        }
+        @keyframes fall {
+            0%   { transform: translateY(-20px); opacity: 0.5; }
+            100% { transform: translateY(0);     opacity: 1; }
+        }
+        .gem-0 { background: rgba(239,68,68,0.25);   border: 1px solid rgba(239,68,68,0.5); }
+        .gem-1 { background: rgba(251,191,36,0.25);  border: 1px solid rgba(251,191,36,0.5); }
+        .gem-2 { background: rgba(34,197,94,0.25);   border: 1px solid rgba(34,197,94,0.5); }
+        .gem-3 { background: rgba(59,130,246,0.25);  border: 1px solid rgba(59,130,246,0.5); }
+        .gem-4 { background: rgba(168,85,247,0.25);  border: 1px solid rgba(168,85,247,0.5); }
+        .gem-5 { background: rgba(236,72,153,0.25);  border: 1px solid rgba(236,72,153,0.5); }
+        .score-pop {
+            position: fixed; font-family: 'Orbitron', sans-serif; font-weight: 900;
+            color: var(--gold); font-size: 1.1rem; pointer-events: none; z-index: 99;
+            animation: score-float 0.9s ease forwards;
+        }
+        @keyframes score-float {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+        }
+        #gameover {
+            position: fixed; inset: 0; z-index: 50; background: rgba(5,5,5,0.95);
+            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+        }
+        #gameover.show { display: flex; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        #intro {
+            position: fixed; inset: 0; z-index: 60; background: rgba(5,5,5,0.97);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #intro-number {
+            font-family: 'Orbitron', sans-serif; font-size: 7rem; font-weight: 900;
+            color: var(--gold); text-shadow: 0 0 60px var(--glow); animation: intro-pop 0.8s ease;
+        }
+        @keyframes intro-pop {
+            0%   { transform: scale(2); opacity: 0; }
+            50%  { transform: scale(0.9); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .lb-row {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+        }
+        .lb-row.me { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.25); }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%     { transform: translateX(-6px); }
+            40%     { transform: translateX(6px); }
+            60%     { transform: translateX(-4px); }
+            80%     { transform: translateX(4px); }
+        }
+        .shake { animation: shake 0.35s ease; }
+    </style>
+</head>
+<body>
+
+    <!-- INTRO -->
+    <div id="intro">
+        <p class="orbitron text-[10px] text-zinc-500 tracking-widest mb-6">ARENA STARTING IN</p>
+        <div id="intro-number">3</div>
+        <p class="orbitron text-xs text-zinc-600 mt-6 tracking-widest" id="intro-label">GET READY</p>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameover">
+        <div class="glass rounded-[2rem] p-7 w-full max-w-sm text-center">
+            <div class="text-4xl mb-2">🐔</div>
+            <h2 class="orbitron text-xl font-black uppercase tracking-tighter mb-1">Time's Up!</h2>
+            <p class="text-zinc-500 text-[9px] orbitron tracking-widest mb-5">YOUR SESSION IS COMPLETE</p>
+            <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-2xl p-4 mb-5">
+                <p class="text-[9px] orbitron text-zinc-500 mb-1">FINAL SCORE</p>
+                <p id="final-score" class="orbitron text-4xl font-black text-yellow-400">0</p>
+            </div>
+            <p class="text-[9px] orbitron text-zinc-600 mb-4 tracking-widest">LEADERBOARD</p>
+            <div id="lb-list" class="flex flex-col gap-2 mb-5 max-h-52 overflow-y-auto">
+                <div class="text-zinc-600 text-[9px] orbitron text-center py-3">LOADING...</div>
+            </div>
+            <button onclick="goToLobby()"
+                class="w-full py-4 bg-yellow-400 text-black rounded-2xl font-black uppercase italic orbitron tracking-tighter">
+                BACK TO LOBBY
+            </button>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-pill">
+            <span class="text-[8px] orbitron text-zinc-500 tracking-widest">SCORE</span>
+            <span id="score-display" class="orbitron text-lg font-black text-yellow-400">0</span>
+        </div>
+        <div id="timer-wrap">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+                <circle class="arc-bg"   cx="32" cy="32" r="28"/>
+                <circle class="arc-fill" id="arc" cx="32" cy="32" r="28"/>
+            </svg>
+            <div id="timer-text">60</div>
+        </div>
+        <div class="hud-pill">
+            <span class="text-[8px] orbitron text-zinc-500 tracking-widest">COMBO</span>
+            <span id="combo-display" class="orbitron text-lg font-black text-white">x1</span>
+        </div>
+    </div>
+
+    <!-- BOARD -->
+    <div id="board-wrap">
+        <div id="board"></div>
+    </div>
+
+    <script>
+    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+    const sb     = window.supabase.createClient(SB_URL, SB_KEY);
+
+    const LOBBY_ID  = '1in15';
+    const COLS      = 7;
+    const ROWS      = 8;
+    const GAME_SECS = 60;
+    const GEMS      = ['🔴','🟡','🟢','🔵','🟣','🩷'];
+    const GEM_TYPES = GEMS.length;
+
+    const params      = new URLSearchParams(window.location.search);
+    const currentUser = params.get('user') || localStorage.getItem('league_user') || 'PLAYER';
+
+    let board = [], score = 0, combo = 1, selected = null;
+    let timeLeft = GAME_SECS, gameTimer = null, gameLive = false;
+    let busy = false, scoresSaved = false;
+
+    function randGem() { return Math.floor(Math.random() * GEM_TYPES); }
+
+    function initBoard() {
+        board = [];
+        for (let r = 0; r < ROWS; r++) {
+            board[r] = [];
+            for (let c = 0; c < COLS; c++) {
+                let gem;
+                do { gem = randGem(); }
+                while (
+                    (c >= 2 && board[r][c-1] === gem && board[r][c-2] === gem) ||
+                    (r >= 2 && board[r-1][c] === gem && board[r-2][c] === gem)
+                );
+                board[r][c] = gem;
+            }
+        }
+    }
+
+    function renderBoard(animateFall = false) {
+        const el = document.getElementById('board');
+        el.innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const cell = document.createElement('div');
+                cell.className = `cell gem-${board[r][c]}${animateFall ? ' falling' : ''}`;
+                cell.dataset.r = r; cell.dataset.c = c;
+                cell.textContent = GEMS[board[r][c]];
+                cell.addEventListener('pointerdown', onCellTap);
+                el.appendChild(cell);
+            }
+        }
+    }
+
+    function getCell(r, c) { return document.querySelector(`[data-r="${r}"][data-c="${c}"]`); }
+
+    function findMatches() {
+        const matched = new Set();
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS - 2; c++) {
+                const g = board[r][c];
+                if (g === board[r][c+1] && g === board[r][c+2]) {
+                    let end = c + 2;
+                    while (end + 1 < COLS && board[r][end+1] === g) end++;
+                    for (let x = c; x <= end; x++) matched.add(`${r},${x}`);
+                }
+            }
+        }
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS - 2; r++) {
+                const g = board[r][c];
+                if (g === board[r+1][c] && g === board[r+2][c]) {
+                    let end = r + 2;
+                    while (end + 1 < ROWS && board[end+1][c] === g) end++;
+                    for (let x = r; x <= end; x++) matched.add(`${x},${c}`);
+                }
+            }
+        }
+        return matched;
+    }
+
+    async function processMatches() {
+        const matched = findMatches();
+        if (matched.size === 0) { combo = 1; updateCombo(); busy = false; return; }
+        matched.forEach(key => {
+            const [r, c] = key.split(',').map(Number);
+            getCell(r, c)?.classList.add('matched');
+        });
+        const base = matched.size * 10;
+        const bonus = matched.size >= 5 ? 3 : matched.size === 4 ? 2 : 1;
+        const gained = base * bonus * combo;
+        score += gained; updateScore(); showScorePop(gained);
+        combo = Math.min(combo + 1, 8); updateCombo();
+        await delay(380);
+        matched.forEach(key => { const [r,c] = key.split(',').map(Number); board[r][c] = -1; });
+        for (let c = 0; c < COLS; c++) {
+            let empty = ROWS - 1;
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (board[r][c] !== -1) { board[empty][c] = board[r][c]; if (empty !== r) board[r][c] = -1; empty--; }
+            }
+            for (let r = empty; r >= 0; r--) board[r][c] = randGem();
+        }
+        renderBoard(true);
+        await delay(280);
+        await processMatches();
+    }
+
+    async function trySwap(r1, c1, r2, c2) {
+        if (busy) return;
+        if (Math.abs(r1-r2) + Math.abs(c1-c2) !== 1) { selected = null; renderBoard(); return; }
+        busy = true;
+        [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+        renderBoard();
+        if (findMatches().size === 0) {
+            await delay(200);
+            [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+            renderBoard();
+            [getCell(r1,c1), getCell(r2,c2)].forEach(el => {
+                if (el) { el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 400); }
+            });
+            busy = false;
+        } else {
+            await processMatches();
+        }
+        selected = null;
+    }
+
+    function onCellTap(e) {
+        if (!gameLive || busy) return;
+        e.preventDefault();
+        const r = parseInt(e.currentTarget.dataset.r);
+        const c = parseInt(e.currentTarget.dataset.c);
+        if (!selected) {
+            selected = { r, c }; renderBoard(); getCell(r,c)?.classList.add('selected');
+        } else {
+            const { r: pr, c: pc } = selected;
+            if (pr === r && pc === c) { selected = null; renderBoard(); }
+            else { trySwap(pr, pc, r, c); }
+        }
+    }
+
+    let touchStart = null;
+    document.getElementById('board').addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        touchStart = { x: t.clientX, y: t.clientY, target: e.target };
+    }, { passive: true });
+
+    document.getElementById('board').addEventListener('touchend', e => {
+        if (!touchStart || !gameLive || busy) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStart.x;
+        const dy = t.clientY - touchStart.y;
+        const r  = parseInt(touchStart.target.dataset.r);
+        const c  = parseInt(touchStart.target.dataset.c);
+        if (isNaN(r) || isNaN(c)) return;
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        let tr = r, tc = c;
+        if (Math.abs(dx) > Math.abs(dy)) { tc = dx > 0 ? c+1 : c-1; }
+        else { tr = dy > 0 ? r+1 : r-1; }
+        if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS) { selected = { r, c }; trySwap(r, c, tr, tc); }
+        touchStart = null;
+    }, { passive: true });
+
+    function updateScore() { document.getElementById('score-display').innerText = score; }
+    function updateCombo() {
+        const el = document.getElementById('combo-display');
+        el.innerText = `x${combo}`;
+        el.style.color = combo >= 4 ? '#fbbf24' : combo >= 2 ? '#a78bfa' : 'white';
+    }
+    function showScorePop(pts) {
+        const pop = document.createElement('div');
+        pop.className = 'score-pop';
+        pop.innerText = `+${pts}`;
+        pop.style.left = (Math.random() * 60 + 20) + '%';
+        pop.style.top  = '120px';
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 950);
+    }
+
+    function startGameTimer() {
+        const arc = document.getElementById('arc');
+        const timerText = document.getElementById('timer-text');
+        gameTimer = setInterval(async () => {
+            timeLeft--;
+            arc.style.strokeDashoffset = 176 * (1 - timeLeft / GAME_SECS);
+            timerText.innerText = timeLeft;
+            if (timeLeft <= 10) { arc.classList.add('danger'); timerText.classList.add('danger'); }
+            if (timeLeft <= 0) { clearInterval(gameTimer); gameLive = false; await endGame(); }
+        }, 1000);
+    }
+
+    async function endGame() {
+        if (scoresSaved) return;
+        scoresSaved = true;
+        await sb.from('game_sessions').upsert({
+            lobby_id: LOBBY_ID, player_username: currentUser,
+            score, is_complete: true, finished_at: new Date().toISOString()
+        }, { onConflict: 'lobby_id,player_username' });
+        document.getElementById('final-score').innerText = score;
+        const { data: lb } = await sb.from('game_sessions').select('player_username, score, is_complete')
+            .eq('lobby_id', LOBBY_ID).order('score', { ascending: false });
+        renderLeaderboard(lb || []);
+        document.getElementById('gameover').classList.add('show');
+    }
+
+    function renderLeaderboard(rows) {
+        const medals = ['🥇','🥈','🥉'];
+        const list = document.getElementById('lb-list');
+        if (!rows.length) { list.innerHTML = `<div class="text-zinc-600 text-[9px] orbitron text-center py-3">NO SCORES YET</div>`; return; }
+        list.innerHTML = rows.map((r, i) => `
+            <div class="lb-row ${r.player_username === currentUser ? 'me' : ''}">
+                <span class="text-sm">${medals[i] || `#${i+1}`}</span>
+                <span class="orbitron text-xs font-bold flex-1 truncate ${r.player_username === currentUser ? 'text-yellow-400' : 'text-white'}">
+                    ${r.player_username === currentUser ? 'YOU' : r.player_username}
+                </span>
+                <span class="orbitron text-yellow-400 font-black text-sm">${r.score}</span>
+                <span class="text-[8px] px-2 py-0.5 rounded-full orbitron ml-1
+                    ${r.is_complete ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-zinc-800 text-zinc-500'}">
+                    ${r.is_complete ? 'DONE' : '⏳'}
+                </span>
+            </div>`).join('');
+    }
+
+    function goToLobby() { window.location.href = '1in15lobby.html'; }
+
+    function runIntro() {
+        const numEl = document.getElementById('intro-number');
+        const labelEl = document.getElementById('intro-label');
+        const steps = [
+            { text: '3', label: 'GET READY',      delay: 900 },
+            { text: '2', label: 'STEADY...',       delay: 900 },
+            { text: '1', label: 'ALMOST...',       delay: 900 },
+            { text: 'GO',label: 'MATCH 3 TO WIN!', delay: 700 },
+        ];
+        let i = 0;
+        function next() {
+            if (i >= steps.length) {
+                document.getElementById('intro').style.display = 'none';
+                gameLive = true; startGameTimer(); return;
+            }
+            const s = steps[i++];
+            numEl.style.animation = 'none'; void numEl.offsetWidth;
+            numEl.style.animation = 'intro-pop 0.8s ease';
+            numEl.innerText = s.text; labelEl.innerText = s.label;
+            setTimeout(next, s.delay);
+        }
+        next();
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    initBoard();
+    renderBoard();
+    runIntro();
+
+    sb.channel('arena_lb')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, async () => {
+            if (document.getElementById('gameover').classList.contains('show')) {
+                const { data: lb } = await sb.from('game_sessions')
+                    .select('player_username, score, is_complete')
+                    .eq('lobby_id', LOBBY_ID).order('score', { ascending: false });
+                renderLeaderboard(lb || []);
+            }
+        }).subscribe();
+    </script>
+</body>
+</html>
