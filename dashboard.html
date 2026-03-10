@@ -21,6 +21,9 @@
             background: #000; border: 1px solid rgba(255, 255, 255, 0.1); 
             border-radius: 1rem; transition: all 0.2s; 
         }
+        .active-red { border-left: 2px solid #ff0000; }
+        .active-blue { border-left: 2px solid #0066ff; }
+        .active-white { border-left: 2px solid #ffffff; }
     </style>
 </head>
 <body class="pt-16 pb-32">
@@ -36,7 +39,7 @@
         </div>
 
         <div class="grid gap-4">
-            <a href="1in2.html" class="glass-card p-5 flex items-center justify-between border-l-2 border-white active:bg-zinc-900">
+            <a href="1in2.html" class="glass-card p-5 flex items-center justify-between active-white active:bg-zinc-900">
                 <div class="flex items-center gap-4">
                     <div class="h-12 w-12 rounded-lg bg-white flex items-center justify-center text-black font-black orbitron text-xl">2</div>
                     <div>
@@ -50,23 +53,44 @@
                 </div>
             </a>
 
-            <a href="#" class="glass-card p-5 flex items-center justify-between border-l-2 border-zinc-800">
+            <a href="1in15.html" class="glass-card p-5 flex items-center justify-between active-red active:bg-zinc-900">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-lg bg-red-600 flex items-center justify-center text-white font-black orbitron text-xl">15</div>
+                    <div>
+                        <h3 class="font-chirp text-lg leading-tight uppercase">Mega Brawl</h3>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">1 IN 15 • High Yield</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="h-1.5 w-1.5 bg-red-600 rounded-full animate-ping"></div>
+                    <span class="text-red-600 font-black text-[9px] uppercase tracking-widest">Open</span>
+                </div>
+            </a>
+
+            <a href="#" class="glass-card p-5 flex items-center justify-between border-l-2 border-zinc-800 opacity-50 cursor-not-allowed">
                 <div class="flex items-center gap-4">
                     <div class="h-12 w-12 rounded-lg bg-zinc-900 flex items-center justify-center text-zinc-400 font-black orbitron text-xl">5</div>
                     <div>
                         <h3 class="font-chirp text-lg leading-tight uppercase text-zinc-400">Squad Clash</h3>
-                        <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">1 IN 5 • Higher Yield</p>
+                        <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">1 IN 5 • Locked</p>
                     </div>
                 </div>
-                <span class="text-zinc-600 font-black text-[9px] uppercase">Locked</span>
+                <span class="text-zinc-600 font-black text-[9px] uppercase">Restricted</span>
             </a>
         </div>
     </main>
 
     <script>
         async function load() {
-            const { data: { session } } = await sb.auth.getSession();
-            if (session) document.getElementById('user_initial').innerText = session.user.user_metadata.username.charAt(0).toUpperCase();
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (session && session.user && session.user.user_metadata) {
+                    const username = session.user.user_metadata.username || "P";
+                    document.getElementById('user_initial').innerText = username.charAt(0).toUpperCase();
+                }
+            } catch (e) {
+                console.error("Session Link Failed", e);
+            }
         }
         load();
     </script>
