@@ -12,103 +12,97 @@
         @import url('https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700;900&display=swap');
         
         :root {
-            --bg: #ffffff;
-            --text: #000000;
-            --attention: #0066ff;
+            --gemini-bg: #131314;
+            --gemini-blue: #4285F4;
+            --text-white: #ffffff;
+            --ui-font: 'Product Sans', 'Google Sans', system-ui, sans-serif;
         }
 
         body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            font-family: 'Product Sans', 'Google Sans', system-ui, sans-serif; 
+            background-color: var(--gemini-bg); 
+            color: var(--text-white); 
+            font-family: var(--ui-font); 
             margin: 0; 
             -webkit-font-smoothing: antialiased; 
         }
 
         .font-bold-900 { font-weight: 900; letter-spacing: -0.02em; }
 
-        .terminal-card { 
-            background: #ffffff; 
-            border: 1px solid #f0f0f0; 
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
             border-radius: 1.25rem; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
         }
 
-        .terminal-card:active {
-            transform: scale(0.98);
-            background-color: #fafafa;
-            border-color: var(--attention);
+        .glass-card:active {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--gemini-blue);
         }
 
-        .blue-highlight { color: var(--attention); }
-        .bg-attention { background-color: var(--attention); }
+        .active-blue { border-left: 4px solid var(--gemini-blue); }
+        .text-blue { color: var(--gemini-blue); }
+        .bg-blue { background-color: var(--gemini-blue); }
         
-        .status-dot {
+        .status-pulse {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background-color: var(--attention);
+            background-color: var(--gemini-blue);
         }
     </style>
 </head>
 <body class="pt-16 pb-32">
     <main class="px-6">
-        <div class="flex justify-between items-end mb-12">
+        <div class="flex justify-between items-start mb-10">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 blue-highlight">Neural Link: Active</p>
-                <h1 class="text-4xl font-bold-900 uppercase tracking-tighter">CONTROL<br>CENTER</h1>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-blue">System: Optimized</p>
+                <h1 class="text-3xl font-bold-900 uppercase tracking-tighter leading-tight">CONTROL<br>CENTER</h1>
             </div>
-            <div class="h-12 w-12 rounded-2xl bg-black flex items-center justify-center shadow-lg shadow-blue-500/10">
-                <span id="user_initial" class="font-black text-white text-xl">?</span>
+            <div class="h-12 w-12 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-blue-500/10">
+                <span id="user_initial" class="font-black text-black text-xl">?</span>
             </div>
         </div>
 
-        <div class="grid gap-5">
-            <a href="1in2.html" class="terminal-card p-6 flex items-center justify-between border-l-4 border-black">
+        <div class="grid gap-4">
+            <a href="1in2.html" class="glass-card p-6 flex items-center justify-between active-blue">
                 <div class="flex items-center gap-5">
-                    <div class="h-14 w-14 rounded-xl bg-black flex items-center justify-center text-white font-black text-2xl">2</div>
+                    <div class="h-14 w-14 rounded-xl bg-white flex items-center justify-center text-black font-black text-2xl shadow-sm">2</div>
                     <div>
-                        <h3 class="font-bold-900 text-xl uppercase">Duo Duel</h3>
-                        <p class="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">1 IN 2 • Instant Link</p>
+                        <h3 class="font-bold-900 text-lg uppercase">Duo Duel</h3>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">1 IN 2 • Instant</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full">
-                    <div class="status-dot animate-pulse"></div>
-                    <span class="blue-highlight font-black text-[9px] uppercase tracking-widest">Live</span>
+                <div class="flex items-center gap-2">
+                    <div class="status-pulse animate-pulse"></div>
+                    <span class="text-blue font-black text-[9px] uppercase tracking-widest">Live</span>
                 </div>
             </a>
 
-            <a href="1in15lobby.html" class="terminal-card p-6 flex items-center justify-between border-l-4 border-blue-600">
+            <a href="1in15lobby.html" class="glass-card p-6 flex items-center justify-between active-blue">
                 <div class="flex items-center gap-5">
-                    <div class="h-14 w-14 rounded-xl bg-attention flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20">15</div>
+                    <div class="h-14 w-14 rounded-xl bg-blue flex items-center justify-center text-white font-black text-2xl shadow-blue-500/20 shadow-lg">15</div>
                     <div>
-                        <h3 class="font-bold-900 text-xl uppercase">Mega Brawl</h3>
-                        <p class="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">1 IN 15 • Terminal Grade</p>
+                        <h3 class="font-bold-900 text-lg uppercase">Mega Brawl</h3>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">1 IN 15 • High Yield</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full">
-                    <div class="status-dot animate-ping"></div>
-                    <span class="blue-highlight font-black text-[9px] uppercase tracking-widest">Open</span>
+                <div class="flex items-center gap-2">
+                    <div class="status-pulse animate-ping"></div>
+                    <span class="text-blue font-black text-[9px] uppercase tracking-widest">Open</span>
                 </div>
             </a>
 
-            <div class="terminal-card p-6 flex items-center justify-between opacity-40 grayscale">
+            <div class="glass-card p-6 flex items-center justify-between opacity-30 cursor-not-allowed">
                 <div class="flex items-center gap-5">
-                    <div class="h-14 w-14 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-400 font-black text-2xl">5</div>
+                    <div class="h-14 w-14 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500 font-black text-2xl">5</div>
                     <div>
-                        <h3 class="font-bold-900 text-xl uppercase text-zinc-400">Squad Clash</h3>
-                        <p class="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">1 IN 5 • Locked</p>
+                        <h3 class="font-bold-900 text-lg uppercase text-zinc-500">Squad Clash</h3>
+                        <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">1 IN 5 • Restricted</p>
                     </div>
                 </div>
-                <span class="text-zinc-400 font-black text-[9px] uppercase tracking-widest">Restricted</span>
+                <span class="text-zinc-600 font-black text-[9px] uppercase tracking-widest">Locked</span>
             </div>
-        </div>
-        
-        <div class="mt-12 pt-8 border-t border-zinc-50 flex justify-center gap-8">
-            <a href="#" class="blue-link text-[10px] font-black uppercase tracking-widest blue-highlight">Security</a>
-            <a href="#" class="blue-link text-[10px] font-black uppercase tracking-widest blue-highlight">Network</a>
-            <a href="#" class="blue-link text-[10px] font-black uppercase tracking-widest blue-highlight">Profile</a>
         </div>
     </main>
 
@@ -117,11 +111,11 @@
             try {
                 const { data: { session } } = await sb.auth.getSession();
                 if (session && session.user && session.user.user_metadata) {
-                    const username = session.user.user_metadata.username || "Pilot";
+                    const username = session.user.user_metadata.username || "P";
                     document.getElementById('user_initial').innerText = username.charAt(0).toUpperCase();
                 }
             } catch (e) {
-                console.error("Neural Link Failed", e);
+                console.error("Neural Sync Error", e);
             }
         }
         load();
