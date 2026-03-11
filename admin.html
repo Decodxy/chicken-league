@@ -8,237 +8,91 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --gold: #fbbf24;
-            --glow: rgba(251,191,36,0.4);
-            --red: #ef4444;
-            --green: #22c55e;
-            --bg: #060606;
-        }
-
+        :root { --gold: #fbbf24; --glow: rgba(251,191,36,0.4); --red: #ef4444; --green: #22c55e; --bg: #060606; }
         * { box-sizing: border-box; }
-
         body {
-            background: var(--bg);
-            color: white;
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
+            background: var(--bg); color: white; font-family: 'Inter', sans-serif; min-height: 100vh;
             background-image:
                 radial-gradient(ellipse 80% 40% at 50% -10%, rgba(251,191,36,0.08) 0%, transparent 60%),
                 repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 40px),
                 repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.015) 40px);
         }
-
         .orbitron { font-family: 'Orbitron', sans-serif; }
-
-        /* ── Glass panels ── */
-        .glass {
-            background: rgba(255,255,255,0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .glass-gold {
-            background: rgba(251,191,36,0.05);
-            border: 1px solid rgba(251,191,36,0.2);
-        }
-
-        /* ── Admin PIN gate ── */
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
         #pin-gate {
-            position: fixed; inset: 0; z-index: 50;
-            background: rgba(6,6,6,0.98);
+            position: fixed; inset: 0; z-index: 50; background: rgba(6,6,6,0.98);
             display: flex; align-items: center; justify-content: center; padding: 24px;
         }
-
-        /* ── Stat pill ── */
-        .stat-pill {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 999px;
-            padding: 6px 16px;
-            display: flex; align-items: center; gap-8px;
-        }
-
-        /* ── Code display ── */
         .code-display {
-            font-family: 'Orbitron', monospace;
-            font-size: 2rem;
-            font-weight: 900;
-            letter-spacing: 0.4em;
-            color: var(--gold);
-            text-shadow: 0 0 30px var(--glow);
-            text-align: center;
-            padding: 20px;
-            background: rgba(251,191,36,0.05);
-            border: 1px solid rgba(251,191,36,0.2);
-            border-radius: 16px;
+            font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 900;
+            letter-spacing: 0.4em; color: var(--gold); text-shadow: 0 0 30px var(--glow);
+            text-align: center; padding: 20px;
+            background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.2); border-radius: 16px;
         }
-
-        /* ── Inputs ── */
         .field {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            border-radius: 12px;
-            padding: 14px 16px;
-            width: 100%;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.85rem;
-            outline: none;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: white;
+            border-radius: 12px; padding: 14px 16px; width: 100%;
+            font-family: 'Orbitron', sans-serif; font-size: 0.85rem; outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .field:focus {
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(251,191,36,0.1);
-        }
+        .field:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(251,191,36,0.1); }
         .field::placeholder { color: rgba(255,255,255,0.2); }
-
-        /* ── Buttons ── */
         .btn-gold {
-            background: var(--gold);
-            color: black;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 14px;
-            padding: 14px 20px;
-            width: 100%;
-            transition: all 0.15s;
-            border: none; cursor: pointer;
+            background: var(--gold); color: black; font-family: 'Orbitron', sans-serif;
+            font-weight: 900; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+            border-radius: 14px; padding: 14px 20px; width: 100%;
+            transition: all 0.15s; border: none; cursor: pointer;
         }
         .btn-gold:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(251,191,36,0.3); }
         .btn-gold:active { transform: scale(0.97); }
-
         .btn-ghost {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.6);
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 0.7rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 12px;
-            padding: 12px 18px;
-            width: 100%;
-            transition: all 0.15s;
-            cursor: pointer;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6); font-family: 'Orbitron', sans-serif;
+            font-weight: 700; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+            border-radius: 12px; padding: 12px 18px; width: 100%; transition: all 0.15s; cursor: pointer;
         }
         .btn-ghost:hover { border-color: rgba(255,255,255,0.25); color: white; }
-
         .btn-danger {
-            background: rgba(239,68,68,0.1);
-            border: 1px solid rgba(239,68,68,0.3);
-            color: #ef4444;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 0.7rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 12px;
-            padding: 12px 18px;
-            width: 100%;
-            transition: all 0.15s;
-            cursor: pointer;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444;
+            font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.7rem;
+            letter-spacing: 0.1em; text-transform: uppercase; border-radius: 12px;
+            padding: 12px 18px; width: 100%; transition: all 0.15s; cursor: pointer;
         }
         .btn-danger:hover { background: rgba(239,68,68,0.2); }
-
-        /* ── Live indicator ── */
-        .live-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: var(--red);
-            display: inline-block;
-        }
-        .live-dot.on {
-            background: var(--green);
-            animation: pulse 1.5s ease-in-out infinite;
-            box-shadow: 0 0 8px var(--green);
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        /* ── Player rows ── */
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; }
+        .live-dot.on { background: var(--green); animation: pulse 1.5s ease-in-out infinite; box-shadow: 0 0 8px var(--green); }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
         .player-row {
-            display: flex; align-items: center; gap: 12px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05);
-            animation: slideIn 0.3s ease;
+            display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+            border-radius: 10px; background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05); animation: slideIn 0.3s ease;
         }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-8px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
-
-        /* ── Timer presets ── */
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
         .preset-btn {
-            flex: 1;
-            padding: 10px 6px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px;
-            color: rgba(255,255,255,0.6);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.15s;
+            flex: 1; padding: 10px 6px; background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+            color: rgba(255,255,255,0.6); font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem; font-weight: 700; text-align: center; cursor: pointer; transition: all 0.15s;
         }
-        .preset-btn:hover, .preset-btn.active {
-            background: rgba(251,191,36,0.1);
-            border-color: rgba(251,191,36,0.4);
-            color: var(--gold);
-        }
-
-        /* ── Toast ── */
+        .preset-btn:hover, .preset-btn.active { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.4); color: var(--gold); }
         #toast {
-            position: fixed; bottom: 24px; left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 22px;
-            border-radius: 12px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            opacity: 0; transition: opacity 0.3s;
-            z-index: 100; pointer-events: none; white-space: nowrap;
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            padding: 10px 22px; border-radius: 12px; font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+            opacity: 0; transition: opacity 0.3s; z-index: 100; pointer-events: none; white-space: nowrap;
         }
         #toast.show { opacity: 1; }
         #toast.success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: var(--green); }
-        #toast.error   { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.4);  color: var(--red); }
+        #toast.error   { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: var(--red); }
         #toast.info    { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); color: var(--gold); }
-
-        /* ── Section divider ── */
         .section-label {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.6rem;
-            font-weight: 900;
-            letter-spacing: 0.25em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.25);
-            margin-bottom: 12px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 900;
+            letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 12px;
         }
-
-        /* ── Countdown display ── */
         #live-countdown {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 900;
-            color: var(--gold);
-            text-shadow: 0 0 20px var(--glow);
-            text-align: center;
-            letter-spacing: 0.1em;
+            font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900;
+            color: var(--gold); text-shadow: 0 0 20px var(--glow); text-align: center; letter-spacing: 0.1em;
         }
-
-        /* scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
@@ -248,6 +102,7 @@
 
     <div id="toast"></div>
 
+    <!-- PIN GATE -->
     <div id="pin-gate">
         <div class="glass rounded-[2rem] p-8 w-full max-w-xs text-center">
             <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5"
@@ -259,16 +114,15 @@
             </div>
             <h2 class="orbitron text-base font-black uppercase tracking-tighter mb-1">Admin Access</h2>
             <p class="text-zinc-600 text-[9px] orbitron tracking-widest mb-6">CHICKEN LEAGUE · CONTROL PANEL</p>
-
             <input id="pin-input" type="password" maxlength="6" placeholder="ENTER PIN"
                 class="field text-center text-xl tracking-[0.5em] mb-4"
                 onkeydown="if(event.key==='Enter') verifyPin()" />
-
             <button onclick="verifyPin()" class="btn-gold">UNLOCK PANEL</button>
             <p class="text-zinc-700 text-[8px] orbitron mt-4">DEFAULT PIN: 000000</p>
         </div>
     </div>
 
+    <!-- ADMIN PANEL -->
     <main id="admin-panel" class="max-w-md mx-auto p-5" style="display:none;">
 
         <div class="mt-5 mb-6 flex items-center justify-between">
@@ -282,6 +136,7 @@
             </div>
         </div>
 
+        <!-- Lobby Stats -->
         <div class="glass rounded-2xl p-4 mb-4">
             <p class="section-label">Live Lobby Status</p>
             <div class="grid grid-cols-3 gap-3 mb-4">
@@ -298,33 +153,26 @@
                     <div class="text-[8px] text-zinc-500 orbitron mt-1">OPEN</div>
                 </div>
             </div>
-
             <div id="player-list" class="flex flex-col gap-2 max-h-44 overflow-y-auto pr-1">
                 <div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO PLAYERS YET</div>
             </div>
         </div>
 
+        <!-- Secret Code -->
         <div class="glass rounded-2xl p-5 mb-4">
             <p class="section-label">Secret Access Code</p>
-
             <div class="code-display mb-4" id="code-display">- - - - - - - -</div>
-
-            <div class="flex gap-3 mb-3">
-                <button onclick="generateCode()" class="btn-gold">⚡ GENERATE NEW CODE</button>
-            </div>
-            <div class="flex gap-3">
-                <input id="custom-code-input" type="text" maxlength="8" placeholder="OR TYPE CUSTOM CODE"
-                    class="field text-center uppercase tracking-widest" style="font-size:0.75rem;" />
-            </div>
-            <button onclick="saveCustomCode()" class="btn-ghost mt-3">SAVE CUSTOM CODE</button>
+            <button onclick="generateCode()" class="btn-gold mb-3">⚡ GENERATE NEW CODE</button>
+            <input id="custom-code-input" type="text" maxlength="8" placeholder="OR TYPE CUSTOM CODE"
+                class="field text-center uppercase tracking-widest mb-3" style="font-size:0.75rem;" />
+            <button onclick="saveCustomCode()" class="btn-ghost">SAVE CUSTOM CODE</button>
         </div>
 
+        <!-- Arena Timer -->
         <div class="glass rounded-2xl p-5 mb-4">
             <p class="section-label">Arena Open Timer</p>
-
             <div id="live-countdown" class="mb-4">--:--</div>
             <p id="open-at-display" class="text-center text-[9px] orbitron text-zinc-600 mb-4">NO TIMER SET</p>
-
             <p class="text-[8px] orbitron text-zinc-600 mb-2 tracking-widest">QUICK PRESETS</p>
             <div class="flex gap-2 mb-4">
                 <div class="preset-btn" onclick="selectPreset(1)">1 MIN</div>
@@ -333,16 +181,14 @@
                 <div class="preset-btn" onclick="selectPreset(10)">10 MIN</div>
                 <div class="preset-btn" onclick="selectPreset(15)">15 MIN</div>
             </div>
-
             <p class="text-[8px] orbitron text-zinc-600 mb-2 tracking-widest">CUSTOM (MINUTES)</p>
-            <input id="custom-minutes" type="number" min="1" max="120" placeholder="e.g. 7"
-                class="field mb-4" />
-
+            <input id="custom-minutes" type="number" min="1" max="120" placeholder="e.g. 7" class="field mb-4" />
             <button onclick="setTimer()" class="btn-gold mb-3">⏱ SET & START TIMER</button>
             <button onclick="openArenaNow()" class="btn-ghost mb-3">🔓 OPEN ARENA IMMEDIATELY</button>
             <button onclick="resetLobby()" class="btn-danger">🔄 RESET ENTIRE LOBBY</button>
         </div>
 
+        <!-- Leaderboard -->
         <div class="glass rounded-2xl p-5 mb-4">
             <p class="section-label">Leaderboard</p>
             <div id="leaderboard-list" class="flex flex-col gap-2">
@@ -352,267 +198,213 @@
         </div>
 
         <button onclick="adminLogout()" class="btn-ghost">← LOGOUT</button>
-
     </main>
 
     <script>
-    // ═══════════════════════════════════════
-    //  CONFIG
-    // ═══════════════════════════════════════
-    const SB_URL  = 'https://tbvmgcknkwsucstedigd.supabase.co';
-    const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
-    const sb      = window.supabase.createClient(SB_URL, SB_KEY);
-    const LOBBY   = '1in15';
-    const ADMIN_PIN = '000000'; // ← change this to your preferred PIN
+        const SB_URL    = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+        const sb        = window.supabase.createClient(SB_URL, SB_KEY);
+        const LOBBY     = '1in15';
+        const ADMIN_PIN = '000000';
 
-    let cachedSignal  = null;
-    let cachedPlayers = [];
-    let selectedMinutes = null;
-    let countdownInterval = null;
+        let cachedSignal = null, cachedPlayers = [], selectedMinutes = null, countdownInterval = null;
 
-    // ═══════════════════════════════════════
-    //  PIN GATE
-    // ═══════════════════════════════════════
-    function verifyPin() {
-        const pin = document.getElementById('pin-input').value.trim();
-        if (pin === ADMIN_PIN) {
-            document.getElementById('pin-gate').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-            syncAll();
-            startRealtime();
-        } else {
-            showToast('WRONG PIN', 'error');
+        function verifyPin() {
+            const pin = document.getElementById('pin-input').value.trim();
+            if (pin === ADMIN_PIN) {
+                document.getElementById('pin-gate').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                syncAll(); startRealtime();
+            } else {
+                showToast('WRONG PIN', 'error');
+                document.getElementById('pin-input').value = '';
+            }
+        }
+
+        function adminLogout() {
+            document.getElementById('pin-gate').style.display = 'flex';
+            document.getElementById('admin-panel').style.display = 'none';
             document.getElementById('pin-input').value = '';
         }
-    }
 
-    function adminLogout() {
-        document.getElementById('pin-gate').style.display = 'flex';
-        document.getElementById('admin-panel').style.display = 'none';
-        document.getElementById('pin-input').value = '';
-    }
-
-    // ═══════════════════════════════════════
-    //  SYNC
-    // ═══════════════════════════════════════
-    async function syncAll() {
-        const [{ data: players }, { data: signal }, { data: scores }] = await Promise.all([
-            sb.from('lobby_players').select('*').eq('lobby_id', LOBBY).order('joined_at', { ascending: true }),
-            sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY).maybeSingle(),
-            sb.from('game_sessions').select('*').eq('lobby_id', LOBBY).order('score', { ascending: false })
-        ]);
-
-        cachedPlayers = players || [];
-        cachedSignal  = signal;
-
-        renderStats();
-        renderPlayers();
-        renderLiveStatus();
-        renderLeaderboard(scores || []);
-        renderCodeDisplay();
-        startLiveCountdown();
-    }
-
-    // ═══════════════════════════════════════
-    //  RENDER HELPERS
-    // ═══════════════════════════════════════
-    function renderStats() {
-        const joined = cachedPlayers.length;
-        document.getElementById('stat-players').innerText = joined;
-        document.getElementById('stat-slots').innerText   = 15 - joined;
-    }
-
-    function renderPlayers() {
-        const list = document.getElementById('player-list');
-        if (!cachedPlayers.length) {
-            list.innerHTML = `<div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO PLAYERS YET</div>`;
-            return;
-        }
-        list.innerHTML = cachedPlayers.map((p, i) => `
-            <div class="player-row">
-                <span class="w-6 h-6 rounded-full bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center orbitron text-yellow-400 font-black text-[10px]">${i + 1}</span>
-                <span class="orbitron text-xs font-bold text-white flex-1">${p.player_username}</span>
-                <span class="text-[8px] text-zinc-600">${new Date(p.joined_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                <button onclick="removePlayer('${p.player_username}')" class="text-red-500/50 hover:text-red-500 text-[10px] orbitron">✕</button>
-            </div>
-        `).join('');
-    }
-
-    function renderLiveStatus() {
-        const isLive  = cachedSignal?.is_live;
-        const dot     = document.getElementById('live-dot');
-        const label   = document.getElementById('live-label');
-        dot.className = isLive ? 'live-dot on' : 'live-dot';
-        label.innerText = isLive ? 'LIVE' : 'OFFLINE';
-        label.className = isLive
-            ? 'text-[9px] orbitron font-bold text-green-400'
-            : 'text-[9px] orbitron font-bold text-zinc-500';
-    }
-
-    function renderCodeDisplay() {
-        const code = cachedSignal?.secret_code || '--------';
-        document.getElementById('code-display').innerText = code.split('').join(' ');
-    }
-
-    function renderLeaderboard(scores) {
-        const list = document.getElementById('leaderboard-list');
-        if (!scores.length) {
-            list.innerHTML = `<div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO SCORES YET</div>`;
-            return;
-        }
-        const medals = ['🥇','🥈','🥉'];
-        list.innerHTML = scores.map((s, i) => `
-            <div class="player-row justify-between">
-                <span class="text-base">${medals[i] || `#${i+1}`}</span>
-                <span class="orbitron text-xs font-bold flex-1 ml-2">${s.player_username}</span>
-                <span class="orbitron text-yellow-400 font-black text-sm">${s.score} PTS</span>
-                <span class="text-[8px] ml-2 px-2 py-0.5 rounded-full ${s.is_complete ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-zinc-800 text-zinc-500'} orbitron">
-                    ${s.is_complete ? 'DONE' : 'PLAYING'}
-                </span>
-            </div>
-        `).join('');
-    }
-
-    // ═══════════════════════════════════════
-    //  LIVE COUNTDOWN (admin side)
-    // ═══════════════════════════════════════
-    function startLiveCountdown() {
-        clearInterval(countdownInterval);
-        const openAt = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
-
-        if (!openAt) {
-            document.getElementById('live-countdown').innerText = '--:--';
-            document.getElementById('open-at-display').innerText = 'NO TIMER SET';
-            return;
+        async function syncAll() {
+            const [{ data: players }, { data: signal }, { data: scores }] = await Promise.all([
+                sb.from('lobby_players').select('*').eq('lobby_id', LOBBY).order('joined_at', { ascending: true }),
+                sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY).maybeSingle(),
+                sb.from('game_sessions').select('*').eq('lobby_id', LOBBY).order('score', { ascending: false })
+            ]);
+            cachedPlayers = players || [];
+            cachedSignal  = signal;
+            renderStats(); renderPlayers(); renderLiveStatus();
+            renderLeaderboard(scores || []); renderCodeDisplay(); startLiveCountdown();
         }
 
-        document.getElementById('open-at-display').innerText =
-            'OPENS AT: ' + openAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        function renderStats() {
+            document.getElementById('stat-players').innerText = cachedPlayers.length;
+            document.getElementById('stat-slots').innerText   = 15 - cachedPlayers.length;
+        }
 
-        function tick() {
-            const diff = openAt - new Date();
-            if (diff <= 0) {
-                clearInterval(countdownInterval);
-                document.getElementById('live-countdown').innerText = '00:00';
-                document.getElementById('open-at-display').innerText = '🔓 ARENA IS OPEN';
+        function renderPlayers() {
+            const list = document.getElementById('player-list');
+            if (!cachedPlayers.length) {
+                list.innerHTML = `<div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO PLAYERS YET</div>`;
                 return;
             }
-            const m = String(Math.floor(diff / 60000)).padStart(2, '0');
-            const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-            document.getElementById('live-countdown').innerText = `${m}:${s}`;
+            list.innerHTML = cachedPlayers.map((p, i) => `
+                <div class="player-row">
+                    <span class="w-6 h-6 rounded-full bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center orbitron text-yellow-400 font-black text-[10px]">${i+1}</span>
+                    <span class="orbitron text-xs font-bold text-white flex-1">${p.player_username}</span>
+                    <span class="text-[8px] text-zinc-600">${new Date(p.joined_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+                    <button onclick="removePlayer('${p.player_username}')" class="text-red-500/50 hover:text-red-500 text-[10px] orbitron">✕</button>
+                </div>`).join('');
         }
-        tick();
-        countdownInterval = setInterval(tick, 1000);
-    }
 
-    // ═══════════════════════════════════════
-    //  SECRET CODE ACTIONS
-    // ═══════════════════════════════════════
-    function generateCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let code = '';
-        for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
-        document.getElementById('custom-code-input').value = code;
-        document.getElementById('code-display').innerText = code.split('').join(' ');
-        showToast('CODE GENERATED — CLICK SAVE TO CONFIRM', 'info');
-    }
+        function renderLiveStatus() {
+            const isLive = cachedSignal?.is_live;
+            document.getElementById('live-dot').className = isLive ? 'live-dot on' : 'live-dot';
+            document.getElementById('live-label').innerText  = isLive ? 'LIVE' : 'OFFLINE';
+            document.getElementById('live-label').className  = isLive
+                ? 'text-[9px] orbitron font-bold text-green-400'
+                : 'text-[9px] orbitron font-bold text-zinc-500';
+        }
 
-    async function saveCustomCode() {
-        const raw = document.getElementById('custom-code-input').value.trim().toUpperCase();
-        if (!raw || raw.length < 4) { showToast('CODE MUST BE AT LEAST 4 CHARS', 'error'); return; }
+        function renderCodeDisplay() {
+            const code = cachedSignal?.secret_code || '--------';
+            document.getElementById('code-display').innerText = code.split('').join(' ');
+        }
 
-        const { error } = await sb.from('lobby_signals')
-            .update({ secret_code: raw, updated_at: new Date().toISOString() })
-            .eq('lobby_id', LOBBY);
+        function renderLeaderboard(scores) {
+            const list   = document.getElementById('leaderboard-list');
+            const medals = ['🥇','🥈','🥉'];
+            if (!scores.length) {
+                list.innerHTML = `<div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO SCORES YET</div>`;
+                return;
+            }
+            list.innerHTML = scores.map((s, i) => `
+                <div class="player-row justify-between">
+                    <span class="text-base">${medals[i] || `#${i+1}`}</span>
+                    <span class="orbitron text-xs font-bold flex-1 ml-2">${s.player_username}</span>
+                    <span class="orbitron text-yellow-400 font-black text-sm">${s.score} PTS</span>
+                    <span class="text-[8px] ml-2 px-2 py-0.5 rounded-full orbitron
+                        ${s.is_complete ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-zinc-800 text-zinc-500'}">
+                        ${s.is_complete ? 'DONE' : 'PLAYING'}
+                    </span>
+                </div>`).join('');
+        }
 
-        if (error) { showToast('SAVE FAILED: ' + error.message, 'error'); return; }
-        showToast('✓ CODE SAVED: ' + raw, 'success');
-        await syncAll();
-    }
+        function startLiveCountdown() {
+            clearInterval(countdownInterval);
+            const openAt = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
+            if (!openAt) {
+                document.getElementById('live-countdown').innerText  = '--:--';
+                document.getElementById('open-at-display').innerText = 'NO TIMER SET';
+                return;
+            }
+            document.getElementById('open-at-display').innerText =
+                'OPENS AT: ' + openAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            function tick() {
+                const diff = openAt - new Date();
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('live-countdown').innerText  = '00:00';
+                    document.getElementById('open-at-display').innerText = '🔓 ARENA IS OPEN';
+                    return;
+                }
+                const m = String(Math.floor(diff/60000)).padStart(2,'0');
+                const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+                document.getElementById('live-countdown').innerText = `${m}:${s}`;
+            }
+            tick();
+            countdownInterval = setInterval(tick, 1000);
+        }
 
-    // ═══════════════════════════════════════
-    //  TIMER ACTIONS
-    // ═══════════════════════════════════════
-    function selectPreset(mins) {
-        selectedMinutes = mins;
-        document.getElementById('custom-minutes').value = mins;
-        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-    }
+        function generateCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            document.getElementById('custom-code-input').value = code;
+            document.getElementById('code-display').innerText  = code.split('').join(' ');
+            showToast('CODE GENERATED — CLICK SAVE TO CONFIRM', 'info');
+        }
 
-    async function setTimer() {
-        const mins = parseInt(document.getElementById('custom-minutes').value) || selectedMinutes;
-        if (!mins || mins < 1) { showToast('SELECT A TIME FIRST', 'error'); return; }
+        async function saveCustomCode() {
+            const raw = document.getElementById('custom-code-input').value.trim().toUpperCase();
+            if (!raw || raw.length < 4) { showToast('CODE MUST BE AT LEAST 4 CHARS', 'error'); return; }
+            const { error } = await sb.from('lobby_signals')
+                .update({ secret_code: raw, updated_at: new Date().toISOString() })
+                .eq('lobby_id', LOBBY);
+            if (error) { showToast('SAVE FAILED: ' + error.message, 'error'); return; }
+            showToast('✓ CODE SAVED: ' + raw, 'success');
+            await syncAll();
+        }
 
-        const openAt     = new Date(Date.now() + mins * 60 * 1000).toISOString();
-        const timerSetAt = new Date().toISOString();
+        function selectPreset(mins) {
+            selectedMinutes = mins;
+            document.getElementById('custom-minutes').value = mins;
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
 
-        const { error } = await sb.from('lobby_signals')
-            .update({ open_at: openAt, timer_set_at: timerSetAt, is_live: true, updated_at: timerSetAt })
-            .eq('lobby_id', LOBBY);
+        async function setTimer() {
+            const mins = parseInt(document.getElementById('custom-minutes').value) || selectedMinutes;
+            if (!mins || mins < 1) { showToast('SELECT A TIME FIRST', 'error'); return; }
+            const openAt     = new Date(Date.now() + mins * 60 * 1000).toISOString();
+            const timerSetAt = new Date().toISOString();
+            const { error } = await sb.from('lobby_signals')
+                .update({ open_at: openAt, timer_set_at: timerSetAt, is_live: true, updated_at: timerSetAt })
+                .eq('lobby_id', LOBBY);
+            if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
+            showToast(`✓ ARENA OPENS IN ${mins} MINUTE${mins > 1 ? 'S' : ''}`, 'success');
+            await syncAll();
+        }
 
-        if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
-        showToast(`✓ ARENA OPENS IN ${mins} MINUTE${mins > 1 ? 'S' : ''}`, 'success');
-        await syncAll();
-    }
+        async function openArenaNow() {
+            const now = new Date().toISOString();
+            const { error } = await sb.from('lobby_signals')
+                .update({ open_at: now, timer_set_at: now, is_live: true, updated_at: now })
+                .eq('lobby_id', LOBBY);
+            if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
+            showToast('🔓 ARENA OPENED IMMEDIATELY', 'success');
+            await syncAll();
+        }
 
-    async function openArenaNow() {
-        const now = new Date().toISOString();
-        const { error } = await sb.from('lobby_signals')
-            .update({ open_at: now, timer_set_at: now, is_live: true, updated_at: now })
-            .eq('lobby_id', LOBBY);
+        async function resetLobby() {
+            if (!confirm('Reset entire lobby? This clears all players, scores, timer AND generates a new secret code.')) return;
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let newCode = '';
+            for (let i = 0; i < 8; i++) newCode += chars[Math.floor(Math.random() * chars.length)];
+            await Promise.all([
+                sb.from('lobby_players').delete().eq('lobby_id', LOBBY),
+                sb.from('game_sessions').delete().eq('lobby_id', LOBBY),
+                sb.from('lobby_signals').update({
+                    is_live: false, open_at: null, timer_set_at: null,
+                    secret_code: newCode, updated_at: new Date().toISOString()
+                }).eq('lobby_id', LOBBY)
+            ]);
+            showToast(`✓ RESET COMPLETE — NEW CODE: ${newCode}`, 'success');
+            await syncAll();
+        }
 
-        if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
-        showToast('🔓 ARENA OPENED IMMEDIATELY', 'success');
-        await syncAll();
-    }
+        async function removePlayer(username) {
+            await sb.from('lobby_players').delete()
+                .eq('lobby_id', LOBBY).eq('player_username', username);
+            showToast(`✓ REMOVED ${username}`, 'info');
+            await syncAll();
+        }
 
-    async function resetLobby() {
-        if (!confirm('Reset entire lobby? This clears all players and scores.')) return;
+        function startRealtime() {
+            sb.channel('admin_watch')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players' }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals' }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, syncAll)
+                .subscribe();
+        }
 
-        await Promise.all([
-            sb.from('lobby_players').delete().eq('lobby_id', LOBBY),
-            sb.from('game_sessions').delete().eq('lobby_id', LOBBY),
-            sb.from('lobby_signals').update({
-                is_live: false,
-                open_at: null,
-                timer_set_at: null,
-                updated_at: new Date().toISOString()
-            }).eq('lobby_id', LOBBY)
-        ]);
-
-        showToast('✓ LOBBY RESET COMPLETE', 'success');
-        await syncAll();
-    }
-
-    async function removePlayer(username) {
-        await sb.from('lobby_players').delete()
-            .eq('lobby_id', LOBBY)
-            .eq('player_username', username);
-        showToast(`✓ REMOVED ${username}`, 'info');
-        await syncAll();
-    }
-
-    // ═══════════════════════════════════════
-    //  REALTIME
-    // ═══════════════════════════════════════
-    function startRealtime() {
-        sb.channel('admin_watch')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players' }, syncAll)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals' }, syncAll)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, syncAll)
-            .subscribe();
-    }
-
-    // ═══════════════════════════════════════
-    //  TOAST
-    // ═══════════════════════════════════════
-    function showToast(msg, type = 'success') {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = `show ${type}`;
-        setTimeout(() => { t.className = ''; }, 3000);
-    }
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = `show ${type}`;
+            setTimeout(() => { t.className = ''; }, 3000);
+        }
     </script>
 </body>
 </html>
