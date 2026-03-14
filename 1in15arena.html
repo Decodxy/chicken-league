@@ -51,7 +51,7 @@
         #touch-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
         .item {
             position: absolute; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.8s cubic-bezier(0.4,0,0.2,1);
+            transition: transform 0.12s cubic-bezier(0.4,0,0.2,1);
             pointer-events: none; user-select: none;
         }
         .match-vanish {
@@ -162,6 +162,9 @@
     const GAME_SECS  = 60;
     const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
     const ITEM_COUNT = ITEMS.length;
+
+    // ── Swap animation speed — change SWAP_MS to adjust ──
+    const SWAP_MS = 150; // ms — increase for slower, decrease for faster
 
     const params      = new URLSearchParams(window.location.search);
     const currentUser = params.get('user') || localStorage.getItem('league_user') || 'PLAYER';
@@ -329,6 +332,7 @@
     }
 
     // ── Swap ──
+    // SWAP_MS at the top controls the slide speed of the swap animation
     async function trySwap(r1, c1, r2, c2) {
         if (isProcessing || !gameLive) return;
         if (Math.abs(r1-r2) + Math.abs(c1-c2) !== 1) return;
@@ -338,19 +342,22 @@
         const item1 = board[r1][c1];
         const item2 = board[r2][c2];
 
+        item1.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+        item2.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+
         item1.el.style.transform = `translate(${c2 * CELL}px, ${r2 * CELL}px)`;
         item2.el.style.transform = `translate(${c1 * CELL}px, ${r1 * CELL}px)`;
         board[r1][c1] = item2;
         board[r2][c2] = item1;
 
-        await delay(0);
+        await delay(SWAP_MS);
 
         if (findMatches().size === 0) {
             item1.el.style.transform = `translate(${c1 * CELL}px, ${r1 * CELL}px)`;
             item2.el.style.transform = `translate(${c2 * CELL}px, ${r2 * CELL}px)`;
             board[r1][c1] = item1;
             board[r2][c2] = item2;
-            await delay(0);
+            await delay(SWAP_MS);
             isProcessing = false;
         } else {
             await processMatches();
