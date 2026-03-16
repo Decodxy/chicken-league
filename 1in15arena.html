@@ -198,7 +198,7 @@
     function computeLayout() {
         const wrap       = document.getElementById('board-wrap');
         const containerW = wrap.clientWidth - 24;
-        CELL = Math.floor((containerW - 5) / COLS);
+        CELL = Math.floor((containerW - 30) / COLS);
 
         const container  = document.getElementById('arena-container');
         container.style.width  = (CELL * COLS) + 'px';
