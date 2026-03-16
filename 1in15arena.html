@@ -91,9 +91,27 @@
             border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
         }
         .lb-row.me { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.25); }
+        #already-played {
+            position: fixed; inset: 0; z-index: 70; background: rgba(5,5,5,0.97);
+            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+        }
+        #already-played.show { display: flex; }
     </style>
 </head>
 <body>
+
+    <!-- ALREADY PLAYED BLOCKER -->
+    <div id="already-played">
+        <div class="glass rounded-[2rem] p-8 w-full max-w-sm text-center">
+            <div class="text-6xl mb-4">🐔</div>
+            <h2 class="orbitron text-lg font-black uppercase tracking-tighter mb-2 text-yellow-400">Score Submitted!</h2>
+            <p class="text-zinc-400 text-[10px] orbitron tracking-widest mb-6">YOU HAVE ALREADY PLAYED THIS ROUND. AWAIT THE FINAL RESULTS IN THE LOBBY.</p>
+            <button onclick="window.location.href='1in15lobby.html'"
+                class="w-full py-4 bg-yellow-400 text-black rounded-2xl font-black uppercase italic orbitron tracking-tighter">
+                BACK TO LOBBY
+            </button>
+        </div>
+    </div>
 
     <!-- INTRO -->
     <div id="intro">
@@ -163,10 +181,9 @@
     const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
     const ITEM_COUNT = ITEMS.length;
 
-    // ── Animation timing — all delays kept tight to prevent hangs ──
-    const SWAP_MS    = 120;  // swap slide speed
-    const VANISH_MS  = 150;  // match pop duration
-    const GRAVITY_MS = 160;  // wait after gravity drop
+    const SWAP_MS    = 120;
+    const VANISH_MS  = 150;
+    const GRAVITY_MS = 160;
 
     const params      = new URLSearchParams(window.location.search);
     const currentUser = params.get('user') || localStorage.getItem('league_user') || 'PLAYER';
@@ -181,7 +198,7 @@
     let scoresSaved  = false;
     let CELL         = 48;
 
-    // ── Safety watchdog — if isProcessing gets stuck, auto-release after 2s ──
+    // ── Safety watchdog ──
     let watchdogTimer = null;
     function armWatchdog() {
         clearTimeout(watchdogTimer);
@@ -562,10 +579,29 @@
             }
         }).subscribe();
 
-    // ── Boot ──
+    // ── Boot — check if already played before starting ──
     computeLayout();
     initBoard();
-    runIntro();
+
+    async function checkAlreadyPlayed() {
+        const { data } = await sb.from('game_sessions')
+            .select('is_complete')
+            .eq('lobby_id', LOBBY_ID)
+            .eq('player_username', currentUser)
+            .eq('is_complete', true)
+            .maybeSingle();
+
+        if (data) {
+            // Already played — show blocker, hide intro
+            document.getElementById('intro').style.display = 'none';
+            document.getElementById('already-played').classList.add('show');
+            return;
+        }
+        // Not played yet — start normally
+        runIntro();
+    }
+
+    checkAlreadyPlayed();
     </script>
 </body>
 </html>
