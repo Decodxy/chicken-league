@@ -158,24 +158,14 @@
             </div>
         </div>
 
-        <!-- Secret Code -->
+        <!-- Player Access Codes -->
         <div class="glass rounded-2xl p-5 mb-4">
-            <p class="section-label">Secret Access Code</p>
-            <div class="code-display mb-4" id="code-display">- - - - - - - -</div>
-            <button onclick="generateCode()" class="btn-gold mb-3">⚡ GENERATE NEW CODE</button>
-            <input id="custom-code-input" type="text" maxlength="8" placeholder="OR TYPE CUSTOM CODE"
-                class="field text-center uppercase tracking-widest mb-3" style="font-size:0.75rem;" />
-            <button onclick="saveCustomCode()" class="btn-ghost">SAVE CUSTOM CODE</button>
+            <p class="section-label">Player Access Codes</p>
+            <p class="text-zinc-600 text-[9px] orbitron mb-4">GENERATE ONE UNIQUE CODE PER PLAYER — DISTRIBUTE PRIVATELY</p>
+            <button onclick="generatePlayerCodes()" class="btn-gold mb-3">🎟 GENERATE 15 PLAYER CODES</button>
+            <div id="codes-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
+            <button onclick="copyAllCodes()" id="copy-all-btn" class="btn-ghost mt-3" style="display:none;">📋 COPY ALL CODES</button>
         </div>
-
-        <!-- Player Codes Section -->
-<div class="glass rounded-2xl p-5 mb-4">
-    <p class="section-label">Player Access Codes</p>
-    <p class="text-zinc-600 text-[9px] orbitron mb-4">GENERATE ONE UNIQUE CODE PER PLAYER — DISTRIBUTE PRIVATELY</p>
-    <button onclick="generatePlayerCodes()" class="btn-gold mb-3">🎟 GENERATE 15 PLAYER CODES</button>
-    <div id="codes-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
-    <button onclick="copyAllCodes()" id="copy-all-btn" class="btn-ghost mt-3" style="display:none;">📋 COPY ALL CODES</button>
-</div>
 
         <!-- Arena Timer -->
         <div class="glass rounded-2xl p-5 mb-4">
@@ -246,6 +236,7 @@
             cachedSignal  = signal;
             renderStats(); renderPlayers(); renderLiveStatus();
             renderLeaderboard(scores || []); renderCodeDisplay(); startLiveCountdown();
+            await loadPlayerCodes(); // ← loads codes list every sync
         }
 
         function renderStats() {
@@ -327,6 +318,71 @@
             countdownInterval = setInterval(tick, 1000);
         }
 
+        // ── Player Codes ──
+        async function generatePlayerCodes() {
+            if (!confirm('This will delete all existing unused codes and generate 15 fresh ones. Continue?')) return;
+
+            // Delete old unused codes for this lobby
+            await sb.from('lobby_codes').delete()
+                .eq('lobby_id', LOBBY).eq('is_used', false);
+
+            // Generate 15 unique codes
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const codes = [];
+            while (codes.length < 15) {
+                let code = '';
+                for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+                if (!codes.includes(code)) codes.push(code);
+            }
+
+            const rows = codes.map(code => ({ lobby_id: LOBBY, code, is_used: false }));
+            const { error } = await sb.from('lobby_codes').insert(rows);
+
+            if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
+            showToast('✓ 15 CODES GENERATED', 'success');
+            await loadPlayerCodes();
+        }
+
+        async function loadPlayerCodes() {
+            const { data: codes } = await sb.from('lobby_codes')
+                .select('*').eq('lobby_id', LOBBY).order('created_at', { ascending: true });
+
+            const list    = document.getElementById('codes-list');
+            const copyBtn = document.getElementById('copy-all-btn');
+
+            if (!codes || !codes.length) {
+                list.innerHTML = `<div class="text-zinc-600 text-[9px] orbitron text-center py-3">NO CODES GENERATED YET</div>`;
+                copyBtn.style.display = 'none';
+                return;
+            }
+
+            copyBtn.style.display = 'block';
+            list.innerHTML = codes.map((c, i) => `
+                <div class="player-row justify-between">
+                    <span class="text-zinc-500 orbitron text-[9px] w-5">#${i+1}</span>
+                    <span class="orbitron text-sm font-black tracking-widest flex-1 ml-2
+                        ${c.is_used ? 'text-zinc-600 line-through' : 'text-yellow-400'}">
+                        ${c.code}
+                    </span>
+                    <span class="text-[8px] px-2 py-0.5 rounded-full orbitron
+                        ${c.is_used
+                            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            : 'bg-green-500/10 text-green-400 border border-green-500/20'}">
+                        ${c.is_used ? `USED · ${c.claimed_by || '?'}` : 'AVAILABLE'}
+                    </span>
+                </div>`).join('');
+        }
+
+        async function copyAllCodes() {
+            const { data: codes } = await sb.from('lobby_codes')
+                .select('code, is_used').eq('lobby_id', LOBBY).eq('is_used', false);
+            if (!codes?.length) { showToast('NO AVAILABLE CODES', 'error'); return; }
+            const text = codes.map((c, i) => `Player ${i+1}: ${c.code}`).join('\n');
+            await navigator.clipboard.writeText(text);
+            showToast('✓ CODES COPIED TO CLIPBOARD', 'success');
+        }
+
+        // ── Timer ──
         function generateCode() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let code = '';
@@ -378,19 +434,20 @@
         }
 
         async function resetLobby() {
-            if (!confirm('Reset entire lobby? This clears all players, scores, timer AND generates a new secret code.')) return;
+            if (!confirm('Reset entire lobby? This clears all players, scores, timer, codes and generates a new secret code.')) return;
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let newCode = '';
             for (let i = 0; i < 8; i++) newCode += chars[Math.floor(Math.random() * chars.length)];
             await Promise.all([
                 sb.from('lobby_players').delete().eq('lobby_id', LOBBY),
                 sb.from('game_sessions').delete().eq('lobby_id', LOBBY),
+                sb.from('lobby_codes').delete().eq('lobby_id', LOBBY), // ← wipes all codes on reset
                 sb.from('lobby_signals').update({
                     is_live: false, open_at: null, timer_set_at: null,
                     secret_code: newCode, updated_at: new Date().toISOString()
                 }).eq('lobby_id', LOBBY)
             ]);
-            showToast(`✓ RESET COMPLETE — NEW CODE: ${newCode}`, 'success');
+            showToast(`✓ RESET COMPLETE — GENERATE NEW CODES FOR NEXT ROUND`, 'success');
             await syncAll();
         }
 
@@ -406,6 +463,7 @@
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players' }, syncAll)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals' }, syncAll)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_codes' }, syncAll)
                 .subscribe();
         }
 
