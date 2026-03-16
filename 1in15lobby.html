@@ -72,6 +72,15 @@
             100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
         }
         .arena-open { animation: arena-unlock 1s ease-out 3; }
+        .lb-link {
+            display: flex; align-items: center; gap-x: 1; gap: 6px;
+            padding: 6px 12px; border-radius: 9999px;
+            background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25);
+            color: var(--arena-gold); font-size: 9px; font-weight: 900;
+            letter-spacing: 0.15em; text-decoration: none; font-family: 'Orbitron', sans-serif;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .lb-link:hover { background: rgba(251,191,36,0.18); box-shadow: 0 0 14px rgba(251,191,36,0.25); }
     </style>
 </head>
 <body class="pb-16">
@@ -108,6 +117,12 @@
     <main class="max-w-md mx-auto p-5" id="main-lobby" style="display:none;">
         <div class="mt-4 mb-5 flex items-center justify-between">
             <button onclick="exitLobby()" class="text-gray-600 text-[10px] font-black uppercase tracking-widest hover:text-white orbitron">← EXIT</button>
+
+            <!-- ── LEADERBOARD LINK ── -->
+            <a href="1in15leaderboard.html" class="lb-link">
+                🏆 LEADERBOARD
+            </a>
+
             <div id="connection-indicator" class="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full">
                 <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                 <span class="text-[9px] font-bold text-red-500 orbitron">DISCONNECTED</span>
@@ -260,7 +275,6 @@
             } catch(e) { log(`SYNC ERROR: ${e.message}`); }
         }
 
-        // ── updateUI is now async to check if player already played ──
         async function updateUI() {
             const total  = cachedPlayers.length;
             const isIn   = cachedPlayers.some(p => p.player_username === currentUser);
@@ -305,7 +319,6 @@
             const now       = new Date();
             const arenaOpen = isLive && openAt && now >= openAt;
 
-            // ── Check if this player already completed a game session ──
             if (arenaOpen && isIn) {
                 const { data: played } = await sb.from('game_sessions')
                     .select('is_complete')
