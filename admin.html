@@ -168,6 +168,15 @@
             <button onclick="saveCustomCode()" class="btn-ghost">SAVE CUSTOM CODE</button>
         </div>
 
+        <!-- Player Codes Section -->
+<div class="glass rounded-2xl p-5 mb-4">
+    <p class="section-label">Player Access Codes</p>
+    <p class="text-zinc-600 text-[9px] orbitron mb-4">GENERATE ONE UNIQUE CODE PER PLAYER — DISTRIBUTE PRIVATELY</p>
+    <button onclick="generatePlayerCodes()" class="btn-gold mb-3">🎟 GENERATE 15 PLAYER CODES</button>
+    <div id="codes-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
+    <button onclick="copyAllCodes()" id="copy-all-btn" class="btn-ghost mt-3" style="display:none;">📋 COPY ALL CODES</button>
+</div>
+
         <!-- Arena Timer -->
         <div class="glass rounded-2xl p-5 mb-4">
             <p class="section-label">Arena Open Timer</p>
