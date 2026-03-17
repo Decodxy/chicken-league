@@ -10,49 +10,41 @@
     <script src="ui-bridge.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700;900&display=swap');
-        
         :root {
             --gemini-bg: #131314;
             --gemini-blue: #4285F4;
             --text-white: #ffffff;
             --ui-font: 'Product Sans', 'Google Sans', system-ui, sans-serif;
         }
-
-        body { 
-            background-color: var(--gemini-bg); 
-            color: var(--text-white); 
-            font-family: var(--ui-font); 
-            margin: 0; 
-            -webkit-font-smoothing: antialiased; 
+        body {
+            background-color: var(--gemini-bg);
+            color: var(--text-white);
+            font-family: var(--ui-font);
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
-
         .font-bold-900 { font-weight: 900; letter-spacing: -0.02em; }
-
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.03); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            border-radius: 1.25rem; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        .glass-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 1.25rem;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
         }
-
         .glass-card:active {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255,255,255,0.06);
             border-color: var(--gemini-blue);
         }
-
         .active-blue { border-left: 4px solid var(--gemini-blue); }
-        .text-blue { color: var(--gemini-blue); }
-        .bg-blue { background-color: var(--gemini-blue); }
-        
+        .text-blue   { color: var(--gemini-blue); }
+        .bg-blue     { background-color: var(--gemini-blue); }
         .status-pulse {
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             background-color: var(--gemini-blue);
         }
     </style>
 </head>
-<body class="pt-16 pb-32">
+<body class="pt-16">
     <main class="px-6">
         <div class="flex justify-between items-start mb-10">
             <div>
@@ -106,6 +98,7 @@
         </div>
     </main>
 
+    <script src="nav.js"></script>
     <script>
         async function load() {
             try {
@@ -114,9 +107,7 @@
                     const username = session.user.user_metadata.username || "P";
                     document.getElementById('user_initial').innerText = username.charAt(0).toUpperCase();
                 }
-            } catch (e) {
-                console.error("Neural Sync Error", e);
-            }
+            } catch(e) { console.error("Neural Sync Error", e); }
         }
         load();
     </script>
