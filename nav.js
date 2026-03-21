@@ -14,7 +14,7 @@
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
       display: flex; justify-content: space-around; align-items: center;
       padding: 10px 16px 18px;
-      background: rgba(8,8,8,0.92);
+      background: rgba(19,19,20,0.95);
       backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
       border-top: 1px solid rgba(255,255,255,0.07);
     }
@@ -29,10 +29,10 @@
     }
     .nav-item svg { transition: stroke 0.2s; }
     .nav-item:active { transform: scale(0.92); }
-    .nav-item.active { color: #fbbf24; }
+    .nav-item.active { color: #4285F4; }
     .nav-item.active svg {
-      stroke: #fbbf24;
-      filter: drop-shadow(0 0 6px rgba(251,191,36,0.5));
+      stroke: #4285F4;
+      filter: drop-shadow(0 0 6px rgba(66,133,244,0.5));
     }
   `;
   document.head.appendChild(style);
