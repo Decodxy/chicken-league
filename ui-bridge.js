@@ -15,16 +15,10 @@ const injectGlobalUI = () => {
         <div id="side-menu" class="fixed inset-0 bg-black z-[2000] -translate-x-full transition-transform duration-300 flex flex-col p-10">
             <button onclick="toggleMenu()" class="self-start text-4xl font-light text-zinc-500 mb-10 hover:text-white">&times;</button>
             <nav class="flex flex-col gap-8">
-                <a href="dashboard.html" class="text-xl font-black uppercase text-white">Control Center</a>
-                <a href="1in2.html" class="text-xl font-black uppercase text-white">The Arena</a>
-                <a href="1in2leaderboard.html" class="text-xl font-black uppercase text-white">Standings</a>
-                <hr class="border-white/5 my-4">
                 <button onclick="logout()" class="text-xl font-black uppercase text-blue-500 text-left underline decoration-blue-500/30">Sign Out</button>
             </nav>
         </div>
     </header>`;
-
-    // MODIFIED: Nav is now pinned to the absolute bottom (bottom-0) with no side padding
     const stickyNavHTML = `
     <nav class="fixed bottom-0 left-0 right-0 z-[1000] w-full max-w-md mx-auto bg-black border-t border-white/10">
         <div class="flex justify-around items-center pt-4 pb-8 px-6">
@@ -39,11 +33,9 @@ const injectGlobalUI = () => {
             </button>
         </div>
     </nav>`;
-
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
     document.body.insertAdjacentHTML('beforeend', stickyNavHTML);
 };
-
 window.toggleMenu = () => document.getElementById('side-menu').classList.toggle('-translate-x-full');
 window.logout = async () => { await sb.auth.signOut(); localStorage.clear(); window.location.href = 'login.html'; };
 document.addEventListener('DOMContentLoaded', injectGlobalUI);
