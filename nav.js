@@ -34,6 +34,13 @@
       stroke: #4285F4;
       filter: drop-shadow(0 0 6px rgba(66,133,244,0.5));
     }
+
+    /* ── Spacer block that pushes page content above the nav ── */
+    #bottom-nav-spacer {
+      display: block;
+      width: 100%;
+      flex-shrink: 0;
+    }
   `;
   document.head.appendChild(style);
 
@@ -71,11 +78,35 @@
   `;
   document.body.appendChild(nav);
 
+  // ── Lock body margin equal to nav's actual rendered height ──
+  // A spacer div is inserted at the bottom of <body> so the last
+  // piece of content always has breathing room above the fixed nav.
+  const spacer = document.createElement('div');
+  spacer.id = 'bottom-nav-spacer';
+  document.body.appendChild(spacer);
+
+  function lockNavMargin() {
+    const navHeight = nav.getBoundingClientRect().height;
+    // Add extra clearance for iOS safe-area notches
+    const safeArea = parseInt(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--sat') || '0',
+      10
+    ) || 0;
+    const totalGap = navHeight + safeArea + 12; // 12 px breathing room
+    spacer.style.height = totalGap + 'px';
+    document.body.style.paddingBottom = '0'; // spacer handles it now
+  }
+
+  // Apply immediately and keep it synced on resize / orientation change
+  lockNavMargin();
+  window.addEventListener('resize', lockNavMargin);
+  window.addEventListener('orientationchange', function () {
+    setTimeout(lockNavMargin, 150); // wait for browser to settle
+  });
+
   // ── Auto-highlight active page ──
   const page = location.pathname.split('/').pop().replace('.html', '') || 'dashboard';
   const active = nav.querySelector(`[data-page="${page}"]`);
   if (active) active.classList.add('active');
-
-  // ── Add bottom padding so content isn't hidden behind nav ──
-  document.body.style.paddingBottom = 'max(72px, env(safe-area-inset-bottom, 72px))';
 })();
