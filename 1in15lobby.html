@@ -243,18 +243,127 @@
             to   { opacity: 1; transform: translateY(0); }
         }
         .fade-in { animation: fadein 0.35s ease forwards; }
+        
+        /* Extra margin to prevent content from hiding under sticky nav.js bottom menu */
+        .main-content-padding {
+            padding-bottom: 100px;
+        }
+        
+        /* Remove black stripe and ensure clean lobby */
+        .handshake-stripe {
+            display: none;
+        }
+        
+        /* Top left corner icons container - positioned outside access block at very top left */
+        .top-left-icons {
+            position: fixed;
+            top: 12px;
+            left: 16px;
+            z-index: 50;
+            display: flex;
+            gap: 12px;
+            background: transparent;
+        }
+        
+        .icon-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(10,10,10,0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 40px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--grey);
+            text-decoration: none;
+        }
+        
+        .icon-button:hover {
+            background: rgba(37,99,235,0.2);
+            border-color: var(--blue);
+            color: var(--white);
+            transform: translateY(-1px);
+        }
+        
+        .icon-button svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Adjust header to avoid overlap with floating icons - but keep original header structure */
+        #page-header {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: rgba(10,10,10,0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 16px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* Override any existing header left/right items to keep functionality */
+        #page-header .header-action:first-child {
+            visibility: hidden;
+            pointer-events: none;
+            opacity: 0;
+            width: 0;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Code gate adjustments to accommodate floating icons */
+        #code-gate {
+            padding-top: 80px;
+        }
+        
+        /* Main lobby padding for sticky nav.js bottom menu */
+        #main-lobby {
+            padding-bottom: 90px;
+        }
     </style>
 </head>
 <body>
 
 <div id="toast"></div>
 
+<!-- Floating Top Left Icons - Outside Access Block, Very Top Left Corner -->
+<div class="top-left-icons">
+    <!-- Share Icon with "invite friends" text -->
+    <div class="icon-button" onclick="openShareSheet()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        INVITE FRIENDS
+    </div>
+    
+    <!-- Game Pad Icon with "practice demo" text - redirects to 1in15demo.html -->
+    <a href="1in15demo.html" class="icon-button">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="12" rx="3"/>
+            <path d="M12 2v4M8 14h8M10 11v2M14 11v2"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+        </svg>
+        PRACTICE DEMO
+    </a>
+</div>
+
 <!-- ════════════════════════════════════════
-     PAGE HEADER — always visible, full width
+     PAGE HEADER — kept for original structure but left button hidden
      ════════════════════════════════════════ -->
 <header id="page-header">
-    <!-- LEFT: Share / Invite -->
-    <button class="header-action" onclick="openShareSheet()">
+    <!-- LEFT: Hidden to avoid duplication (now using floating icons) -->
+    <button class="header-action" style="visibility:hidden; pointer-events:none;">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
@@ -265,8 +374,8 @@
     <!-- CENTER: Brand -->
     <div class="header-center">1IN15 <span>ARENA</span></div>
 
-    <!-- RIGHT: Practice Demo -->
-    <a href="1in15demo.html" class="header-action">
+    <!-- RIGHT: Practice Demo - hidden in header (now using floating icons) -->
+    <a href="1in15demo.html" class="header-action" style="visibility:hidden; pointer-events:none;">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <rect x="2" y="6" width="20" height="12" rx="3"/>
             <path d="M12 2v4M8 14h8M10 11v2M14 11v2"/>
@@ -275,7 +384,6 @@
         PRACTICE DEMO
     </a>
 </header>
-
 
 <!-- ════════════════════════════════════════
      SHARE SHEET
@@ -314,9 +422,8 @@
     </div>
 </div>
 
-
 <!-- ════════════════════════════════════════
-     CODE GATE  (full-screen overlay)
+     CODE GATE (full-screen overlay)
      ════════════════════════════════════════ -->
 <div id="code-gate" class="fixed inset-0 z-40 flex flex-col items-center justify-center p-6"
      style="background: rgba(10,10,10,0.98); padding-top: 72px;">
@@ -348,7 +455,7 @@
             </button>
         </div>
 
-        <!-- "Don't have a code" — outside the card, below like a sign-up prompt -->
+        <!-- "Don't have an access code, get code" - OUTSIDE below Access block like sign-up prompt -->
         <div class="text-center">
             <p class="mb-3" style="font-size:0.72rem; color:var(--grey);">
                 Don't have an access code?
@@ -368,11 +475,10 @@
     </div>
 </div>
 
-
 <!-- ════════════════════════════════════════
-     MAIN LOBBY
+     MAIN LOBBY (with proper margin spacing for sticky nav.js)
      ════════════════════════════════════════ -->
-<main class="max-w-md mx-auto px-4 pb-28" id="main-lobby" style="display:none;">
+<main class="max-w-md mx-auto px-4 main-content-padding" id="main-lobby" style="display:none;">
 
     <!-- Sub-header row: connection status + exit -->
     <div class="flex items-center justify-between py-4">
@@ -504,201 +610,4 @@
         const savedUser = localStorage.getItem('league_user');
         if (!savedCode || !savedUser) return;
         const { data } = await sb.from('lobby_codes')
-            .select('*').eq('lobby_id', LOBBY_ID).eq('code', savedCode)
-            .eq('claimed_by', savedUser).eq('is_used', true).maybeSingle();
-        if (data) { openLobby(); syncLobby(); }
-        else { localStorage.removeItem('league_code_' + LOBBY_ID); }
-    }
-
-    async function verifySecretCode() {
-        const input = document.getElementById('secret-code-input').value.trim().toUpperCase();
-        if (!input || input.length < 4) { showToast('ENTER YOUR CODE', 'error'); return; }
-        const btn = document.getElementById('code-submit-btn');
-        btn.classList.add('btn-loading'); btn.innerText = '';
-        const { data: codeRow, error } = await sb.from('lobby_codes')
-            .select('*').eq('lobby_id', LOBBY_ID).eq('code', input).maybeSingle();
-        btn.classList.remove('btn-loading'); btn.innerText = 'VERIFY & ENTER →';
-        if (error || !codeRow) {
-            showToast('INVALID CODE — CHECK WITH ORGANIZER', 'error');
-            document.getElementById('secret-code-input').value = ''; return;
-        }
-        if (codeRow.is_used && codeRow.claimed_by !== currentUser) {
-            showToast('CODE ALREADY USED — GET A NEW ONE', 'error');
-            document.getElementById('secret-code-input').value = ''; return;
-        }
-        if (codeRow.is_used && codeRow.claimed_by === currentUser) {
-            localStorage.setItem('league_code_' + LOBBY_ID, input);
-            openLobby(); syncLobby(); return;
-        }
-        const { data: players } = await sb.from('lobby_players').select('id').eq('lobby_id', LOBBY_ID);
-        if (players && players.length >= MAX_SLOTS) {
-            showToast('LOBBY IS FULL — NEXT ROUND', 'error'); return;
-        }
-        const { error: claimError } = await sb.from('lobby_codes')
-            .update({ is_used: true, claimed_by: currentUser, claimed_at: new Date().toISOString() })
-            .eq('id', codeRow.id).eq('is_used', false);
-        if (claimError) { showToast('CODE ALREADY TAKEN — TRY AGAIN', 'error'); return; }
-        localStorage.setItem('league_code_' + LOBBY_ID, input);
-        openLobby(); syncLobby();
-    }
-
-    /* ── Sync & UI ── */
-    async function syncLobby() {
-        try {
-            const [{ data: players, error: pErr }, { data: signal, error: sErr }] = await Promise.all([
-                sb.from('lobby_players').select('*').eq('lobby_id', LOBBY_ID).order('joined_at', { ascending: true }),
-                sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY_ID).maybeSingle()
-            ]);
-            if (pErr || sErr) throw (pErr || sErr);
-            cachedPlayers = players || [];
-            cachedSignal  = signal;
-            const ind = document.getElementById('connection-indicator');
-            ind.style.cssText = 'background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2);';
-            ind.innerHTML = `<span class="conn-dot" style="background:#22c55e; animation: pulse 1.5s infinite;"></span>
-                             <span style="color:#22c55e;">LIVE</span>`;
-            updateUI();
-        } catch(e) { console.error('[LOBBY]', e.message); }
-    }
-
-    async function updateUI() {
-        const total  = cachedPlayers.length;
-        const isIn   = cachedPlayers.some(p => p.player_username === currentUser);
-        const isFull = total >= MAX_SLOTS;
-        const isLive = cachedSignal?.is_live;
-        const openAt = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
-        const btn    = document.getElementById('mainBtn');
-
-        document.getElementById('count_display').innerText = `${total} / ${MAX_SLOTS} PLAYERS JOINED`;
-
-        // Slots
-        const grid = document.getElementById('slots-grid');
-        grid.innerHTML = '';
-        for (let i = 0; i < MAX_SLOTS; i++) {
-            const player = cachedPlayers[i];
-            const isMe   = player && player.player_username === currentUser;
-            const wrap   = document.createElement('div');
-            wrap.className = 'flex flex-col items-center gap-1';
-            const circle = document.createElement('div');
-            circle.className = 'slot-circle' + (player ? (isMe ? ' slot-mine' : ' slot-filled') : '');
-            circle.innerHTML = player
-                ? `<span class="orbitron font-black" style="font-size:0.9rem; color:${isMe ? '#fff' : 'var(--blue-lt)'};">${player.player_username[0]}</span>`
-                : `<span style="color:var(--dim); font-size:0.75rem;">+</span>`;
-            const label = document.createElement('span');
-            label.className = 'orbitron tracking-tighter text-center truncate';
-            label.style.cssText = `font-size:0.58rem; width:52px; color:${player ? (isMe ? '#fff' : 'var(--blue-lt)') : 'var(--dim)'};`;
-            label.innerText = player ? (isMe ? 'YOU' : player.player_username.substring(0, 6)) : `${i+1}`;
-            wrap.appendChild(circle); wrap.appendChild(label); grid.appendChild(wrap);
-        }
-
-        // Countdown
-        clearInterval(countdownTimer);
-        if (isLive && openAt) {
-            startCountdown(openAt);
-        } else {
-            document.getElementById('timer-label').innerText = isFull
-                ? 'LOBBY FULL · WAITING FOR ADMIN'
-                : `WAITING FOR PLAYERS · ${MAX_SLOTS - total} SLOTS LEFT`;
-            setRing(0, 1);
-            document.getElementById('countdown-display').innerText = '--:--';
-        }
-
-        if (isProcessing) return;
-        const arenaOpen = isLive && openAt && new Date() >= openAt;
-
-        if (arenaOpen && isIn) {
-            const { data: played } = await sb.from('game_sessions')
-                .select('is_complete').eq('lobby_id', LOBBY_ID)
-                .eq('player_username', currentUser).eq('is_complete', true).maybeSingle();
-            if (played) {
-                btn.innerText = '✓ SCORE SUBMITTED — AWAIT RESULTS';
-                btn.disabled  = true;
-                btn.style.cssText = 'background:rgba(34,197,94,0.07); color:#4ade80; border:1px solid rgba(34,197,94,0.2); font-size:0.72rem;';
-            } else {
-                btn.innerText = 'ENTER ARENA →';
-                btn.disabled  = false;
-                btn.style.cssText = 'background:var(--blue); color:#fff; border:none; box-shadow:0 0 28px var(--blue-glow); font-size:0.82rem;';
-                btn.classList.add('arena-open');
-            }
-        } else if (!isIn && !isFull) {
-            btn.innerText = 'JOIN ARENA';
-            btn.disabled  = false;
-            btn.style.cssText = 'background:var(--white); color:#000; border:none; font-size:0.82rem;';
-        } else if (isIn && !arenaOpen) {
-            btn.innerText = (isLive && openAt) ? 'ARENA OPENS SOON...' : (isFull ? 'WAITING FOR ADMIN...' : 'WAITING FOR PLAYERS...');
-            btn.disabled  = true;
-            btn.style.cssText = 'background:var(--surface); color:var(--grey); border:1px solid var(--border); font-size:0.72rem;';
-        } else if (isFull && !isIn) {
-            btn.innerText = 'LOBBY FULL';
-            btn.disabled  = true;
-            btn.style.cssText = 'background:var(--surface); color:var(--grey); border:1px solid var(--border); font-size:0.72rem;';
-        }
-    }
-
-    function setRing(elapsed, total) {
-        const pct = total > 0 ? Math.max(0, 1 - elapsed / total) : 0;
-        document.getElementById('ring-fill').style.strokeDashoffset = ringMax * (1 - pct);
-    }
-
-    function startCountdown(openAt) {
-        const setAt   = cachedSignal?.timer_set_at ? new Date(cachedSignal.timer_set_at) : new Date(Date.now() - 1000);
-        const totalMs = Math.max(openAt - setAt, 1000);
-        document.getElementById('timer-label').innerText = 'ARENA OPENS IN';
-        function tick() {
-            const diff = openAt - new Date();
-            if (diff <= 0) {
-                clearInterval(countdownTimer);
-                document.getElementById('countdown-display').innerText = '00:00';
-                setRing(totalMs, totalMs);
-                document.getElementById('timer-label').innerText = '🔓 ARENA IS OPEN!';
-                syncLobby(); return;
-            }
-            const mins = String(Math.floor(diff / 60000)).padStart(2, '0');
-            const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-            document.getElementById('countdown-display').innerText = `${mins}:${secs}`;
-            setRing(totalMs - diff, totalMs);
-        }
-        tick();
-        countdownTimer = setInterval(tick, 1000);
-    }
-
-    async function handleMainAction() {
-        if (isProcessing) return;
-        const isIn      = cachedPlayers.some(p => p.player_username === currentUser);
-        const isFull    = cachedPlayers.length >= MAX_SLOTS;
-        const openAt    = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
-        const arenaOpen = cachedSignal?.is_live && openAt && new Date() >= openAt;
-        if (isIn && arenaOpen) {
-            window.location.href = `1in15arena.html?user=${encodeURIComponent(currentUser)}&league=${LOBBY_ID}`;
-            return;
-        }
-        if (!isIn && !isFull) {
-            isProcessing = true;
-            const btn = document.getElementById('mainBtn');
-            const prev = btn.innerText;
-            btn.innerText = 'REGISTERING...';
-            btn.classList.add('btn-loading');
-            const { error } = await sb.from('lobby_players').insert([{ lobby_id: LOBBY_ID, player_username: currentUser }]);
-            isProcessing = false;
-            btn.classList.remove('btn-loading');
-            if (error) { btn.innerText = prev; showToast('JOIN FAILED — TRY AGAIN', 'error'); }
-            else { showToast('YOU JOINED THE ARENA! 🐔', 'success'); await syncLobby(); }
-        }
-    }
-
-    async function exitLobby() {
-        await sb.from('lobby_players').delete().eq('lobby_id', LOBBY_ID).eq('player_username', currentUser);
-        localStorage.removeItem('league_code_' + LOBBY_ID);
-        window.location.href = 'dashboard.html';
-    }
-
-    /* ── Realtime ── */
-    sb.channel('1in15_lobby')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
-        .subscribe();
-
-    checkCodeGate();
-</script>
-</body>
-</html>
+            .select('*').eq('lobby_id', LOBBY_ID).
