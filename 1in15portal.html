@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>1in15 Portal | Chicken League</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --blue: #2563eb;
+                --blue-lt: #3b82f6;
+                --blue-glow: rgba(37, 99, 235, 0.35);
+                --black: #0a0a0a;
+                --eerie: #111111;
+                --surface: #181818;
+                --card: #1c1c1c;
+                --border: #272727;
+                --white: #ffffff;
+                --grey: #666666;
+                --dim: #3a3a3a;
+            }
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: var(--black);
+                color: var(--white);
+                font-family: "Syne", sans-serif;
+                min-height: 100dvh;
+                overflow-x: hidden;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            .orbitron {
+                font-family: "Orbitron", monospace;
+            }
+
+            .glass-panel {
+                background: rgba(255, 255, 255, 0.025);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--border);
+            }
+
+            /* ── Code input ── */
+            .code-input {
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid var(--border);
+                color: var(--white);
+                letter-spacing: 0.3em;
+                text-align: center;
+                font-family: "Orbitron", monospace;
+                font-size: 1.05rem;
+                text-transform: uppercase;
+                outline: none;
+                transition:
+                    border-color 0.2s,
+                    box-shadow 0.2s;
+                width: 100%;
+                padding: 14px 16px;
+                border-radius: 14px;
+            }
+            .code-input:focus {
+                border-color: var(--blue);
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            }
+            .code-input::placeholder {
+                color: rgba(255, 255, 255, 0.15);
+                letter-spacing: 0.2em;
+            }
+
+            /* ── Buttons ── */
+            .btn-blue {
+                background: var(--blue);
+                color: var(--white);
+                border: none;
+                box-shadow: 0 0 18px var(--blue-glow);
+                transition:
+                    background 0.15s,
+                    transform 0.1s,
+                    box-shadow 0.15s;
+                cursor: pointer;
+            }
+            .btn-blue:hover {
+                background: var(--blue-lt);
+                box-shadow: 0 0 26px var(--blue-glow);
+            }
+            .btn-blue:active {
+                transform: scale(0.97);
+            }
+            .btn-loading {
+                position: relative;
+                pointer-events: none;
+                opacity: 0.65;
+            }
+            .btn-loading::after {
+                content: "";
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: auto;
+                border: 2px solid transparent;
+                border-top-color: var(--white);
+                border-radius: 50%;
+                animation: spin 0.6s linear infinite;
+            }
+
+            /* ── Toast ── */
+            #toast {
+                position: fixed;
+                bottom: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--card);
+                border: 1px solid var(--border);
+                padding: 10px 20px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: bold;
+                letter-spacing: 0.1em;
+                font-family: "Orbitron", monospace;
+                opacity: 0;
+                transition: opacity 0.3s;
+                z-index: 200;
+                white-space: nowrap;
+            }
+            #toast.show {
+                opacity: 1;
+            }
+            #toast.error {
+                border-color: #ef4444;
+                color: #ef4444;
+            }
+            #toast.success {
+                border-color: var(--blue);
+                color: var(--blue-lt);
+            }
+
+            /* ── Animations ── */
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes fadein {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .fade-in {
+                animation: fadein 0.35s ease forwards;
+            }
+
+            /* ── Portal container ── */
+            #portal-container {
+                width: 100%;
+                max-width: 420px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toast"></div>
+
+        <div id="portal-container" class="fade-in">
+            <!-- Access card -->
+            <div class="glass-panel rounded-[2rem] p-8 text-center mb-6">
+                <!-- Lock icon -->
+                <div
+                    class="mx-auto mb-5 flex items-center justify-center rounded-2xl"
+                    style="
+                        width: 56px;
+                        height: 56px;
+                        background: rgba(37, 99, 235, 0.1);
+                        border: 1px solid rgba(37, 99, 235, 0.25);
+                    "
+                >
+                    <svg
+                        width="24"
+                        height="24"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <rect
+                            x="5"
+                            y="11"
+                            width="14"
+                            height="10"
+                            rx="2"
+                            stroke="#3b82f6"
+                            stroke-width="1.5"
+                        />
+                        <path
+                            d="M8 11V7a4 4 0 0 1 8 0v4"
+                            stroke="#3b82f6"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </div>
+
+                <div
+                    class="orbitron mb-1"
+                    style="
+                        font-size: 0.6rem;
+                        letter-spacing: 0.3em;
+                        color: var(--blue-lt);
+                    "
+                >
+                    CHICKEN LEAGUE
+                </div>
+                <h2
+                    class="orbitron font-black uppercase tracking-tighter mb-1"
+                    style="font-size: 1.25rem"
+                >
+                    Arena Access
+                </h2>
+                <p
+                    class="orbitron mb-7"
+                    style="
+                        font-size: 0.62rem;
+                        letter-spacing: 0.18em;
+                        color: var(--grey);
+                    "
+                >
+                    ENTER YOUR SECRET CODE TO JOIN
+                </p>
+
+                <input
+                    id="secret-code-input"
+                    type="text"
+                    maxlength="10"
+                    placeholder="XXXXXXXXXX"
+                    class="code-input mb-4"
+                    onkeydown="if(event.key==='Enter') verifySecretCode()"
+                />
+
+                <button
+                    id="code-submit-btn"
+                    onclick="verifySecretCode()"
+                    class="btn-blue w-full py-4 rounded-2xl font-black uppercase tracking-tighter orbitron"
+                    style="font-size: 0.82rem"
+                >
+                    VERIFY & ENTER →
+                </button>
+            </div>
+
+            <!-- Don't have code section -->
+            <div class="text-center">
+                <p
+                    class="mb-3"
+                    style="font-size: 0.72rem; color: var(--grey)"
+                >
+                    Don't have an access code?
+                </p>
+                <a
+                    href="https://wa.me/2347074150855?text=Hi%2C%20I%20want%20to%20join%20the%201in15%20Chicken%20League%20Arena.%20Please%20send%20me%20my%20access%20code."
+                    target="_blank"
+                    class="inline-flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold orbitron"
+                    style="
+                        background: rgba(37, 211, 102, 0.08);
+                        border: 1px solid rgba(37, 211, 102, 0.22);
+                        color: #25d366;
+                        font-size: 0.72rem;
+                        letter-spacing: 0.08em;
+                        text-decoration: none;
+                        transition: background 0.15s;
+                    "
+                    onmouseover="this.style.background='rgba(37,211,102,0.15)'"
+                    onmouseout="this.style.background='rgba(37,211,102,0.08)'"
+                >
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 32 32"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M16 2C8.268 2 2 8.268 2 16c0 2.49.651 4.83 1.79 6.86L2 30l7.34-1.77A13.94 13.94 0 0 0 16 30c7.732 0 14-6.268 14-14S23.732 2 16 2zm0 25.5a11.44 11.44 0 0 1-5.83-1.6l-.42-.25-4.35 1.05 1.08-4.23-.28-.44A11.5 11.5 0 1 1 16 27.5zm6.3-8.6c-.35-.17-2.06-1.01-2.38-1.13-.32-.11-.55-.17-.78.17-.23.35-.88 1.13-1.08 1.36-.2.23-.4.26-.74.09-.35-.17-1.47-.54-2.8-1.72-1.03-.92-1.73-2.06-1.93-2.4-.2-.35-.02-.54.15-.71.15-.15.35-.4.52-.6.17-.2.23-.34.35-.57.11-.23.06-.43-.03-.6-.09-.17-.78-1.88-1.07-2.57-.28-.67-.57-.58-.78-.59H9.9c-.2 0-.52.07-.79.35-.26.28-1 1-1 2.44s1.03 2.83 1.17 3.03c.15.2 2.03 3.1 4.92 4.35.69.3 1.22.47 1.64.6.69.22 1.32.19 1.81.12.55-.08 1.7-.7 1.94-1.37.23-.67.23-1.24.16-1.37-.07-.12-.26-.2-.6-.35z"
+                        />
+                    </svg>
+                    GET MY ACCESS CODE
+                </a>
+            </div>
+        </div>
+
+        <script>
+            const SB_URL = "https://tbvmgcknkwsucstedigd.supabase.co";
+            const SB_KEY =
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q";
+            const sb = window.supabase.createClient(SB_URL, SB_KEY);
+            const LOBBY_ID = "1in15";
+
+            let currentUser = localStorage.getItem("league_user");
+            if (!currentUser) {
+                currentUser =
+                    "PLR_" +
+                    Math.random().toString(36).substring(2, 8).toUpperCase();
+                localStorage.setItem("league_user", currentUser);
+            }
+
+            /* ── Toast ── */
+            function showToast(msg, type = "success") {
+                const t = document.getElementById("toast");
+                t.textContent = msg;
+                t.className = `show ${type}`;
+                setTimeout(() => {
+                    t.className = "";
+                }, 3500);
+            }
+
+            /* ── Check if already has valid code ── */
+            async function checkExistingAccess() {
+                const savedCode = localStorage.getItem(
+                    "league_code_" + LOBBY_ID,
+                );
+                const savedUser = localStorage.getItem("league_user");
+                if (!savedCode || !savedUser) return;
+
+                const { data } = await sb
+                    .from("lobby_codes")
+                    .select("*")
+                    .eq("lobby_id", LOBBY_ID)
+                    .eq("code", savedCode)
+                    .eq("used_by", savedUser)
+                    .maybeSingle();
+
+                if (data) {
+                    // Already has valid access, redirect to lobby
+                    window.location.href = "1in15lobby.html";
+                }
+            }
+
+            /* ── Verify secret code ── */
+            async function verifySecretCode() {
+                const input = document
+                    .getElementById("secret-code-input")
+                    .value.trim()
+                    .toUpperCase();
+                if (!input) {
+                    showToast("ENTER A CODE", "error");
+                    return;
+                }
+                const btn = document.getElementById("code-submit-btn");
+                btn.classList.add("btn-loading");
+                btn.textContent = "";
+
+                const { data, error } = await sb
+                    .from("lobby_codes")
+                    .select("*")
+                    .eq("lobby_id", LOBBY_ID)
+                    .eq("code", input)
+                    .maybeSingle();
+
+                btn.classList.remove("btn-loading");
+                btn.textContent = "VERIFY & ENTER →";
+
+                if (error || !data) {
+                    showToast("INVALID CODE", "error");
+                    return;
+                }
+                if (data.used_by && data.used_by !== currentUser) {
+                    showToast("CODE ALREADY USED", "error");
+                    return;
+                }
+
+                if (!data.used_by) {
+                    await sb
+                        .from("lobby_codes")
+                        .update({ used_by: currentUser })
+                        .eq("code", input)
+                        .eq("lobby_id", LOBBY_ID);
+                }
+                localStorage.setItem("league_code_" + LOBBY_ID, input);
+                showToast("ACCESS GRANTED", "success");
+                setTimeout(() => {
+                    window.location.href = "1in15lobby.html";
+                }, 900);
+            }
+
+            /* ── Boot ── */
+            checkExistingAccess();
+        </script>
+    </body>
+</html>
