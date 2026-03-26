@@ -6,7 +6,7 @@
     <title>1in15 Lobby | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --blue:      #2563eb;
@@ -15,10 +15,11 @@
             --black:     #0a0a0a;
             --eerie:     #111111;
             --surface:   #181818;
-            --card:      #1e1e1e;
-            --border:    #2a2a2a;
+            --card:      #1c1c1c;
+            --border:    #272727;
             --white:     #ffffff;
             --grey:      #666666;
+            --dim:       #3a3a3a;
         }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,9 +29,15 @@
             font-family: 'Syne', sans-serif;
             min-height: 100dvh;
             overflow-x: hidden;
-            background-image: radial-gradient(ellipse at 50% 0%, rgba(37,99,235,0.07) 0%, transparent 60%);
         }
+
         .orbitron { font-family: 'Orbitron', monospace; }
+
+        .glass-panel {
+            background: rgba(255,255,255,0.025);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+        }
 
         /* ── Page header ── */
         #page-header {
@@ -38,355 +45,139 @@
             top: 0;
             z-index: 30;
             background: rgba(10,10,10,0.92);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
-            padding: 10px 16px;
+            padding: 0 16px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
         .header-action {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            padding: 6px 10px;
+            gap: 7px;
+            padding: 8px 14px;
             border-radius: 10px;
             border: 1px solid var(--border);
-            background: var(--surface);
-            transition: border-color 0.15s, background 0.15s;
-            text-decoration: none;
-            color: inherit;
-        }
-        .header-action:hover { border-color: var(--blue); background: rgba(37,99,235,0.08); }
-        .header-action svg { width: 20px; height: 20px; }
-        .header-action span {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.5rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            color: var(--grey);
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-        .header-brand {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1px;
-        }
-        .header-brand .eyebrow {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.5rem;
-            letter-spacing: 0.25em;
-            color: var(--blue-lt);
-            text-transform: uppercase;
-        }
-        .header-brand .name {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.85rem;
-            font-weight: 900;
-            color: var(--white);
-            letter-spacing: 0.05em;
-        }
-
-        /* ── Glass card ── */
-        .glass-panel {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-        }
-
-        /* ── Code gate page ── */
-        #code-gate-page {
-            min-height: calc(100dvh - 57px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px 20px 40px;
-            gap: 0;
-        }
-
-        /* ── Access card ── */
-        #access-card {
-            width: 100%;
-            max-width: 380px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 32px 28px 28px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(37,99,235,0.06);
-        }
-        .access-icon {
-            width: 56px; height: 56px;
-            border-radius: 16px;
-            background: rgba(37,99,235,0.1);
-            border: 1px solid rgba(37,99,235,0.25);
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 18px;
-        }
-        .access-eyebrow {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.55rem;
-            letter-spacing: 0.25em;
-            color: var(--blue-lt);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        .access-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.2rem;
-            font-weight: 900;
-            color: var(--white);
-            letter-spacing: -0.01em;
-            margin-bottom: 4px;
-        }
-        .access-sub {
-            font-size: 0.68rem;
-            color: var(--grey);
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 0.15em;
-            margin-bottom: 24px;
-        }
-
-        /* ── Code input ── */
-        .code-input {
-            width: 100%;
-            background: var(--card);
-            border: 1px solid var(--border);
-            color: var(--white);
-            letter-spacing: 0.3em;
-            text-align: center;
-            font-family: 'Orbitron', monospace;
-            font-size: 1.05rem;
-            text-transform: uppercase;
-            outline: none;
-            padding: 14px 16px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .code-input:focus {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-        }
-        .code-input::placeholder { color: rgba(255,255,255,0.15); }
-
-        /* ── Buttons ── */
-        .btn-blue {
-            width: 100%;
-            padding: 14px;
-            background: var(--blue);
-            color: var(--white);
-            border: none;
-            border-radius: 12px;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+            background: rgba(255,255,255,0.03);
             cursor: pointer;
-            box-shadow: 0 0 20px var(--blue-glow);
-            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-        }
-        .btn-blue:hover { background: var(--blue-lt); box-shadow: 0 0 28px var(--blue-glow); }
-        .btn-blue:active { transform: scale(0.98); }
-
-        .btn-loading { position: relative; pointer-events: none; opacity: 0.6; }
-        .btn-loading::after {
-            content: "";
-            position: absolute;
-            width: 16px; height: 16px;
-            top: 0; left: 0; right: 0; bottom: 0; margin: auto;
-            border: 2px solid transparent;
-            border-top-color: var(--white);
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        /* ── Get code CTA — sits BELOW the card like a sign-up prompt ── */
-        #get-code-row {
-            width: 100%;
-            max-width: 380px;
-            margin-top: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .divider-line {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-        .divider-line::before,
-        .divider-line::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-        .divider-line span {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.55rem;
-            color: var(--grey);
-            letter-spacing: 0.15em;
-            white-space: nowrap;
-        }
-        .get-code-box {
-            width: 100%;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            text-decoration: none;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .get-code-box:hover {
-            border-color: #25d366;
-            background: rgba(37,211,102,0.05);
-        }
-        .get-code-box .gcb-left { display: flex; align-items: center; gap: 12px; }
-        .gcb-icon {
-            width: 36px; height: 36px;
-            border-radius: 10px;
-            background: rgba(37,211,102,0.1);
-            border: 1px solid rgba(37,211,102,0.2);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; flex-shrink: 0;
-        }
-        .gcb-text .gcb-title {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--white);
-            margin-bottom: 2px;
-        }
-        .gcb-text .gcb-sub {
+            transition: background 0.15s, border-color 0.15s;
             font-family: 'Orbitron', monospace;
             font-size: 0.58rem;
-            color: var(--grey);
+            font-weight: 700;
             letter-spacing: 0.08em;
+            color: var(--grey);
+            text-decoration: none;
         }
-        .gcb-arrow {
-            font-size: 1rem;
-            color: #25d366;
-            flex-shrink: 0;
+        .header-action:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.18);
+            color: var(--white);
         }
-
-        /* ── Main lobby ── */
-        #main-lobby { display: none; }
-        .lobby-inner { max-width: 440px; margin: 0 auto; padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 14px; }
-
-        /* ── Connection pill ── */
-        #connection-indicator {
-            display: flex; align-items: center; gap-6px;
-            padding: 5px 10px; border-radius: 20px;
+        .header-action svg { flex-shrink: 0; }
+        .header-center {
             font-family: 'Orbitron', monospace;
-            font-size: 0.58rem; font-weight: 700;
-            letter-spacing: 0.1em;
-            border: 1px solid rgba(239,68,68,0.25);
-            background: rgba(239,68,68,0.08);
-            color: #ef4444;
-            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: var(--white);
         }
-        #connection-indicator.live {
-            border-color: rgba(34,197,94,0.25);
-            background: rgba(34,197,94,0.08);
-            color: #4ade80;
-        }
-
-        /* ── Hero card ── */
-        .hero-img {
-            height: 90px; border-radius: 16px 16px 0 0;
-            background: url('https://i.ibb.co/qYSmTyxm/IMG-2414.png') center/cover;
-            opacity: 0.5;
-        }
-        .hero-body {
-            padding: 16px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        /* ── Countdown ring ── */
-        .countdown-ring { position: relative; width: 100px; height: 100px; margin: 0 auto; }
-        .countdown-ring svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
-        .ring-bg   { fill: none; stroke: rgba(255,255,255,0.04); stroke-width: 5; }
-        .ring-fill {
-            fill: none; stroke: var(--blue); stroke-width: 5; stroke-linecap: round;
-            stroke-dasharray: 283; stroke-dashoffset: 283;
-            transition: stroke-dashoffset 1s linear;
-            filter: drop-shadow(0 0 5px var(--blue));
-        }
-        .ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .header-center span { color: var(--blue-lt); }
 
         /* ── Slot circles ── */
         .slot-circle {
-            width: 48px; height: 48px; border-radius: 50%;
-            border: 2px dashed rgba(255,255,255,0.1);
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.01);
+            width: 52px; height: 52px; border-radius: 50%;
+            border: 2px dashed rgba(255,255,255,0.08);
             transition: all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.01); flex-shrink: 0;
         }
         .slot-filled {
-            background: rgba(37,99,235,0.12);
+            background: rgba(37,99,235,0.1);
             border: 2px solid var(--blue);
             box-shadow: 0 0 16px var(--blue-glow);
             transform: scale(1.08);
             animation: pulse-blue 2.5s ease-in-out infinite;
         }
         .slot-mine {
-            background: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.07);
             border: 2px solid var(--white);
             box-shadow: 0 0 20px rgba(255,255,255,0.2);
             transform: scale(1.12);
         }
 
-        /* ── Main action button ── */
-        #mainBtn {
-            width: 100%;
-            padding: 18px;
-            border-radius: 16px;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.82rem;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            cursor: pointer;
+        /* ── Countdown ring ── */
+        .countdown-ring { position: relative; width: 110px; height: 110px; margin: 0 auto; }
+        .countdown-ring svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
+        .ring-bg   { fill: none; stroke: rgba(255,255,255,0.04); stroke-width: 5; }
+        .ring-fill {
+            fill: none; stroke: var(--blue); stroke-width: 5; stroke-linecap: round;
+            stroke-dasharray: 314; stroke-dashoffset: 314;
+            transition: stroke-dashoffset 1s linear;
+            filter: drop-shadow(0 0 5px var(--blue));
+        }
+        .ring-text {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+
+        /* ── Code input ── */
+        .code-input {
+            background: rgba(255,255,255,0.04);
             border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--grey);
-            transition: all 0.15s;
+            color: var(--white);
+            letter-spacing: 0.3em; text-align: center;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.05rem; text-transform: uppercase; outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+        }
+        .code-input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        .code-input::placeholder { color: rgba(255,255,255,0.15); letter-spacing: 0.2em; }
+
+        /* ── Buttons ── */
+        .btn-blue {
+            background: var(--blue);
+            color: var(--white);
+            border: none;
+            box-shadow: 0 0 18px var(--blue-glow);
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+            cursor: pointer;
+        }
+        .btn-blue:hover { background: var(--blue-lt); box-shadow: 0 0 26px var(--blue-glow); }
+        .btn-blue:active { transform: scale(0.97); }
+        .btn-loading { position: relative; pointer-events: none; opacity: 0.65; }
+        .btn-loading::after {
+            content: ""; position: absolute;
+            width: 16px; height: 16px;
+            top: 0; left: 0; right: 0; bottom: 0; margin: auto;
+            border: 2px solid transparent; border-top-color: var(--white);
+            border-radius: 50%; animation: spin 0.6s linear infinite;
         }
 
         /* ── Toast ── */
         #toast {
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-            background: var(--surface); border: 1px solid var(--border);
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: var(--card); border: 1px solid var(--border);
             padding: 10px 20px; border-radius: 12px;
-            font-family: 'Orbitron', monospace; font-size: 0.65rem;
-            font-weight: 700; letter-spacing: 0.1em;
-            opacity: 0; transition: opacity 0.3s; z-index: 100; white-space: nowrap;
+            font-size: 11px; font-weight: bold; letter-spacing: 0.1em;
+            font-family: 'Orbitron', monospace;
+            opacity: 0; transition: opacity 0.3s; z-index: 200; white-space: nowrap;
         }
-        #toast.show   { opacity: 1; }
+        #toast.show    { opacity: 1; }
         #toast.error   { border-color: #ef4444; color: #ef4444; }
-        #toast.success { border-color: var(--blue-lt); color: var(--blue-lt); }
+        #toast.success { border-color: var(--blue); color: var(--blue-lt); }
 
         /* ── Share sheet ── */
         #share-sheet {
-            position: fixed; inset: 0; z-index: 60;
+            position: fixed; inset: 0; z-index: 100;
             background: rgba(10,10,10,0.88);
             display: none; align-items: flex-end; justify-content: center;
         }
@@ -394,61 +185,52 @@
         #share-inner {
             background: var(--surface);
             border: 1px solid var(--border);
+            border-bottom: none;
             border-radius: 24px 24px 0 0;
-            padding: 8px 0 0;
+            padding: 20px 20px 36px;
             width: 100%; max-width: 440px;
-            animation: slideup 0.25s ease;
+            animation: slideup 0.28s cubic-bezier(0.32,0.72,0,1);
         }
-        .sheet-pill {
+        .share-handle {
             width: 36px; height: 4px;
-            background: var(--border);
-            border-radius: 2px;
+            background: var(--dim); border-radius: 2px;
             margin: 0 auto 20px;
-        }
-        .sheet-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.6rem;
-            color: var(--grey);
-            letter-spacing: 0.2em;
-            text-align: center;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-            padding: 0 20px;
         }
         .share-opt {
             display: flex; align-items: center; gap: 14px;
-            padding: 14px 20px;
-            cursor: pointer;
-            border-top: 1px solid var(--border);
-            transition: background 0.12s;
+            padding: 14px 16px; border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            cursor: pointer; margin-bottom: 10px;
+            transition: background 0.15s, border-color 0.15s;
         }
-        .share-opt:hover { background: rgba(255,255,255,0.03); }
-        .share-opt-icon {
+        .share-opt:hover { background: rgba(255,255,255,0.06); border-color: var(--blue); }
+        .share-icon {
             width: 40px; height: 40px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; flex-shrink: 0;
+            font-size: 1.15rem; flex-shrink: 0;
         }
-        .share-opt-label { font-size: 0.82rem; font-weight: 700; color: var(--white); }
-        .share-opt-sub { font-family: 'Orbitron', monospace; font-size: 0.58rem; color: var(--grey); letter-spacing: 0.05em; margin-top: 2px; }
-        .sheet-cancel {
-            display: block; width: 100%;
-            padding: 16px;
-            background: none; border: none; border-top: 1px solid var(--border);
-            font-family: 'Orbitron', monospace; font-size: 0.65rem; font-weight: 700;
-            letter-spacing: 0.12em; color: var(--grey); cursor: pointer;
-            transition: color 0.12s;
+        .share-lbl { font-size: 0.82rem; font-weight: 700; color: var(--white); }
+        .share-sub { font-size: 0.62rem; color: var(--grey); font-family: 'Orbitron', monospace; letter-spacing: 0.04em; margin-top: 2px; }
+
+        /* ── Connection pill ── */
+        .conn-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px; border-radius: 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.58rem; font-weight: 700;
         }
-        .sheet-cancel:hover { color: var(--white); }
+        .conn-dot { width: 6px; height: 6px; border-radius: 50%; }
 
         /* ── Animations ── */
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse-blue {
-            0%,100% { box-shadow: 0 0 8px rgba(37,99,235,0.3); }
-            50%      { box-shadow: 0 0 20px rgba(37,99,235,0.65); }
+            0%,100% { box-shadow: 0 0 6px rgba(37,99,235,0.3); }
+            50%      { box-shadow: 0 0 20px rgba(37,99,235,0.7); }
         }
         @keyframes arena-unlock {
-            0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.6); }
-            70%  { box-shadow: 0 0 0 20px rgba(37,99,235,0); }
+            0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.7); }
+            70%  { box-shadow: 0 0 0 18px rgba(37,99,235,0); }
             100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
         }
         .arena-open { animation: arena-unlock 1s ease-out 3; }
@@ -460,18 +242,463 @@
             from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .fade-in { animation: fadein 0.3s ease forwards; }
+        .fade-in { animation: fadein 0.35s ease forwards; }
     </style>
 </head>
 <body>
 
 <div id="toast"></div>
 
-<!-- ═══════════════════════════════════════════
-     PAGE HEADER — always visible, outside everything
-════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════
+     PAGE HEADER — always visible, full width
+     ════════════════════════════════════════ -->
 <header id="page-header">
-    <!-- LEFT: Practice Demo -->
+    <!-- LEFT: Share / Invite -->
+    <button class="header-action" onclick="openShareSheet()">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        INVITE FRIENDS
+    </button>
+
+    <!-- CENTER: Brand -->
+    <div class="header-center">1IN15 <span>ARENA</span></div>
+
+    <!-- RIGHT: Practice Demo -->
     <a href="1in15demo.html" class="header-action">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue-lt)">
-            <r
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="12" rx="3"/>
+            <path d="M12 2v4M8 14h8M10 11v2M14 11v2"/>
+            <circle cx="8" cy="11" r="1" fill="currentColor"/>
+        </svg>
+        PRACTICE DEMO
+    </a>
+</header>
+
+
+<!-- ════════════════════════════════════════
+     SHARE SHEET
+     ════════════════════════════════════════ -->
+<div id="share-sheet" onclick="closeShareSheet(event)">
+    <div id="share-inner">
+        <div class="share-handle"></div>
+        <p class="orbitron text-center mb-5" style="font-size:0.65rem; letter-spacing:0.2em; color:var(--grey);">INVITE A FRIEND</p>
+
+        <div class="share-opt" onclick="shareWhatsApp()">
+            <div class="share-icon" style="background:rgba(37,211,102,0.1);">📱</div>
+            <div>
+                <div class="share-lbl">Share via WhatsApp</div>
+                <div class="share-sub">Send invite link directly</div>
+            </div>
+        </div>
+        <div class="share-opt" onclick="copyLink()">
+            <div class="share-icon" style="background:rgba(37,99,235,0.1);">🔗</div>
+            <div>
+                <div class="share-lbl">Copy Invite Link</div>
+                <div class="share-sub">Paste anywhere</div>
+            </div>
+        </div>
+        <div class="share-opt" onclick="shareNative()">
+            <div class="share-icon" style="background:rgba(255,255,255,0.05);">↗️</div>
+            <div>
+                <div class="share-lbl">More Options</div>
+                <div class="share-sub">System share sheet</div>
+            </div>
+        </div>
+        <button onclick="document.getElementById('share-sheet').classList.remove('open')"
+            class="w-full mt-2 py-3 rounded-2xl orbitron text-center cursor-pointer"
+            style="background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--grey); font-size:0.62rem; letter-spacing:0.12em;">
+            CANCEL
+        </button>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     CODE GATE  (full-screen overlay)
+     ════════════════════════════════════════ -->
+<div id="code-gate" class="fixed inset-0 z-40 flex flex-col items-center justify-center p-6"
+     style="background: rgba(10,10,10,0.98); padding-top: 72px;">
+
+    <div class="w-full max-w-sm fade-in">
+        <!-- Access card -->
+        <div class="glass-panel rounded-[2rem] p-8 text-center mb-6">
+            <!-- Lock icon -->
+            <div class="mx-auto mb-5 flex items-center justify-center rounded-2xl"
+                 style="width:56px; height:56px; background:rgba(37,99,235,0.1); border:1px solid rgba(37,99,235,0.25);">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3b82f6" stroke-width="1.5"/>
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <div class="orbitron mb-1" style="font-size:0.6rem; letter-spacing:0.3em; color:var(--blue-lt);">CHICKEN LEAGUE</div>
+            <h2 class="orbitron font-black uppercase tracking-tighter mb-1" style="font-size:1.25rem;">Arena Access</h2>
+            <p class="orbitron mb-7" style="font-size:0.62rem; letter-spacing:0.18em; color:var(--grey);">ENTER YOUR SECRET CODE TO JOIN</p>
+
+            <input id="secret-code-input" type="text" maxlength="10" placeholder="XXXXXXXXXX"
+                class="code-input mb-4"
+                onkeydown="if(event.key==='Enter') verifySecretCode()" />
+
+            <button id="code-submit-btn" onclick="verifySecretCode()"
+                class="btn-blue w-full py-4 rounded-2xl font-black uppercase tracking-tighter orbitron"
+                style="font-size:0.82rem;">
+                VERIFY & ENTER →
+            </button>
+        </div>
+
+        <!-- "Don't have a code" — outside the card, below like a sign-up prompt -->
+        <div class="text-center">
+            <p class="mb-3" style="font-size:0.72rem; color:var(--grey);">
+                Don't have an access code?
+            </p>
+            <a href="https://wa.me/2347074150855?text=Hi%2C%20I%20want%20to%20join%20the%201in15%20Chicken%20League%20Arena.%20Please%20send%20me%20my%20access%20code."
+               target="_blank"
+               class="inline-flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold orbitron"
+               style="background:rgba(37,211,102,0.08); border:1px solid rgba(37,211,102,0.22); color:#25d366; font-size:0.72rem; letter-spacing:0.08em; text-decoration:none; transition:background 0.15s;"
+               onmouseover="this.style.background='rgba(37,211,102,0.15)'"
+               onmouseout="this.style.background='rgba(37,211,102,0.08)'">
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="currentColor">
+                    <path d="M16 2C8.268 2 2 8.268 2 16c0 2.49.651 4.83 1.79 6.86L2 30l7.34-1.77A13.94 13.94 0 0 0 16 30c7.732 0 14-6.268 14-14S23.732 2 16 2zm0 25.5a11.44 11.44 0 0 1-5.83-1.6l-.42-.25-4.35 1.05 1.08-4.23-.28-.44A11.5 11.5 0 1 1 16 27.5zm6.3-8.6c-.35-.17-2.06-1.01-2.38-1.13-.32-.11-.55-.17-.78.17-.23.35-.88 1.13-1.08 1.36-.2.23-.4.26-.74.09-.35-.17-1.47-.54-2.8-1.72-1.03-.92-1.73-2.06-1.93-2.4-.2-.35-.02-.54.15-.71.15-.15.35-.4.52-.6.17-.2.23-.34.35-.57.11-.23.06-.43-.03-.6-.09-.17-.78-1.88-1.07-2.57-.28-.67-.57-.58-.78-.59H9.9c-.2 0-.52.07-.79.35-.26.28-1 1-1 2.44s1.03 2.83 1.17 3.03c.15.2 2.03 3.1 4.92 4.35.69.3 1.22.47 1.64.6.69.22 1.32.19 1.81.12.55-.08 1.7-.7 1.94-1.37.23-.67.23-1.24.16-1.37-.07-.12-.26-.2-.6-.35z"/>
+                </svg>
+                GET MY ACCESS CODE
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     MAIN LOBBY
+     ════════════════════════════════════════ -->
+<main class="max-w-md mx-auto px-4 pb-28" id="main-lobby" style="display:none;">
+
+    <!-- Sub-header row: connection status + exit -->
+    <div class="flex items-center justify-between py-4">
+        <div id="connection-indicator" class="conn-pill"
+             style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2);">
+            <span class="conn-dot" style="background:#ef4444;"></span>
+            <span style="color:#ef4444;">OFFLINE</span>
+        </div>
+        <button onclick="exitLobby()"
+            class="orbitron cursor-pointer"
+            style="font-size:0.6rem; letter-spacing:0.1em; color:var(--grey); background:none; border:none; transition:color 0.15s;"
+            onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--grey)'">
+            ← EXIT LOBBY
+        </button>
+    </div>
+
+    <!-- Hero card -->
+    <div class="glass-panel rounded-[2rem] overflow-hidden mb-4">
+        <div class="h-24 bg-cover bg-center" style="background-image:url('https://i.ibb.co/qYSmTyxm/IMG-2414.png'); opacity:0.5;"></div>
+        <div class="p-5 flex items-center justify-between">
+            <div>
+                <div class="orbitron mb-1" style="font-size:0.6rem; letter-spacing:0.2em; color:var(--blue-lt);">15-PLAYER ARENA</div>
+                <h1 class="orbitron font-black uppercase tracking-tighter" style="font-size:1.1rem;">Broiler Championship</h1>
+                <p class="orbitron mt-0.5" style="font-size:0.58rem; letter-spacing:0.15em; color:var(--grey);">Chicken League · 1in15</p>
+            </div>
+            <div class="text-right">
+                <p class="orbitron mb-1" style="font-size:0.58rem; color:var(--grey);">PRIZE</p>
+                <p class="orbitron font-black" style="font-size:0.9rem;">🐔 1 BROILER</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Countdown card -->
+    <div class="glass-panel p-5 rounded-[2rem] mb-4 text-center">
+        <p class="orbitron mb-4" id="timer-label"
+           style="font-size:0.6rem; letter-spacing:0.2em; color:var(--grey); text-transform:uppercase;">
+            WAITING FOR LOBBY TO FILL
+        </p>
+        <div class="countdown-ring mb-3">
+            <svg width="110" height="110" viewBox="0 0 110 110">
+                <circle class="ring-bg"   cx="55" cy="55" r="50"/>
+                <circle class="ring-fill" id="ring-fill" cx="55" cy="55" r="50"/>
+            </svg>
+            <div class="ring-text">
+                <span id="countdown-display" class="orbitron font-black"
+                      style="font-size:1.6rem; color:var(--blue-lt);">--:--</span>
+                <span class="orbitron mt-1" style="font-size:0.6rem; color:var(--grey);">ARENA OPENS</span>
+            </div>
+        </div>
+        <div id="count_display" class="orbitron font-black tracking-widest"
+             style="font-size:0.68rem; color:var(--blue-lt);">SYNCING...</div>
+    </div>
+
+    <!-- Slots grid -->
+    <div class="glass-panel p-5 rounded-[2rem] mb-4">
+        <h3 class="orbitron font-black uppercase tracking-widest mb-4"
+            style="font-size:0.6rem; color:var(--grey);">Arena Registry — 15 Slots</h3>
+        <div class="grid grid-cols-5 gap-3" id="slots-grid"></div>
+    </div>
+
+    <!-- Main CTA -->
+    <button id="mainBtn" onclick="handleMainAction()"
+        class="w-full py-5 rounded-2xl font-black uppercase italic tracking-tighter orbitron transition-all active:scale-95"
+        style="background:var(--surface); color:var(--grey); border:1px solid var(--border); font-size:0.82rem;"
+        disabled>
+        STARTING SYSTEM...
+    </button>
+
+</main>
+
+<script src="nav.js"></script>
+<script>
+    const SB_URL    = 'https://tbvmgcknkwsucstedigd.supabase.co';
+    const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+    const sb        = window.supabase.createClient(SB_URL, SB_KEY);
+    const LOBBY_ID  = '1in15';
+    const MAX_SLOTS = 15;
+
+    let currentUser = localStorage.getItem('league_user');
+    if (!currentUser) {
+        currentUser = "PLR_" + Math.random().toString(36).substring(2, 8).toUpperCase();
+        localStorage.setItem('league_user', currentUser);
+    }
+
+    let cachedPlayers = [], cachedSignal = null, isProcessing = false, countdownTimer = null;
+    const ringMax = 314;
+
+    /* ── Toast ── */
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.className = `show ${type}`;
+        setTimeout(() => { t.className = ''; }, 3500);
+    }
+
+    /* ── Open lobby ── */
+    function openLobby() {
+        document.getElementById('code-gate').style.display = 'none';
+        document.getElementById('main-lobby').style.display = 'block';
+    }
+
+    /* ── Share sheet ── */
+    const INVITE_URL = `${location.origin}/1in15demo.html`;
+    const INVITE_MSG = `🐔 Join me on Chicken League!\nCompete in the 1in15 Arena — highest match-3 score wins a broiler chicken.\n\nTry the demo first: ${INVITE_URL}\n\nGet your access code: https://wa.me/2347074150855`;
+
+    function openShareSheet()  { document.getElementById('share-sheet').classList.add('open'); }
+    function closeShareSheet(e) {
+        if (e.target === document.getElementById('share-sheet'))
+            document.getElementById('share-sheet').classList.remove('open');
+    }
+    function shareWhatsApp() {
+        window.open(`https://wa.me/?text=${encodeURIComponent(INVITE_MSG)}`, '_blank');
+        document.getElementById('share-sheet').classList.remove('open');
+    }
+    async function copyLink() {
+        try { await navigator.clipboard.writeText(INVITE_URL); showToast('LINK COPIED!', 'success'); }
+        catch (_) { showToast('COPY FAILED', 'error'); }
+        document.getElementById('share-sheet').classList.remove('open');
+    }
+    function shareNative() {
+        if (navigator.share) {
+            navigator.share({ title: 'Chicken League — 1in15 Arena', text: INVITE_MSG, url: INVITE_URL }).catch(()=>{});
+        } else { copyLink(); return; }
+        document.getElementById('share-sheet').classList.remove('open');
+    }
+
+    /* ── Code gate ── */
+    async function checkCodeGate() {
+        const savedCode = localStorage.getItem('league_code_' + LOBBY_ID);
+        const savedUser = localStorage.getItem('league_user');
+        if (!savedCode || !savedUser) return;
+        const { data } = await sb.from('lobby_codes')
+            .select('*').eq('lobby_id', LOBBY_ID).eq('code', savedCode)
+            .eq('claimed_by', savedUser).eq('is_used', true).maybeSingle();
+        if (data) { openLobby(); syncLobby(); }
+        else { localStorage.removeItem('league_code_' + LOBBY_ID); }
+    }
+
+    async function verifySecretCode() {
+        const input = document.getElementById('secret-code-input').value.trim().toUpperCase();
+        if (!input || input.length < 4) { showToast('ENTER YOUR CODE', 'error'); return; }
+        const btn = document.getElementById('code-submit-btn');
+        btn.classList.add('btn-loading'); btn.innerText = '';
+        const { data: codeRow, error } = await sb.from('lobby_codes')
+            .select('*').eq('lobby_id', LOBBY_ID).eq('code', input).maybeSingle();
+        btn.classList.remove('btn-loading'); btn.innerText = 'VERIFY & ENTER →';
+        if (error || !codeRow) {
+            showToast('INVALID CODE — CHECK WITH ORGANIZER', 'error');
+            document.getElementById('secret-code-input').value = ''; return;
+        }
+        if (codeRow.is_used && codeRow.claimed_by !== currentUser) {
+            showToast('CODE ALREADY USED — GET A NEW ONE', 'error');
+            document.getElementById('secret-code-input').value = ''; return;
+        }
+        if (codeRow.is_used && codeRow.claimed_by === currentUser) {
+            localStorage.setItem('league_code_' + LOBBY_ID, input);
+            openLobby(); syncLobby(); return;
+        }
+        const { data: players } = await sb.from('lobby_players').select('id').eq('lobby_id', LOBBY_ID);
+        if (players && players.length >= MAX_SLOTS) {
+            showToast('LOBBY IS FULL — NEXT ROUND', 'error'); return;
+        }
+        const { error: claimError } = await sb.from('lobby_codes')
+            .update({ is_used: true, claimed_by: currentUser, claimed_at: new Date().toISOString() })
+            .eq('id', codeRow.id).eq('is_used', false);
+        if (claimError) { showToast('CODE ALREADY TAKEN — TRY AGAIN', 'error'); return; }
+        localStorage.setItem('league_code_' + LOBBY_ID, input);
+        openLobby(); syncLobby();
+    }
+
+    /* ── Sync & UI ── */
+    async function syncLobby() {
+        try {
+            const [{ data: players, error: pErr }, { data: signal, error: sErr }] = await Promise.all([
+                sb.from('lobby_players').select('*').eq('lobby_id', LOBBY_ID).order('joined_at', { ascending: true }),
+                sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY_ID).maybeSingle()
+            ]);
+            if (pErr || sErr) throw (pErr || sErr);
+            cachedPlayers = players || [];
+            cachedSignal  = signal;
+            const ind = document.getElementById('connection-indicator');
+            ind.style.cssText = 'background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2);';
+            ind.innerHTML = `<span class="conn-dot" style="background:#22c55e; animation: pulse 1.5s infinite;"></span>
+                             <span style="color:#22c55e;">LIVE</span>`;
+            updateUI();
+        } catch(e) { console.error('[LOBBY]', e.message); }
+    }
+
+    async function updateUI() {
+        const total  = cachedPlayers.length;
+        const isIn   = cachedPlayers.some(p => p.player_username === currentUser);
+        const isFull = total >= MAX_SLOTS;
+        const isLive = cachedSignal?.is_live;
+        const openAt = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
+        const btn    = document.getElementById('mainBtn');
+
+        document.getElementById('count_display').innerText = `${total} / ${MAX_SLOTS} PLAYERS JOINED`;
+
+        // Slots
+        const grid = document.getElementById('slots-grid');
+        grid.innerHTML = '';
+        for (let i = 0; i < MAX_SLOTS; i++) {
+            const player = cachedPlayers[i];
+            const isMe   = player && player.player_username === currentUser;
+            const wrap   = document.createElement('div');
+            wrap.className = 'flex flex-col items-center gap-1';
+            const circle = document.createElement('div');
+            circle.className = 'slot-circle' + (player ? (isMe ? ' slot-mine' : ' slot-filled') : '');
+            circle.innerHTML = player
+                ? `<span class="orbitron font-black" style="font-size:0.9rem; color:${isMe ? '#fff' : 'var(--blue-lt)'};">${player.player_username[0]}</span>`
+                : `<span style="color:var(--dim); font-size:0.75rem;">+</span>`;
+            const label = document.createElement('span');
+            label.className = 'orbitron tracking-tighter text-center truncate';
+            label.style.cssText = `font-size:0.58rem; width:52px; color:${player ? (isMe ? '#fff' : 'var(--blue-lt)') : 'var(--dim)'};`;
+            label.innerText = player ? (isMe ? 'YOU' : player.player_username.substring(0, 6)) : `${i+1}`;
+            wrap.appendChild(circle); wrap.appendChild(label); grid.appendChild(wrap);
+        }
+
+        // Countdown
+        clearInterval(countdownTimer);
+        if (isLive && openAt) {
+            startCountdown(openAt);
+        } else {
+            document.getElementById('timer-label').innerText = isFull
+                ? 'LOBBY FULL · WAITING FOR ADMIN'
+                : `WAITING FOR PLAYERS · ${MAX_SLOTS - total} SLOTS LEFT`;
+            setRing(0, 1);
+            document.getElementById('countdown-display').innerText = '--:--';
+        }
+
+        if (isProcessing) return;
+        const arenaOpen = isLive && openAt && new Date() >= openAt;
+
+        if (arenaOpen && isIn) {
+            const { data: played } = await sb.from('game_sessions')
+                .select('is_complete').eq('lobby_id', LOBBY_ID)
+                .eq('player_username', currentUser).eq('is_complete', true).maybeSingle();
+            if (played) {
+                btn.innerText = '✓ SCORE SUBMITTED — AWAIT RESULTS';
+                btn.disabled  = true;
+                btn.style.cssText = 'background:rgba(34,197,94,0.07); color:#4ade80; border:1px solid rgba(34,197,94,0.2); font-size:0.72rem;';
+            } else {
+                btn.innerText = 'ENTER ARENA →';
+                btn.disabled  = false;
+                btn.style.cssText = 'background:var(--blue); color:#fff; border:none; box-shadow:0 0 28px var(--blue-glow); font-size:0.82rem;';
+                btn.classList.add('arena-open');
+            }
+        } else if (!isIn && !isFull) {
+            btn.innerText = 'JOIN ARENA';
+            btn.disabled  = false;
+            btn.style.cssText = 'background:var(--white); color:#000; border:none; font-size:0.82rem;';
+        } else if (isIn && !arenaOpen) {
+            btn.innerText = (isLive && openAt) ? 'ARENA OPENS SOON...' : (isFull ? 'WAITING FOR ADMIN...' : 'WAITING FOR PLAYERS...');
+            btn.disabled  = true;
+            btn.style.cssText = 'background:var(--surface); color:var(--grey); border:1px solid var(--border); font-size:0.72rem;';
+        } else if (isFull && !isIn) {
+            btn.innerText = 'LOBBY FULL';
+            btn.disabled  = true;
+            btn.style.cssText = 'background:var(--surface); color:var(--grey); border:1px solid var(--border); font-size:0.72rem;';
+        }
+    }
+
+    function setRing(elapsed, total) {
+        const pct = total > 0 ? Math.max(0, 1 - elapsed / total) : 0;
+        document.getElementById('ring-fill').style.strokeDashoffset = ringMax * (1 - pct);
+    }
+
+    function startCountdown(openAt) {
+        const setAt   = cachedSignal?.timer_set_at ? new Date(cachedSignal.timer_set_at) : new Date(Date.now() - 1000);
+        const totalMs = Math.max(openAt - setAt, 1000);
+        document.getElementById('timer-label').innerText = 'ARENA OPENS IN';
+        function tick() {
+            const diff = openAt - new Date();
+            if (diff <= 0) {
+                clearInterval(countdownTimer);
+                document.getElementById('countdown-display').innerText = '00:00';
+                setRing(totalMs, totalMs);
+                document.getElementById('timer-label').innerText = '🔓 ARENA IS OPEN!';
+                syncLobby(); return;
+            }
+            const mins = String(Math.floor(diff / 60000)).padStart(2, '0');
+            const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+            document.getElementById('countdown-display').innerText = `${mins}:${secs}`;
+            setRing(totalMs - diff, totalMs);
+        }
+        tick();
+        countdownTimer = setInterval(tick, 1000);
+    }
+
+    async function handleMainAction() {
+        if (isProcessing) return;
+        const isIn      = cachedPlayers.some(p => p.player_username === currentUser);
+        const isFull    = cachedPlayers.length >= MAX_SLOTS;
+        const openAt    = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
+        const arenaOpen = cachedSignal?.is_live && openAt && new Date() >= openAt;
+        if (isIn && arenaOpen) {
+            window.location.href = `1in15arena.html?user=${encodeURIComponent(currentUser)}&league=${LOBBY_ID}`;
+            return;
+        }
+        if (!isIn && !isFull) {
+            isProcessing = true;
+            const btn = document.getElementById('mainBtn');
+            const prev = btn.innerText;
+            btn.innerText = 'REGISTERING...';
+            btn.classList.add('btn-loading');
+            const { error } = await sb.from('lobby_players').insert([{ lobby_id: LOBBY_ID, player_username: currentUser }]);
+            isProcessing = false;
+            btn.classList.remove('btn-loading');
+            if (error) { btn.innerText = prev; showToast('JOIN FAILED — TRY AGAIN', 'error'); }
+            else { showToast('YOU JOINED THE ARENA! 🐔', 'success'); await syncLobby(); }
+        }
+    }
+
+    async function exitLobby() {
+        await sb.from('lobby_players').delete().eq('lobby_id', LOBBY_ID).eq('player_username', currentUser);
+        localStorage.removeItem('league_code_' + LOBBY_ID);
+        window.location.href = 'dashboard.html';
+    }
+
+    /* ── Realtime ── */
+    sb.channel('1in15_lobby')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
+        .subscribe();
+
+    checkCodeGate();
+</script>
+</body>
+</html>
