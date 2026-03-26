@@ -123,7 +123,7 @@
 <body>
 
 <!-- ── DEMO MODE BADGE ── -->
-<div id="demo-badge">⚡ PRACTICE DEMO</div>
+
 
 <!-- ── INTRO ── -->
 <div id="intro">
@@ -201,13 +201,13 @@
     </div>
 </div>
 
-<script src="nav.js"></script>
+
 <script>
     /* ─────────────────────────────────────────
        CONSTANTS — identical to the real arena
     ───────────────────────────────────────── */
     const COLS       = 6;
-    const ROWS       = 7;
+    const ROWS       = 9;
     const GAME_SECS  = 60;
     const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
     const ITEM_COUNT = ITEMS.length;
@@ -242,25 +242,8 @@
     ───────────────────────────────────────── */
     function computeLayout() {
         const wrap = document.getElementById('board-wrap');
-        const hud  = document.getElementById('hud');
-
-        // ── Width constraint ──────────────────────────────────────────────
         const containerW = wrap.clientWidth - 24;
-        const cellFromW  = Math.floor((containerW - 30) / COLS);
-
-        // ── Height constraint ─────────────────────────────────────────────
-        // Measure the bottom nav spacer that nav.js injects (or fall back to 72px)
-        const navSpacer  = document.getElementById('bottom-nav-spacer');
-        const navH       = navSpacer ? navSpacer.offsetHeight : 72;
-        const hudH       = hud.offsetHeight || 88;
-        const badgeH     = 34;  // #demo-badge pill + breathing room
-        const bufferH    = 16;  // safety margin above nav
-        const available  = window.innerHeight - hudH - badgeH - navH - bufferH;
-        const cellFromH  = Math.floor(available / ROWS);
-
-        // Use whichever constraint is tighter so board never overflows
-        CELL = Math.min(cellFromW, cellFromH);
-
+        CELL = Math.floor((containerW - 30) / COLS);
         const container = document.getElementById('arena-container');
         container.style.width  = (CELL * COLS) + 'px';
         container.style.height = (CELL * ROWS) + 'px';
@@ -270,282 +253,7 @@
         for (let i = 0; i < ROWS * COLS; i++) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
-            cell.style.width = is the complete file — copy everything below:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Practice Demo | Chicken League</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root { --gold: #fbbf24; --glow: rgba(251,191,36,0.5); --bg: #050505; --blue: #3b82f6; --blue-glow: rgba(59,130,246,0.4); }
-        * { box-sizing: border-box; }
-        body {
-            background: var(--bg); color: white; font-family: 'Inter', sans-serif;
-            min-height: 100dvh; overflow: hidden; touch-action: none;
-            background-image: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59,130,246,0.07) 0%, transparent 60%);
-        }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-
-        /* ── Demo badge ── */
-        #demo-badge {
-            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-            z-index: 40; background: rgba(59,130,246,0.12);
-            border: 1px solid rgba(59,130,246,0.3); border-radius: 99px;
-            padding: 4px 14px;
-            font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
-            font-weight: 700; letter-spacing: 0.2em; color: var(--blue);
-        }
-
-        /* ── HUD ── */
-        #hud {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 16px 10px; max-width: 400px; margin: 0 auto;
-        }
-        .hud-pill {
-            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 999px; padding: 6px 14px;
-            display: flex; flex-direction: column; align-items: center; min-width: 72px;
-        }
-        #timer-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
-        #timer-wrap svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
-        .arc-bg  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
-        .arc-fill {
-            fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round;
-            stroke-dasharray: 176; stroke-dashoffset: 0;
-            transition: stroke-dashoffset 1s linear, stroke 0.5s;
-            filter: drop-shadow(0 0 5px var(--gold));
-        }
-        .arc-fill.danger { stroke: #ef4444; filter: drop-shadow(0 0 5px #ef4444); }
-        #timer-text {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: var(--gold);
-        }
-        #timer-text.danger { color: #ef4444; }
-
-        /* ── Board ── */
-        #board-wrap { max-width: 400px; margin: 4px auto 0; padding: 0 12px; }
-        #arena-container {
-            position: relative; border-radius: 1.5rem;
-            background: #050505; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;
-        }
-        #grid-bg { position: absolute; top: 0; left: 0; display: grid; z-index: 1; pointer-events: none; }
-        .grid-cell { border: 0.5px dotted rgba(255,255,255,0.07); }
-        #item-layer { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
-        #touch-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
-        .item {
-            position: absolute; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.12s cubic-bezier(0.4,0,0.2,1);
-            pointer-events: none; user-select: none;
-        }
-        .match-vanish { transform: scale(0) !important; opacity: 0; transition: transform 0.15s ease, opacity 0.15s ease !important; }
-        .score-pop {
-            position: fixed; font-family: 'Orbitron', sans-serif; font-weight: 900;
-            color: var(--gold); font-size: 1.1rem; pointer-events: none; z-index: 99;
-            animation: score-float 0.9s ease forwards;
-        }
-        @keyframes score-float {
-            0%   { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-55px) scale(1.3); }
-        }
-
-        /* ── Intro ── */
-        #intro {
-            position: fixed; inset: 0; z-index: 60; background: rgba(5,5,5,0.97);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        #intro-number {
-            font-family: 'Orbitron', sans-serif; font-size: 7rem; font-weight: 900;
-            color: var(--gold); text-shadow: 0 0 60px var(--glow); animation: intro-pop 0.8s ease;
-        }
-        @keyframes intro-pop {
-            0%   { transform: scale(2); opacity: 0; }
-            50%  { transform: scale(0.9); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
-        /* ── Game over ── */
-        #gameover {
-            position: fixed; inset: 0; z-index: 50; background: rgba(5,5,5,0.95);
-            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
-        }
-        #gameover.show { display: flex; }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-
-        /* ── Personal best badge ── */
-        .best-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);
-            border-radius: 99px; padding: 4px 14px;
-            font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700;
-            color: var(--gold); margin-bottom: 18px;
-        }
-        .new-best {
-            background: rgba(251,191,36,0.18) !important;
-            border-color: rgba(251,191,36,0.5) !important;
-            animation: best-pulse 1s ease 3;
-        }
-        @keyframes best-pulse {
-            0%,100% { box-shadow: none; }
-            50%      { box-shadow: 0 0 18px rgba(251,191,36,0.4); }
-        }
-    </style>
-</head>
-<body>
-
-<!-- ── DEMO MODE BADGE ── -->
-<div id="demo-badge">⚡ PRACTICE DEMO</div>
-
-<!-- ── INTRO ── -->
-<div id="intro">
-    <p class="orbitron text-[10px] text-zinc-500 tracking-widest mb-6">ARENA STARTING IN</p>
-    <div id="intro-number">3</div>
-    <p class="orbitron text-sm text-zinc-400 mt-6 tracking-widest" id="intro-label">GET READY</p>
-</div>
-
-<!-- ── GAME OVER ── -->
-<div id="gameover">
-    <div class="glass rounded-[2rem] p-7 w-full max-w-sm text-center">
-        <div class="text-5xl mb-3">🐔</div>
-        <h2 class="orbitron text-xl font-black uppercase tracking-tighter mb-1">Time's Up!</h2>
-        <p class="text-zinc-500 text-[9px] orbitron tracking-widest mb-5">PRACTICE SESSION COMPLETE</p>
-
-        <!-- Final score -->
-        <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-2xl p-4 mb-4">
-            <p class="text-[9px] orbitron text-zinc-500 mb-1">FINAL SCORE</p>
-            <p id="final-score" class="orbitron text-4xl font-black text-yellow-400">0</p>
-        </div>
-
-        <!-- Personal best -->
-        <div id="best-row" class="best-badge">
-            <span>🏆</span>
-            <span>BEST: <span id="best-score-display">0</span></span>
-        </div>
-        <p id="new-best-label" class="text-[9px] orbitron text-yellow-400 tracking-widest mb-4" style="display:none;">
-            ✨ NEW PERSONAL BEST!
-        </p>
-
-        <!-- Replay tip -->
-        <p class="text-[9px] orbitron text-zinc-600 mb-4 tracking-widest">
-            UNLIMITED REPLAYS · NO ACCOUNT NEEDED
-        </p>
-
-        <!-- Actions -->
-        <button id="play-again-btn" onclick="replayGame()"
-            class="w-full py-4 mb-3 rounded-2xl font-black uppercase italic orbitron tracking-tighter"
-            style="background:var(--blue); color:#fff; border:none; box-shadow:0 0 18px var(--blue-glow); font-size:0.82rem; cursor:pointer;">
-            PLAY AGAIN →
-        </button>
-        <button onclick="window.location.href='1in15access.html'"
-            class="w-full py-3 rounded-2xl font-black uppercase orbitron tracking-tighter cursor-pointer"
-            style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#666; font-size:0.7rem;">
-            ← BACK TO LOBBY
-        </button>
-    </div>
-</div>
-
-<!-- ── HUD ── -->
-<div id="hud">
-    <div class="hud-pill">
-        <span class="text-[8px] orbitron text-zinc-500 tracking-widest">SCORE</span>
-        <span id="score-display" class="orbitron text-lg font-black text-yellow-400">0</span>
-    </div>
-    <div id="timer-wrap">
-        <svg width="64" height="64" viewBox="0 0 64 64">
-            <circle class="arc-bg"   cx="32" cy="32" r="28"/>
-            <circle class="arc-fill" id="arc" cx="32" cy="32" r="28"/>
-        </svg>
-        <div id="timer-text">60</div>
-    </div>
-    <div class="hud-pill">
-        <span class="text-[8px] orbitron text-zinc-500 tracking-widest">COMBO</span>
-        <span id="combo-display" class="orbitron text-lg font-black text-white">x1</span>
-    </div>
-</div>
-
-<!-- ── BOARD ── -->
-<div id="board-wrap">
-    <div id="arena-container">
-        <div id="grid-bg"></div>
-        <div id="item-layer"></div>
-        <div id="touch-mask"></div>
-    </div>
-</div>
-
-<script src="nav.js"></script>
-<script>
-    /* ─────────────────────────────────────────
-       CONSTANTS — identical to the real arena
-    ───────────────────────────────────────── */
-    const COLS       = 6;
-    const ROWS       = 7;
-    const GAME_SECS  = 60;
-    const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
-    const ITEM_COUNT = ITEMS.length;
-    const SWAP_MS    = 120;
-    const VANISH_MS  = 150;
-    const GRAVITY_MS = 160;
-
-    /* ─────────────────────────────────────────
-       PERSONAL BEST — stored locally per device
-    ───────────────────────────────────────── */
-    const BEST_KEY = 'chicken_league_demo_best';
-    function loadBest()    { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10); }
-    function saveBest(val) { localStorage.setItem(BEST_KEY, val); }
-
-    /* ─────────────────────────────────────────
-       GAME STATE
-    ───────────────────────────────────────── */
-    let board = [], score = 0, combo = 1, timeLeft = GAME_SECS;
-    let gameTimer = null, gameLive = false, isProcessing = false, CELL = 48;
-
-    let watchdogTimer = null;
-    function armWatchdog() {
-        clearTimeout(watchdogTimer);
-        watchdogTimer = setTimeout(() => {
-            if (isProcessing && gameLive) { console.warn('[WATCHDOG] force releasing'); isProcessing = false; }
-        }, 2000);
-    }
-    function disarmWatchdog() { clearTimeout(watchdogTimer); }
-
-    /* ─────────────────────────────────────────
-       LAYOUT
-    ───────────────────────────────────────── */
-    function computeLayout() {
-        const wrap = document.getElementById('board-wrap');
-        const hud  = document.getElementById('hud');
-
-        // ── Width constraint ──────────────────────────────────────────────
-        const containerW = wrap.clientWidth - 24;
-        const cellFromW  = Math.floor((containerW - 30) / COLS);
-
-        // ── Height constraint ─────────────────────────────────────────────
-        // Measure the bottom nav spacer that nav.js injects (or fall back to 72px)
-        const navSpacer  = document.getElementById('bottom-nav-spacer');
-        const navH       = navSpacer ? navSpacer.offsetHeight : 72;
-        const hudH       = hud.offsetHeight || 88;
-        const badgeH     = 34;  // #demo-badge pill + breathing room
-        const bufferH    = 16;  // safety margin above nav
-        const available  = window.innerHeight - hudH - badgeH - navH - bufferH;
-        const cellFromH  = Math.floor(available / ROWS);
-
-        // Use whichever constraint is tighter so board never overflows
-        CELL = Math.min(cellFromW, cellFromH);
-
-        const container = document.getElementById('arena-container');
-        container.style.width  = (CELL * COLS) + 'px';
-        container.style.height = (CELL * ROWS) + 'px';
-        const gridBg = document.getElementById('grid-bg');
-        gridBg.style.gridTemplateColumns = `repeat(${COLS}, ${CELL}px)`;
-        gridBg.innerHTML = '';
-        for (let i = 0; i < ROWS * COLS; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.style.width = CELL + 'px'; + 'px';
+            cell.style.width = CELL + 'px'; cell.style.height = CELL + 'px';
             gridBg.appendChild(cell);
         }
     }
@@ -775,9 +483,11 @@
        REPLAY — reset everything and go again
     ───────────────────────────────────────── */
     function replayGame() {
+        // Reset state
         score = 0; combo = 1; timeLeft = GAME_SECS; gameLive = false;
         isProcessing = false; clearInterval(gameTimer); gameTimer = null;
 
+        // Reset HUD
         updateScore(); updateCombo();
         const arc = document.getElementById('arc');
         const timerText = document.getElementById('timer-text');
@@ -786,8 +496,10 @@
         timerText.innerText = GAME_SECS;
         timerText.classList.remove('danger');
 
+        // Hide game over
         document.getElementById('gameover').classList.remove('show');
 
+        // Rebuild board and show intro again
         initBoard();
         runIntro();
     }
