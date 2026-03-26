@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1in15 Demo — Chicken League</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=DM+Mono:wght@400;500&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #0a0a0a;
+      --eerie:   #111111;
+      --surface: #181818;
+      --card:    #1e1e1e;
+      --border:  #2a2a2a;
+      --blue:    #2563eb;
+      --blue-lt: #3b82f6;
+      --glow:    rgba(37,99,235,0.35);
+      --white:   #ffffff;
+      --grey:    #666666;
+      --dim:     #333333;
+    }
+
+    html, body {
+      min-height: 100dvh;
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Top nav bar ── */
+    #topbar {
+      width: 100%;
+      background: var(--eerie);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .topbar-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.55rem;
+      letter-spacing: 0.25em;
+      color: var(--blue-lt);
+      text-transform: uppercase;
+    }
+    .topbar-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+    .topbar-title span { color: var(--blue-lt); }
+    #topbar-back {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--grey);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #topbar-back:hover { border-color: var(--blue); color: var(--blue-lt); }
+
+    /* ── Page body ── */
+    #page {
+      flex: 1;
+      width: 100%;
+      max-width: 520px;
+      padding: 20px 12px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── Game card ── */
+    #game-card {
+      background: var(--eerie);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 48px rgba(37,99,235,0.07), 0 2px 0 var(--blue);
+      position: relative;
+    }
+
+    /* ── Stats bar ── */
+    #stats-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 14px 20px;
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stat-val.urgent { color: #ef4444; animation: pulse 0.5s ease infinite alternate; }
+    .stat-lbl {
+      font-size: 0.58rem;
+      color: var(--grey);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .stat-div { width: 1px; height: 36px; background: var(--border); }
+
+    /* ── Combo strip ── */
+    #combo-strip {
+      height: 24px;
+      background: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--blue-lt);
+      letter-spacing: 0.1em;
+      opacity: 0;
+      transition: opacity 0.15s;
+      border-bottom: 1px solid var(--border);
+    }
+    #combo-strip.show { opacity: 1; }
+
+    /* ── Grid ── */
+    #grid-wrap {
+      padding: 14px;
+      background: var(--black);
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      user-select: none;
+    }
+    .gem {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1rem, 3.8vw, 1.3rem);
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      position: relative;
+    }
+    .gem:hover { transform: scale(1.07); }
+    .gem.selected {
+      border-color: var(--white);
+      box-shadow: 0 0 0 3px var(--glow), 0 0 10px var(--glow);
+      transform: scale(1.12);
+    }
+    .gem.matched { animation: pop 0.25s ease forwards; }
+    .gem[data-g="0"] { background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.22); }
+    .gem[data-g="1"] { background: rgba(249,115,22,0.16); border-color: rgba(249,115,22,0.22); }
+    .gem[data-g="2"] { background: rgba(234,179,8,0.16);  border-color: rgba(234,179,8,0.22); }
+    .gem[data-g="3"] { background: rgba(34,197,94,0.16);  border-color: rgba(34,197,94,0.22); }
+    .gem[data-g="4"] { background: rgba(59,130,246,0.16); border-color: rgba(59,130,246,0.22); }
+    .gem[data-g="5"] { background: rgba(168,85,247,0.16); border-color: rgba(168,85,247,0.22); }
+
+    /* ── Footer bar ── */
+    #footer-bar {
+      padding: 14px 18px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    #footer-msg {
+      font-size: 0.7rem;
+      color: var(--grey);
+      flex: 1;
+    }
+    #footer-msg b { color: var(--white); }
+    #start-btn {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: var(--blue);
+      color: var(--white);
+      white-space: nowrap;
+      box-shadow: 0 0 16px var(--glow);
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+    #start-btn:hover { background: var(--blue-lt); transform: translateY(-1px); box-shadow: 0 0 24px var(--glow); }
+    #start-btn:active { transform: scale(0.97); }
+    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Personal best chip ── */
+    #pb-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    #pb-chip .pb-label {
+      font-size: 0.6rem;
+      color: var(--grey);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      flex: 1;
+    }
+    #pb-chip .pb-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--blue-lt);
+    }
+
+    /* ── Tutorial overlay ── */
+    #tutorial {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,10,0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      gap: 14px;
+      z-index: 20;
+      animation: fadein 0.3s ease;
+    }
+    #tutorial h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+    #tutorial h2 em { font-style: normal; color: var(--blue-lt); }
+    .tut-steps { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+    .tut-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+    }
+    .tut-n {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--blue-lt);
+      min-width: 20px;
+    }
+    .tut-t { font-size: 0.72rem; color: var(--white); line-height: 1.55; }
+    .tut-t b { color: var(--blue-lt); }
+    #tut-btn {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 12px 34px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: var(--blue);
+      color: var(--white);
+      box-shadow: 0 0 20px var(--glow);
+      margin-top: 4px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    #tut-btn:hover { background: var(--blue-lt); transform: translateY(-1px); }
+
+    /* ── Result overlay ── */
+    #result {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,10,0.96);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 19;
+    }
+    #result.show { display: flex; animation: fadein 0.25s ease; }
+    #result-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      color: var(--grey);
+      text-transform: uppercase;
+    }
+    #result-score {
+      font-family: 'Orbitron', monospace;
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1;
+    }
+    #result-pb-line {
+      font-size: 0.78rem;
+      color: var(--blue-lt);
+      font-weight: 500;
+      min-height: 20px;
+      letter-spacing: 0.05em;
+    }
+    #result-save-msg {
+      font-size: 0.65rem;
+      color: var(--grey);
+      letter-spacing: 0.04em;
+    }
+    #replay-btn {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 12px 34px;
+      border-radius: 8px;
+      border: 1.5px solid var(--blue);
+      background: transparent;
+      color: var(--blue-lt);
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+    #replay-btn:hover { background: var(--blue); color: var(--white); transform: translateY(-1px); }
+
+    /* ── Hint bar ── */
+    #hint-bar {
+      margin-top: 16px;
+      background: var(--eerie);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.68rem;
+      color: var(--grey);
+      line-height: 1.6;
+      text-align: center;
+    }
+    #hint-bar b { color: var(--white); }
+    #hint-bar .chip {
+      display: inline-block;
+      background: rgba(37,99,235,0.15);
+      border: 1px solid rgba(37,99,235,0.3);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--blue-lt);
+      font-size: 0.62rem;
+      margin: 0 2px;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes pop {
+      0%   { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0);   opacity: 0; }
+    }
+    @keyframes pulse {
+      from { opacity: 1; }
+      to   { opacity: 0.45; }
+    }
+    @keyframes fadein {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scorebump {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .bump { animation: scorebump 0.22s ease; }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-eyebrow">Chicken League</div>
+      <div class="topbar-title">1in15 <span>Demo</span></div>
+    </div>
+    <a href="lobby.html" id="topbar-back">← LOBBY</a>
+  </div>
+
+  <!-- Page -->
+  <div id="page">
+    <div id="game-card">
+
+      <!-- Tutorial overlay -->
+      <div id="tutorial">
+        <h2>⚡ HOW TO PLAY <em>1in15</em></h2>
+        <div class="tut-steps">
+          <div class="tut-step">
+            <span class="tut-n">01</span>
+            <span class="tut-t"><b>Tap any gem</b> to select it — it glows white.</span>
+          </div>
+          <div class="tut-step">
+            <span class="tut-n">02</span>
+            <span class="tut-t"><b>Tap an adjacent gem</b> to swap. Line up <b>3 or more</b> of the same gem in a row or column to clear them.</span>
+          </div>
+          <div class="tut-step">
+            <span class="tut-n">03</span>
+            <span class="tut-t">Cascades build <b>combo multipliers</b> — chain clears score way more points!</span>
+          </div>
+          <div class="tut-step">
+            <span class="tut-n">04</span>
+            <span class="tut-t">You have <b>60 seconds</b>. In the real arena, <b>15 players</b> compete — highest score takes the prize 🐔</span>
+          </div>
+        </div>
+        <button id="tut-btn">I'M READY →</button>
+      </div>
+
+      <!-- Result overlay -->
+      <div id="result">
+        <div id="result-eyebrow">TIME'S UP — YOUR SCORE</div>
+        <div id="result-score">0</div>
+        <div id="result-pb-line"></div>
+        <div id="result-save-msg"></div>
+        <button id="replay-btn">↺ TRY AGAIN</button>
+      </div>
+
+      <!-- Stats bar -->
+      <div id="stats-bar">
+        <div class="stat">
+          <div class="stat-val" id="timer-val">60</div>
+          <div class="stat-lbl">Seconds</div>
+        </div>
+        <div class="stat-div"></div>
+        <div class="stat">
+          <div class="stat-val" id="score-val">0</div>
+          <div class="stat-lbl">Score</div>
+        </div>
+        <div class="stat-div"></div>
+        <div class="stat">
+          <div class="stat-val" id="combo-val">x1</div>
+          <div class="stat-lbl">Combo</div>
+        </div>
+      </div>
+
+      <!-- Combo strip -->
+      <div id="combo-strip"></div>
+
+      <!-- Grid -->
+      <div id="grid-wrap">
+        <div id="grid"></div>
+      </div>
+
+      <!-- Personal best -->
+      <div id="pb-chip">
+        <div class="pb-label">Your Best</div>
+        <div class="pb-val" id="pb-val">—</div>
+      </div>
+
+      <!-- Footer -->
+      <div id="footer-bar">
+        <div id="footer-msg">Hit <b>START</b> to begin your 60-second practice run.</div>
+        <button id="start-btn">START →</button>
+      </div>
+
+    </div><!-- /game-card -->
+
+    <!-- Hint bar -->
+    <div id="hint-bar">
+      This is a <b>solo practice mode</b>. In the real
+      <span class="chip">1in15 Arena</span>, you compete live against
+      <b>14 other players</b> — the top score wins a 🐔 broiler chicken.
+      Head to the <b>Lobby</b> to join when a game opens.
+    </div>
+
+  </div><!-- /page -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Config ── */
+  const COLS = 7, ROWS = 7, GEM_TYPES = 6, DURATION = 60;
+  const EMOJI = ['🔴','🟠','🟡','🟢','🔵','🟣'];
+  const PTS_PER_GEM = 10;
+  const SB_URL  = 'https://tbvmgcknkwsucstedigd.supabase.co';
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MTQ5MDQsImV4cCI6MjA1OTA5MDkwNH0.bO9UVLjGXGn0iCJMOnjw7FPdMYj0l3kL4Y3VyJVVq4A';
+
+  /* ── State ── */
+  let grid = [], selected = null, score = 0, personalBest = 0;
+  let timeLeft = DURATION, timer = null, running = false;
+  let combo = 1, busy = false;
+
+  /* ── DOM ── */
+  const $ = id => document.getElementById(id);
+  const gridEl      = $('grid');
+  const timerEl     = $('timer-val');
+  const scoreEl     = $('score-val');
+  const comboEl     = $('combo-val');
+  const comboStrip  = $('combo-strip');
+  const footerMsg   = $('footer-msg');
+  const startBtn    = $('start-btn');
+  const pbVal       = $('pb-val');
+  const resultEl    = $('result');
+  const resultScore = $('result-score');
+  const resultPB    = $('result-pb-line');
+  const resultSave  = $('result-save-msg');
+  const replayBtn   = $('replay-btn');
+  const tutEl       = $('tutorial');
+  const tutBtn      = $('tut-btn');
+
+  /* ── Tutorial ── */
+  const TUT_KEY = 'cl_demo_tut_seen';
+  if (localStorage.getItem(TUT_KEY)) tutEl.style.display = 'none';
+  tutBtn.addEventListener('click', () => {
+    localStorage.setItem(TUT_KEY, '1');
+    tutEl.style.animation = 'fadein 0.2s ease reverse forwards';
+    setTimeout(() => { tutEl.style.display = 'none'; }, 200);
+  });
+
+  /* ── Supabase REST helper ── */
+  async function sb(path, opts = {}) {
+    return fetch(`${SB_URL}/rest/v1/${path}`, {
+      headers: {
+        'apikey': SB_ANON,
+        'Authorization': `Bearer ${SB_ANON}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...(opts.headers || {})
+      },
+      ...opts
+    });
+  }
+
+  /* ── Load personal best ── */
+  async function loadBest() {
+    const u = localStorage.getItem('cl_username');
+    if (!u) return;
+    try {
+      const r = await sb(`Profiles?public_username=eq.${encodeURIComponent(u)}&select=practice_best`);
+      if (r.ok) {
+        const rows = await r.json();
+        if (rows[0]?.practice_best) {
+          personalBest = rows[0].practice_best;
+          pbVal.textContent = personalBest;
+        }
+      }
+    } catch (_) {}
+  }
+
+  /* ── Save score ── */
+  async function saveBest(final) {
+    const u = localStorage.getItem('cl_username');
+    if (!u) { resultSave.textContent = 'Log in to save your score.'; return; }
+    if (final <= personalBest) { resultSave.textContent = 'Not a new best — keep practising!'; return; }
+    resultSave.textContent = 'Saving…';
+    try {
+      const r = await sb(
+        `Profiles?public_username=eq.${encodeURIComponent(u)}`,
+        { method: 'PATCH', body: JSON.stringify({ practice_best: final }) }
+      );
+      if (r.ok) {
+        personalBest = final;
+        pbVal.textContent = final;
+        resultSave.textContent = '✓ Personal best saved to your profile!';
+        resultPB.textContent = '🏆 NEW PERSONAL BEST';
+      } else {
+        resultSave.textContent = 'Save failed — try again later.';
+      }
+    } catch (_) {
+      resultSave.textContent = 'Offline — score not saved.';
+    }
+  }
+
+  /* ── Grid utils ── */
+  const idx = (r, c) => r * COLS + c;
+  const rand = () => Math.floor(Math.random() * GEM_TYPES);
+
+  function buildGrid() {
+    grid = Array.from({ length: ROWS * COLS }, rand);
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        while (hasMatchAt(r, c)) grid[idx(r, c)] = rand();
+  }
+
+  function hasMatchAt(r, c) {
+    const t = grid[idx(r, c)];
+    if (c >= 2 && grid[idx(r, c-1)] === t && grid[idx(r, c-2)] === t) return true;
+    if (r >= 2 && grid[idx(r-1, c)] === t && grid[idx(r-2, c)] === t) return true;
+    return false;
+  }
+
+  /* ── Render ── */
+  function render() {
+    gridEl.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const g = grid[idx(r, c)];
+        const el = document.createElement('div');
+        el.className = 'gem';
+        el.dataset.g = g;
+        el.dataset.r = r;
+        el.dataset.c = c;
+        el.textContent = EMOJI[g];
+        el.addEventListener('click', onGem);
+        gridEl.appendChild(el);
+      }
+    }
+  }
+
+  const getEl = (r, c) => gridEl.querySelector(`.gem[data-r="${r}"][data-c="${c}"]`);
+
+  /* ── Tap handler ── */
+  function onGem(e) {
+    if (!running || busy) return;
+    const r = +e.currentTarget.dataset.r;
+    const c = +e.currentTarget.dataset.c;
+
+    if (!selected) {
+      selected = { r, c };
+      getEl(r, c)?.classList.add('selected');
+      return;
+    }
+
+    const prev = selected; selected = null;
+    getEl(prev.r, prev.c)?.classList.remove('selected');
+    if (prev.r === r && prev.c === c) return;
+
+    const adj = (Math.abs(prev.r - r) === 1 && prev.c === c)
+             || (Math.abs(prev.c - c) === 1 && prev.r === r);
+
+    if (!adj) { selected = { r, c }; getEl(r, c)?.classList.add('selected'); return; }
+
+    doSwap(prev.r, prev.c, r, c);
+  }
+
+  async function doSwap(r1, c1, r2, c2) {
+    busy = true;
+    swap(r1, c1, r2, c2); render();
+    const m = findMatches();
+    if (!m.length) { await wait(140); swap(r1, c1, r2, c2); render(); busy = false; return; }
+    combo = 1;
+    await cascade(m);
+    busy = false;
+  }
+
+  function swap(r1, c1, r2, c2) {
+    const t = grid[idx(r1, c1)];
+    grid[idx(r1, c1)] = grid[idx(r2, c2)];
+    grid[idx(r2, c2)] = t;
+  }
+
+  /* ── Match finding ── */
+  function findMatches() {
+    const s = new Set();
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c <= COLS - 3; c++) {
+        const t = grid[idx(r, c)];
+        if (grid[idx(r, c+1)] === t && grid[idx(r, c+2)] === t) {
+          let e = c + 2;
+          while (e + 1 < COLS && grid[idx(r, e+1)] === t) e++;
+          for (let k = c; k <= e; k++) s.add(idx(r, k));
+        }
+      }
+    }
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r <= ROWS - 3; r++) {
+        const t = grid[idx(r, c)];
+        if (grid[idx(r+1, c)] === t && grid[idx(r+2, c)] === t) {
+          let e = r + 2;
+          while (e + 1 < ROWS && grid[idx(e+1, c)] === t) e++;
+          for (let k = r; k <= e; k++) s.add(idx(k, c));
+        }
+      }
+    }
+    return [...s];
+  }
+
+  async function cascade(matched) {
+    // Score & flash
+    const pts = matched.length * PTS_PER_GEM * combo;
+    addScore(pts);
+    flashCombo(combo, matched.length);
+
+    matched.forEach(i => {
+      const r = Math.floor(i / COLS), c = i % COLS;
+      getEl(r, c)?.classList.add('matched');
+    });
+
+    await wait(260);
+    matched.forEach(i => { grid[i] = null; });
+
+    // Gravity
+    for (let c = 0; c < COLS; c++) {
+      let empty = ROWS - 1;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (grid[idx(r, c)] !== null) {
+          grid[idx(empty, c)] = grid[idx(r, c)];
+          if (empty !== r) grid[idx(r, c)] = null;
+          empty--;
+        }
+      }
+      for (let r = empty; r >= 0; r--) grid[idx(r, c)] = rand();
+    }
+
+    render();
+    await wait(200);
+
+    const next = findMatches();
+    if (next.length) { combo++; await cascade(next); }
+    else { combo = 1; updateCombo(); }
+  }
+
+  /* ── Score display ── */
+  function addScore(pts) {
+    score += pts;
+    scoreEl.textContent = score;
+    scoreEl.classList.remove('bump');
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add('bump');
+  }
+
+  function flashCombo(c, n) {
+    updateCombo();
+    if (c >= 2) {
+      comboStrip.textContent = `${c}× COMBO!  +${c * n * PTS_PER_GEM} PTS`;
+      comboStrip.classList.add('show');
+      setTimeout(() => comboStrip.classList.remove('show'), 950);
+    } else if (n >= 4) {
+      comboStrip.textContent = `${n}-GEM CLEAR!  +${n * PTS_PER_GEM} PTS`;
+      comboStrip.classList.add('show');
+      setTimeout(() => comboStrip.classList.remove('show'), 800);
+    }
+  }
+
+  function updateCombo() {
+    comboEl.textContent = `x${combo}`;
+    comboEl.style.color = combo >= 3 ? '#f97316' : combo >= 2 ? 'var(--blue-lt)' : 'var(--white)';
+  }
+
+  /* ── Timer ── */
+  function startTimer() {
+    timer = setInterval(() => {
+      timeLeft--;
+      timerEl.textContent = timeLeft;
+      if (timeLeft <= 10) timerEl.classList.add('urgent');
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  }
+
+  /* ── Game lifecycle ── */
+  function startGame() {
+    score = 0; timeLeft = DURATION; combo = 1;
+    selected = null; busy = false;
+    scoreEl.textContent = '0';
+    timerEl.textContent = DURATION;
+    timerEl.classList.remove('urgent');
+    updateCombo();
+    comboStrip.classList.remove('show');
+    resultEl.classList.remove('show');
+    clearInterval(timer);
+
+    buildGrid(); render();
+    running = true;
+    startBtn.disabled = true;
+    startBtn.textContent = 'RUNNING…';
+    footerMsg.innerHTML = 'Swap gems to match <b>3 or more</b> in a row or column!';
+    startTimer();
+  }
+
+  async function endGame() {
+    clearInterval(timer);
+    running = false; busy = true;
+    resultScore.textContent = score;
+    resultPB.textContent = score > personalBest ? '' : `Your best is ${personalBest}`;
+    resultSave.textContent = '';
+    resultEl.classList.add('show');
+    startBtn.disabled = false;
+    startBtn.textContent = 'START →';
+    footerMsg.innerHTML = 'Good run! Hit <b>START</b> to go again.';
+    await saveBest(score);
+  }
+
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ── Wire up ── */
+  startBtn.addEventListener('click', () => { if (!running) startGame(); });
+  replayBtn.addEventListener('click', startGame);
+
+  /* ── Boot ── */
+  loadBest();
+  buildGrid();
+  render();
+
+})();
+</script>
+</body>
+</html>
