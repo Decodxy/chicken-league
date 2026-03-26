@@ -1,821 +1,547 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1in15 Demo — Chicken League</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=DM+Mono:wght@400;500&family=Syne:wght@600;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Practice Demo | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #fbbf24; --glow: rgba(251,191,36,0.5); --bg: #050505; --blue: #3b82f6; --blue-glow: rgba(59,130,246,0.4); }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg); color: white; font-family: 'Inter', sans-serif;
+            min-height: 100dvh; overflow: hidden; touch-action: none;
+            background-image: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59,130,246,0.07) 0%, transparent 60%);
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
 
-    :root {
-      --black:   #0a0a0a;
-      --eerie:   #111111;
-      --surface: #181818;
-      --card:    #1e1e1e;
-      --border:  #2a2a2a;
-      --blue:    #2563eb;
-      --blue-lt: #3b82f6;
-      --glow:    rgba(37,99,235,0.35);
-      --white:   #ffffff;
-      --grey:    #666666;
-      --dim:     #333333;
-    }
+        /* ── Demo badge ── */
+        #demo-badge {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            z-index: 40; background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.3); border-radius: 99px;
+            padding: 4px 14px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+            font-weight: 700; letter-spacing: 0.2em; color: var(--blue);
+        }
 
-    html, body {
-      min-height: 100dvh;
-      background: var(--black);
-      color: var(--white);
-      font-family: 'DM Mono', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+        /* ── HUD ── */
+        #hud {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px 10px; max-width: 400px; margin: 0 auto;
+        }
+        .hud-pill {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 999px; padding: 6px 14px;
+            display: flex; flex-direction: column; align-items: center; min-width: 72px;
+        }
+        #timer-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+        #timer-wrap svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
+        .arc-bg  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+        .arc-fill {
+            fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round;
+            stroke-dasharray: 176; stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.5s;
+            filter: drop-shadow(0 0 5px var(--gold));
+        }
+        .arc-fill.danger { stroke: #ef4444; filter: drop-shadow(0 0 5px #ef4444); }
+        #timer-text {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: var(--gold);
+        }
+        #timer-text.danger { color: #ef4444; }
 
-    /* ── Top nav bar ── */
-    #topbar {
-      width: 100%;
-      background: var(--eerie);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .topbar-brand {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-    .topbar-eyebrow {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.55rem;
-      letter-spacing: 0.25em;
-      color: var(--blue-lt);
-      text-transform: uppercase;
-    }
-    .topbar-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--white);
-      letter-spacing: -0.01em;
-    }
-    .topbar-title span { color: var(--blue-lt); }
-    #topbar-back {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.6rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--grey);
-      cursor: pointer;
-      text-decoration: none;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    #topbar-back:hover { border-color: var(--blue); color: var(--blue-lt); }
+        /* ── Board ── */
+        #board-wrap { max-width: 400px; margin: 4px auto 0; padding: 0 12px; }
+        #arena-container {
+            position: relative; border-radius: 1.5rem;
+            background: #050505; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;
+        }
+        #grid-bg { position: absolute; top: 0; left: 0; display: grid; z-index: 1; pointer-events: none; }
+        .grid-cell { border: 0.5px dotted rgba(255,255,255,0.07); }
+        #item-layer { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+        #touch-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
+        .item {
+            position: absolute; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.12s cubic-bezier(0.4,0,0.2,1);
+            pointer-events: none; user-select: none;
+        }
+        .match-vanish { transform: scale(0) !important; opacity: 0; transition: transform 0.15s ease, opacity 0.15s ease !important; }
+        .score-pop {
+            position: fixed; font-family: 'Orbitron', sans-serif; font-weight: 900;
+            color: var(--gold); font-size: 1.1rem; pointer-events: none; z-index: 99;
+            animation: score-float 0.9s ease forwards;
+        }
+        @keyframes score-float {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-55px) scale(1.3); }
+        }
 
-    /* ── Page body ── */
-    #page {
-      flex: 1;
-      width: 100%;
-      max-width: 520px;
-      padding: 20px 12px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
+        /* ── Intro ── */
+        #intro {
+            position: fixed; inset: 0; z-index: 60; background: rgba(5,5,5,0.97);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #intro-number {
+            font-family: 'Orbitron', sans-serif; font-size: 7rem; font-weight: 900;
+            color: var(--gold); text-shadow: 0 0 60px var(--glow); animation: intro-pop 0.8s ease;
+        }
+        @keyframes intro-pop {
+            0%   { transform: scale(2); opacity: 0; }
+            50%  { transform: scale(0.9); opacity: 1; }
+            100% { transform: scale(1); }
+        }
 
-    /* ── Game card ── */
-    #game-card {
-      background: var(--eerie);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 0 48px rgba(37,99,235,0.07), 0 2px 0 var(--blue);
-      position: relative;
-    }
+        /* ── Game over ── */
+        #gameover {
+            position: fixed; inset: 0; z-index: 50; background: rgba(5,5,5,0.95);
+            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+        }
+        #gameover.show { display: flex; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
 
-    /* ── Stats bar ── */
-    #stats-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      padding: 14px 20px;
-      background: var(--black);
-      border-bottom: 1px solid var(--border);
-    }
-    .stat { text-align: center; }
-    .stat-val {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: var(--white);
-      line-height: 1;
-      letter-spacing: -0.02em;
-    }
-    .stat-val.urgent { color: #ef4444; animation: pulse 0.5s ease infinite alternate; }
-    .stat-lbl {
-      font-size: 0.58rem;
-      color: var(--grey);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-top: 3px;
-    }
-    .stat-div { width: 1px; height: 36px; background: var(--border); }
-
-    /* ── Combo strip ── */
-    #combo-strip {
-      height: 24px;
-      background: var(--black);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Orbitron', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--blue-lt);
-      letter-spacing: 0.1em;
-      opacity: 0;
-      transition: opacity 0.15s;
-      border-bottom: 1px solid var(--border);
-    }
-    #combo-strip.show { opacity: 1; }
-
-    /* ── Grid ── */
-    #grid-wrap {
-      padding: 14px;
-      background: var(--black);
-    }
-    #grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      user-select: none;
-    }
-    .gem {
-      aspect-ratio: 1;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(1rem, 3.8vw, 1.3rem);
-      cursor: pointer;
-      border: 1.5px solid transparent;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
-      position: relative;
-    }
-    .gem:hover { transform: scale(1.07); }
-    .gem.selected {
-      border-color: var(--white);
-      box-shadow: 0 0 0 3px var(--glow), 0 0 10px var(--glow);
-      transform: scale(1.12);
-    }
-    .gem.matched { animation: pop 0.25s ease forwards; }
-    .gem[data-g="0"] { background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.22); }
-    .gem[data-g="1"] { background: rgba(249,115,22,0.16); border-color: rgba(249,115,22,0.22); }
-    .gem[data-g="2"] { background: rgba(234,179,8,0.16);  border-color: rgba(234,179,8,0.22); }
-    .gem[data-g="3"] { background: rgba(34,197,94,0.16);  border-color: rgba(34,197,94,0.22); }
-    .gem[data-g="4"] { background: rgba(59,130,246,0.16); border-color: rgba(59,130,246,0.22); }
-    .gem[data-g="5"] { background: rgba(168,85,247,0.16); border-color: rgba(168,85,247,0.22); }
-
-    /* ── Footer bar ── */
-    #footer-bar {
-      padding: 14px 18px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    #footer-msg {
-      font-size: 0.7rem;
-      color: var(--grey);
-      flex: 1;
-    }
-    #footer-msg b { color: var(--white); }
-    #start-btn {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 10px 22px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      background: var(--blue);
-      color: var(--white);
-      white-space: nowrap;
-      box-shadow: 0 0 16px var(--glow);
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-    }
-    #start-btn:hover { background: var(--blue-lt); transform: translateY(-1px); box-shadow: 0 0 24px var(--glow); }
-    #start-btn:active { transform: scale(0.97); }
-    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-
-    /* ── Personal best chip ── */
-    #pb-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-    }
-    #pb-chip .pb-label {
-      font-size: 0.6rem;
-      color: var(--grey);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      flex: 1;
-    }
-    #pb-chip .pb-val {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--blue-lt);
-    }
-
-    /* ── Tutorial overlay ── */
-    #tutorial {
-      position: absolute;
-      inset: 0;
-      background: rgba(10,10,10,0.97);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 20px;
-      gap: 14px;
-      z-index: 20;
-      animation: fadein 0.3s ease;
-    }
-    #tutorial h2 {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.95rem;
-      font-weight: 900;
-      color: var(--white);
-      letter-spacing: 0.08em;
-      text-align: center;
-    }
-    #tutorial h2 em { font-style: normal; color: var(--blue-lt); }
-    .tut-steps { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-    .tut-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 11px 13px;
-    }
-    .tut-n {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.85rem;
-      font-weight: 900;
-      color: var(--blue-lt);
-      min-width: 20px;
-    }
-    .tut-t { font-size: 0.72rem; color: var(--white); line-height: 1.55; }
-    .tut-t b { color: var(--blue-lt); }
-    #tut-btn {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 12px 34px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      background: var(--blue);
-      color: var(--white);
-      box-shadow: 0 0 20px var(--glow);
-      margin-top: 4px;
-      transition: background 0.15s, transform 0.1s;
-    }
-    #tut-btn:hover { background: var(--blue-lt); transform: translateY(-1px); }
-
-    /* ── Result overlay ── */
-    #result {
-      position: absolute;
-      inset: 0;
-      background: rgba(10,10,10,0.96);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      z-index: 19;
-    }
-    #result.show { display: flex; animation: fadein 0.25s ease; }
-    #result-eyebrow {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.25em;
-      color: var(--grey);
-      text-transform: uppercase;
-    }
-    #result-score {
-      font-family: 'Orbitron', monospace;
-      font-size: 3.5rem;
-      font-weight: 900;
-      color: var(--white);
-      line-height: 1;
-    }
-    #result-pb-line {
-      font-size: 0.78rem;
-      color: var(--blue-lt);
-      font-weight: 500;
-      min-height: 20px;
-      letter-spacing: 0.05em;
-    }
-    #result-save-msg {
-      font-size: 0.65rem;
-      color: var(--grey);
-      letter-spacing: 0.04em;
-    }
-    #replay-btn {
-      font-family: 'Orbitron', monospace;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 12px 34px;
-      border-radius: 8px;
-      border: 1.5px solid var(--blue);
-      background: transparent;
-      color: var(--blue-lt);
-      cursor: pointer;
-      margin-top: 8px;
-      transition: background 0.15s, color 0.15s, transform 0.1s;
-    }
-    #replay-btn:hover { background: var(--blue); color: var(--white); transform: translateY(-1px); }
-
-    /* ── Hint bar ── */
-    #hint-bar {
-      margin-top: 16px;
-      background: var(--eerie);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 0.68rem;
-      color: var(--grey);
-      line-height: 1.6;
-      text-align: center;
-    }
-    #hint-bar b { color: var(--white); }
-    #hint-bar .chip {
-      display: inline-block;
-      background: rgba(37,99,235,0.15);
-      border: 1px solid rgba(37,99,235,0.3);
-      border-radius: 4px;
-      padding: 1px 6px;
-      color: var(--blue-lt);
-      font-size: 0.62rem;
-      margin: 0 2px;
-    }
-
-    /* ── Keyframes ── */
-    @keyframes pop {
-      0%   { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(0);   opacity: 0; }
-    }
-    @keyframes pulse {
-      from { opacity: 1; }
-      to   { opacity: 0.45; }
-    }
-    @keyframes fadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes scorebump {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-    .bump { animation: scorebump 0.22s ease; }
-  </style>
+        /* ── Personal best badge ── */
+        .best-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);
+            border-radius: 99px; padding: 4px 14px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700;
+            color: var(--gold); margin-bottom: 18px;
+        }
+        .new-best {
+            background: rgba(251,191,36,0.18) !important;
+            border-color: rgba(251,191,36,0.5) !important;
+            animation: best-pulse 1s ease 3;
+        }
+        @keyframes best-pulse {
+            0%,100% { box-shadow: none; }
+            50%      { box-shadow: 0 0 18px rgba(251,191,36,0.4); }
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Top bar -->
-  <div id="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-eyebrow">Chicken League</div>
-      <div class="topbar-title">1in15 <span>Demo</span></div>
+<!-- ── DEMO MODE BADGE ── -->
+<div id="demo-badge">⚡ PRACTICE DEMO</div>
+
+<!-- ── INTRO ── -->
+<div id="intro">
+    <p class="orbitron text-[10px] text-zinc-500 tracking-widest mb-6">ARENA STARTING IN</p>
+    <div id="intro-number">3</div>
+    <p class="orbitron text-sm text-zinc-400 mt-6 tracking-widest" id="intro-label">GET READY</p>
+</div>
+
+<!-- ── GAME OVER ── -->
+<div id="gameover">
+    <div class="glass rounded-[2rem] p-7 w-full max-w-sm text-center">
+        <div class="text-5xl mb-3">🐔</div>
+        <h2 class="orbitron text-xl font-black uppercase tracking-tighter mb-1">Time's Up!</h2>
+        <p class="text-zinc-500 text-[9px] orbitron tracking-widest mb-5">PRACTICE SESSION COMPLETE</p>
+
+        <!-- Final score -->
+        <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-2xl p-4 mb-4">
+            <p class="text-[9px] orbitron text-zinc-500 mb-1">FINAL SCORE</p>
+            <p id="final-score" class="orbitron text-4xl font-black text-yellow-400">0</p>
+        </div>
+
+        <!-- Personal best -->
+        <div id="best-row" class="best-badge">
+            <span>🏆</span>
+            <span>BEST: <span id="best-score-display">0</span></span>
+        </div>
+        <p id="new-best-label" class="text-[9px] orbitron text-yellow-400 tracking-widest mb-4" style="display:none;">
+            ✨ NEW PERSONAL BEST!
+        </p>
+
+        <!-- Replay tip -->
+        <p class="text-[9px] orbitron text-zinc-600 mb-4 tracking-widest">
+            UNLIMITED REPLAYS · NO ACCOUNT NEEDED
+        </p>
+
+        <!-- Actions -->
+        <button id="play-again-btn" onclick="replayGame()"
+            class="w-full py-4 mb-3 rounded-2xl font-black uppercase italic orbitron tracking-tighter"
+            style="background:var(--blue); color:#fff; border:none; box-shadow:0 0 18px var(--blue-glow); font-size:0.82rem; cursor:pointer;">
+            PLAY AGAIN →
+        </button>
+        <button onclick="window.location.href='1in15access.html'"
+            class="w-full py-3 rounded-2xl font-black uppercase orbitron tracking-tighter cursor-pointer"
+            style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#666; font-size:0.7rem;">
+            ← BACK TO LOBBY
+        </button>
     </div>
-    <a href="lobby.html" id="topbar-back">← LOBBY</a>
-  </div>
+</div>
 
-  <!-- Page -->
-  <div id="page">
-    <div id="game-card">
-
-      <!-- Tutorial overlay -->
-      <div id="tutorial">
-        <h2>⚡ HOW TO PLAY <em>1in15</em></h2>
-        <div class="tut-steps">
-          <div class="tut-step">
-            <span class="tut-n">01</span>
-            <span class="tut-t"><b>Tap any gem</b> to select it — it glows white.</span>
-          </div>
-          <div class="tut-step">
-            <span class="tut-n">02</span>
-            <span class="tut-t"><b>Tap an adjacent gem</b> to swap. Line up <b>3 or more</b> of the same gem in a row or column to clear them.</span>
-          </div>
-          <div class="tut-step">
-            <span class="tut-n">03</span>
-            <span class="tut-t">Cascades build <b>combo multipliers</b> — chain clears score way more points!</span>
-          </div>
-          <div class="tut-step">
-            <span class="tut-n">04</span>
-            <span class="tut-t">You have <b>60 seconds</b>. In the real arena, <b>15 players</b> compete — highest score takes the prize 🐔</span>
-          </div>
-        </div>
-        <button id="tut-btn">I'M READY →</button>
-      </div>
-
-      <!-- Result overlay -->
-      <div id="result">
-        <div id="result-eyebrow">TIME'S UP — YOUR SCORE</div>
-        <div id="result-score">0</div>
-        <div id="result-pb-line"></div>
-        <div id="result-save-msg"></div>
-        <button id="replay-btn">↺ TRY AGAIN</button>
-      </div>
-
-      <!-- Stats bar -->
-      <div id="stats-bar">
-        <div class="stat">
-          <div class="stat-val" id="timer-val">60</div>
-          <div class="stat-lbl">Seconds</div>
-        </div>
-        <div class="stat-div"></div>
-        <div class="stat">
-          <div class="stat-val" id="score-val">0</div>
-          <div class="stat-lbl">Score</div>
-        </div>
-        <div class="stat-div"></div>
-        <div class="stat">
-          <div class="stat-val" id="combo-val">x1</div>
-          <div class="stat-lbl">Combo</div>
-        </div>
-      </div>
-
-      <!-- Combo strip -->
-      <div id="combo-strip"></div>
-
-      <!-- Grid -->
-      <div id="grid-wrap">
-        <div id="grid"></div>
-      </div>
-
-      <!-- Personal best -->
-      <div id="pb-chip">
-        <div class="pb-label">Your Best</div>
-        <div class="pb-val" id="pb-val">—</div>
-      </div>
-
-      <!-- Footer -->
-      <div id="footer-bar">
-        <div id="footer-msg">Hit <b>START</b> to begin your 60-second practice run.</div>
-        <button id="start-btn">START →</button>
-      </div>
-
-    </div><!-- /game-card -->
-
-    <!-- Hint bar -->
-    <div id="hint-bar">
-      This is a <b>solo practice mode</b>. In the real
-      <span class="chip">1in15 Arena</span>, you compete live against
-      <b>14 other players</b> — the top score wins a 🐔 broiler chicken.
-      Head to the <b>Lobby</b> to join when a game opens.
+<!-- ── HUD ── -->
+<div id="hud">
+    <div class="hud-pill">
+        <span class="text-[8px] orbitron text-zinc-500 tracking-widest">SCORE</span>
+        <span id="score-display" class="orbitron text-lg font-black text-yellow-400">0</span>
     </div>
+    <div id="timer-wrap">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="arc-bg"   cx="32" cy="32" r="28"/>
+            <circle class="arc-fill" id="arc" cx="32" cy="32" r="28"/>
+        </svg>
+        <div id="timer-text">60</div>
+    </div>
+    <div class="hud-pill">
+        <span class="text-[8px] orbitron text-zinc-500 tracking-widest">COMBO</span>
+        <span id="combo-display" class="orbitron text-lg font-black text-white">x1</span>
+    </div>
+</div>
 
-  </div><!-- /page -->
+<!-- ── BOARD ── -->
+<div id="board-wrap">
+    <div id="arena-container">
+        <div id="grid-bg"></div>
+        <div id="item-layer"></div>
+        <div id="touch-mask"></div>
+    </div>
+</div>
 
+<script src="nav.js"></script>
 <script>
-(function () {
-  'use strict';
+    /* ─────────────────────────────────────────
+       CONSTANTS — identical to the real arena
+    ───────────────────────────────────────── */
+    const COLS       = 6;
+    const ROWS       = 9;
+    const GAME_SECS  = 60;
+    const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
+    const ITEM_COUNT = ITEMS.length;
+    const SWAP_MS    = 120;
+    const VANISH_MS  = 150;
+    const GRAVITY_MS = 160;
 
-  /* ── Config ── */
-  const COLS = 7, ROWS = 7, GEM_TYPES = 6, DURATION = 60;
-  const EMOJI = ['🔴','🟠','🟡','🟢','🔵','🟣'];
-  const PTS_PER_GEM = 10;
-  const SB_URL  = 'https://tbvmgcknkwsucstedigd.supabase.co';
-  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MTQ5MDQsImV4cCI6MjA1OTA5MDkwNH0.bO9UVLjGXGn0iCJMOnjw7FPdMYj0l3kL4Y3VyJVVq4A';
+    /* ─────────────────────────────────────────
+       PERSONAL BEST — stored locally per device
+    ───────────────────────────────────────── */
+    const BEST_KEY = 'chicken_league_demo_best';
+    function loadBest()    { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10); }
+    function saveBest(val) { localStorage.setItem(BEST_KEY, val); }
 
-  /* ── State ── */
-  let grid = [], selected = null, score = 0, personalBest = 0;
-  let timeLeft = DURATION, timer = null, running = false;
-  let combo = 1, busy = false;
+    /* ─────────────────────────────────────────
+       GAME STATE
+    ───────────────────────────────────────── */
+    let board = [], score = 0, combo = 1, timeLeft = GAME_SECS;
+    let gameTimer = null, gameLive = false, isProcessing = false, CELL = 48;
 
-  /* ── DOM ── */
-  const $ = id => document.getElementById(id);
-  const gridEl      = $('grid');
-  const timerEl     = $('timer-val');
-  const scoreEl     = $('score-val');
-  const comboEl     = $('combo-val');
-  const comboStrip  = $('combo-strip');
-  const footerMsg   = $('footer-msg');
-  const startBtn    = $('start-btn');
-  const pbVal       = $('pb-val');
-  const resultEl    = $('result');
-  const resultScore = $('result-score');
-  const resultPB    = $('result-pb-line');
-  const resultSave  = $('result-save-msg');
-  const replayBtn   = $('replay-btn');
-  const tutEl       = $('tutorial');
-  const tutBtn      = $('tut-btn');
-
-  /* ── Tutorial ── */
-  const TUT_KEY = 'cl_demo_tut_seen';
-  if (localStorage.getItem(TUT_KEY)) tutEl.style.display = 'none';
-  tutBtn.addEventListener('click', () => {
-    localStorage.setItem(TUT_KEY, '1');
-    tutEl.style.animation = 'fadein 0.2s ease reverse forwards';
-    setTimeout(() => { tutEl.style.display = 'none'; }, 200);
-  });
-
-  /* ── Supabase REST helper ── */
-  async function sb(path, opts = {}) {
-    return fetch(`${SB_URL}/rest/v1/${path}`, {
-      headers: {
-        'apikey': SB_ANON,
-        'Authorization': `Bearer ${SB_ANON}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
-        ...(opts.headers || {})
-      },
-      ...opts
-    });
-  }
-
-  /* ── Load personal best ── */
-  async function loadBest() {
-    const u = localStorage.getItem('cl_username');
-    if (!u) return;
-    try {
-      const r = await sb(`Profiles?public_username=eq.${encodeURIComponent(u)}&select=practice_best`);
-      if (r.ok) {
-        const rows = await r.json();
-        if (rows[0]?.practice_best) {
-          personalBest = rows[0].practice_best;
-          pbVal.textContent = personalBest;
-        }
-      }
-    } catch (_) {}
-  }
-
-  /* ── Save score ── */
-  async function saveBest(final) {
-    const u = localStorage.getItem('cl_username');
-    if (!u) { resultSave.textContent = 'Log in to save your score.'; return; }
-    if (final <= personalBest) { resultSave.textContent = 'Not a new best — keep practising!'; return; }
-    resultSave.textContent = 'Saving…';
-    try {
-      const r = await sb(
-        `Profiles?public_username=eq.${encodeURIComponent(u)}`,
-        { method: 'PATCH', body: JSON.stringify({ practice_best: final }) }
-      );
-      if (r.ok) {
-        personalBest = final;
-        pbVal.textContent = final;
-        resultSave.textContent = '✓ Personal best saved to your profile!';
-        resultPB.textContent = '🏆 NEW PERSONAL BEST';
-      } else {
-        resultSave.textContent = 'Save failed — try again later.';
-      }
-    } catch (_) {
-      resultSave.textContent = 'Offline — score not saved.';
+    let watchdogTimer = null;
+    function armWatchdog() {
+        clearTimeout(watchdogTimer);
+        watchdogTimer = setTimeout(() => {
+            if (isProcessing && gameLive) { console.warn('[WATCHDOG] force releasing'); isProcessing = false; }
+        }, 2000);
     }
-  }
+    function disarmWatchdog() { clearTimeout(watchdogTimer); }
 
-  /* ── Grid utils ── */
-  const idx = (r, c) => r * COLS + c;
-  const rand = () => Math.floor(Math.random() * GEM_TYPES);
+    /* ─────────────────────────────────────────
+       LAYOUT
+    ───────────────────────────────────────── */
+    function computeLayout() {
+        const wrap = document.getElementById('board-wrap');
+        const containerW = wrap.clientWidth - 24;
+        CELL = Math.floor((containerW - 30) / COLS);
+        const container = document.getElementById('arena-container');
+        container.style.width  = (CELL * COLS) + 'px';
+        container.style.height = (CELL * ROWS) + 'px';
+        const gridBg = document.getElementById('grid-bg');
+        gridBg.style.gridTemplateColumns = `repeat(${COLS}, ${CELL}px)`;
+        gridBg.innerHTML = '';
+        for (let i = 0; i < ROWS * COLS; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.style.width = CELL + 'px'; cell.style.height = CELL + 'px';
+            gridBg.appendChild(cell);
+        }
+    }
 
-  function buildGrid() {
-    grid = Array.from({ length: ROWS * COLS }, rand);
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++)
-        while (hasMatchAt(r, c)) grid[idx(r, c)] = rand();
-  }
+    /* ─────────────────────────────────────────
+       BOARD LOGIC — identical to arena
+    ───────────────────────────────────────── */
+    function typeAt(r, c) {
+        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return -1;
+        if (!board[r] || !board[r][c]) return -1;
+        return board[r][c].type;
+    }
+    function randItem() { return Math.floor(Math.random() * ITEM_COUNT); }
 
-  function hasMatchAt(r, c) {
-    const t = grid[idx(r, c)];
-    if (c >= 2 && grid[idx(r, c-1)] === t && grid[idx(r, c-2)] === t) return true;
-    if (r >= 2 && grid[idx(r-1, c)] === t && grid[idx(r-2, c)] === t) return true;
-    return false;
-  }
+    function initBoard() {
+        board = [];
+        document.getElementById('item-layer').innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+            board[r] = [];
+            for (let c = 0; c < COLS; c++) {
+                let type, attempts = 0;
+                do { type = randItem(); attempts++; if (attempts > 50) break; }
+                while ((typeAt(r,c-1)===type && typeAt(r,c-2)===type) || (typeAt(r-1,c)===type && typeAt(r-2,c)===type));
+                board[r][c] = makeEl(r, c, type, false);
+            }
+        }
+    }
 
-  /* ── Render ── */
-  function render() {
-    gridEl.innerHTML = '';
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const g = grid[idx(r, c)];
+    function makeEl(r, c, type, fromAbove) {
         const el = document.createElement('div');
-        el.className = 'gem';
-        el.dataset.g = g;
-        el.dataset.r = r;
-        el.dataset.c = c;
-        el.textContent = EMOJI[g];
-        el.addEventListener('click', onGem);
-        gridEl.appendChild(el);
-      }
-    }
-  }
-
-  const getEl = (r, c) => gridEl.querySelector(`.gem[data-r="${r}"][data-c="${c}"]`);
-
-  /* ── Tap handler ── */
-  function onGem(e) {
-    if (!running || busy) return;
-    const r = +e.currentTarget.dataset.r;
-    const c = +e.currentTarget.dataset.c;
-
-    if (!selected) {
-      selected = { r, c };
-      getEl(r, c)?.classList.add('selected');
-      return;
-    }
-
-    const prev = selected; selected = null;
-    getEl(prev.r, prev.c)?.classList.remove('selected');
-    if (prev.r === r && prev.c === c) return;
-
-    const adj = (Math.abs(prev.r - r) === 1 && prev.c === c)
-             || (Math.abs(prev.c - c) === 1 && prev.r === r);
-
-    if (!adj) { selected = { r, c }; getEl(r, c)?.classList.add('selected'); return; }
-
-    doSwap(prev.r, prev.c, r, c);
-  }
-
-  async function doSwap(r1, c1, r2, c2) {
-    busy = true;
-    swap(r1, c1, r2, c2); render();
-    const m = findMatches();
-    if (!m.length) { await wait(140); swap(r1, c1, r2, c2); render(); busy = false; return; }
-    combo = 1;
-    await cascade(m);
-    busy = false;
-  }
-
-  function swap(r1, c1, r2, c2) {
-    const t = grid[idx(r1, c1)];
-    grid[idx(r1, c1)] = grid[idx(r2, c2)];
-    grid[idx(r2, c2)] = t;
-  }
-
-  /* ── Match finding ── */
-  function findMatches() {
-    const s = new Set();
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c <= COLS - 3; c++) {
-        const t = grid[idx(r, c)];
-        if (grid[idx(r, c+1)] === t && grid[idx(r, c+2)] === t) {
-          let e = c + 2;
-          while (e + 1 < COLS && grid[idx(r, e+1)] === t) e++;
-          for (let k = c; k <= e; k++) s.add(idx(r, k));
+        el.className = 'item';
+        el.innerHTML = ITEMS[type];
+        el.style.width = CELL + 'px'; el.style.height = CELL + 'px';
+        el.style.fontSize = Math.floor(CELL * 0.52) + 'px';
+        if (fromAbove) {
+            el.style.transition = 'none';
+            el.style.transform  = `translate(${c * CELL}px, ${-CELL}px)`;
+            document.getElementById('item-layer').appendChild(el);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                el.style.transition = `transform ${GRAVITY_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+                el.style.transform  = `translate(${c * CELL}px, ${r * CELL}px)`;
+            }));
+        } else {
+            el.style.transform = `translate(${c * CELL}px, ${r * CELL}px)`;
+            document.getElementById('item-layer').appendChild(el);
         }
-      }
+        return { type, el };
     }
-    for (let c = 0; c < COLS; c++) {
-      for (let r = 0; r <= ROWS - 3; r++) {
-        const t = grid[idx(r, c)];
-        if (grid[idx(r+1, c)] === t && grid[idx(r+2, c)] === t) {
-          let e = r + 2;
-          while (e + 1 < ROWS && grid[idx(e+1, c)] === t) e++;
-          for (let k = r; k <= e; k++) s.add(idx(k, c));
+
+    function findMatches() {
+        const matched = new Set();
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS - 2; c++) {
+                const t = typeAt(r,c); if (t < 0) continue;
+                if (typeAt(r,c+1)===t && typeAt(r,c+2)===t) {
+                    let end = c+2; while (end+1 < COLS && typeAt(r,end+1)===t) end++;
+                    for (let x = c; x <= end; x++) matched.add(`${r},${x}`);
+                }
+            }
         }
-      }
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS - 2; r++) {
+                const t = typeAt(r,c); if (t < 0) continue;
+                if (typeAt(r+1,c)===t && typeAt(r+2,c)===t) {
+                    let end = r+2; while (end+1 < ROWS && typeAt(end+1,c)===t) end++;
+                    for (let x = r; x <= end; x++) matched.add(`${x},${c}`);
+                }
+            }
+        }
+        return matched;
     }
-    return [...s];
-  }
 
-  async function cascade(matched) {
-    // Score & flash
-    const pts = matched.length * PTS_PER_GEM * combo;
-    addScore(pts);
-    flashCombo(combo, matched.length);
+    async function processMatches() {
+        const matched = findMatches();
+        if (matched.size === 0) { combo = 1; updateCombo(); isProcessing = false; disarmWatchdog(); return; }
+        const base  = matched.size * 10;
+        const bonus = matched.size >= 5 ? 3 : matched.size === 4 ? 2 : 1;
+        const gained = base * bonus * combo;
+        score += gained; updateScore(); showScorePop(gained);
+        combo = Math.min(combo + 1, 8); updateCombo();
+        matched.forEach(key => {
+            const [r,c] = key.split(',').map(Number);
+            if (board[r][c]?.el) board[r][c].el.classList.add('match-vanish');
+        });
+        await delay(VANISH_MS);
+        matched.forEach(key => {
+            const [r,c] = key.split(',').map(Number);
+            if (board[r][c]?.el) board[r][c].el.remove();
+            board[r][c] = null;
+        });
+        for (let c = 0; c < COLS; c++) {
+            let empty = 0;
+            for (let r = ROWS-1; r >= 0; r--) {
+                if (board[r][c] === null) { empty++; }
+                else if (empty > 0) {
+                    const item = board[r][c]; board[r+empty][c] = item; board[r][c] = null;
+                    item.el.style.transition = `transform ${GRAVITY_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+                    item.el.style.transform  = `translate(${c*CELL}px, ${(r+empty)*CELL}px)`;
+                }
+            }
+            for (let i = 0; i < empty; i++) board[i][c] = makeEl(i, c, randItem(), true);
+        }
+        await delay(GRAVITY_MS + 20);
+        await processMatches();
+    }
 
-    matched.forEach(i => {
-      const r = Math.floor(i / COLS), c = i % COLS;
-      getEl(r, c)?.classList.add('matched');
+    async function trySwap(r1,c1,r2,c2) {
+        if (isProcessing || !gameLive) return;
+        if (Math.abs(r1-r2) + Math.abs(c1-c2) !== 1) return;
+        isProcessing = true; armWatchdog();
+        const item1 = board[r1][c1], item2 = board[r2][c2];
+        item1.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+        item2.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+        item1.el.style.transform = `translate(${c2*CELL}px, ${r2*CELL}px)`;
+        item2.el.style.transform = `translate(${c1*CELL}px, ${r1*CELL}px)`;
+        board[r1][c1] = item2; board[r2][c2] = item1;
+        await delay(SWAP_MS);
+        if (findMatches().size === 0) {
+            item1.el.style.transform = `translate(${c1*CELL}px, ${r1*CELL}px)`;
+            item2.el.style.transform = `translate(${c2*CELL}px, ${r2*CELL}px)`;
+            board[r1][c1] = item1; board[r2][c2] = item2;
+            await delay(SWAP_MS); isProcessing = false; disarmWatchdog();
+        } else { await processMatches(); }
+    }
+
+    /* ─────────────────────────────────────────
+       TOUCH / MOUSE INPUT — identical to arena
+    ───────────────────────────────────────── */
+    let tStartX, tStartY, tStartR, tStartC;
+    document.getElementById('touch-mask').addEventListener('touchstart', e => {
+        if (!gameLive || isProcessing) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        tStartX = e.touches[0].clientX - rect.left; tStartY = e.touches[0].clientY - rect.top;
+        tStartC = Math.floor(tStartX / CELL); tStartR = Math.floor(tStartY / CELL);
+    }, { passive: true });
+    document.getElementById('touch-mask').addEventListener('touchend', e => {
+        if (!gameLive || isProcessing || tStartR === undefined) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const dx = (e.changedTouches[0].clientX - rect.left) - tStartX;
+        const dy = (e.changedTouches[0].clientY - rect.top)  - tStartY;
+        const THR = 18;
+        let tr = tStartR, tc = tStartC;
+        if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > THR) tc += dx > 0 ? 1 : -1; }
+        else { if (Math.abs(dy) > THR) tr += dy > 0 ? 1 : -1; }
+        if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS && (tr !== tStartR || tc !== tStartC)) trySwap(tStartR, tStartC, tr, tc);
+        tStartR = undefined;
+    }, { passive: true });
+
+    let mStartX, mStartY, mStartR, mStartC, mouseDown = false;
+    document.getElementById('touch-mask').addEventListener('mousedown', e => {
+        if (!gameLive || isProcessing) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        mStartX = e.clientX - rect.left; mStartY = e.clientY - rect.top;
+        mStartC = Math.floor(mStartX / CELL); mStartR = Math.floor(mStartY / CELL); mouseDown = true;
+    });
+    document.getElementById('touch-mask').addEventListener('mouseup', e => {
+        if (!gameLive || isProcessing || !mouseDown) return;
+        mouseDown = false;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const dx = (e.clientX - rect.left) - mStartX, dy = (e.clientY - rect.top) - mStartY;
+        const THR = 18;
+        let tr = mStartR, tc = mStartC;
+        if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > THR) tc += dx > 0 ? 1 : -1; }
+        else { if (Math.abs(dy) > THR) tr += dy > 0 ? 1 : -1; }
+        if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS && (tr !== mStartR || tc !== mStartC)) trySwap(mStartR, mStartC, tr, tc);
     });
 
-    await wait(260);
-    matched.forEach(i => { grid[i] = null; });
+    /* ─────────────────────────────────────────
+       HUD UPDATES — identical to arena
+    ───────────────────────────────────────── */
+    function updateScore() { document.getElementById('score-display').innerText = score; }
+    function updateCombo() {
+        const el = document.getElementById('combo-display');
+        el.innerText = `x${combo}`;
+        el.style.color = combo >= 4 ? '#fbbf24' : combo >= 2 ? '#a78bfa' : 'white';
+    }
+    function showScorePop(pts) {
+        const pop = document.createElement('div');
+        pop.className = 'score-pop'; pop.innerText = `+${pts}`;
+        pop.style.left = (Math.random() * 55 + 20) + '%'; pop.style.top = '110px';
+        document.body.appendChild(pop); setTimeout(() => pop.remove(), 950);
+    }
 
-    // Gravity
-    for (let c = 0; c < COLS; c++) {
-      let empty = ROWS - 1;
-      for (let r = ROWS - 1; r >= 0; r--) {
-        if (grid[idx(r, c)] !== null) {
-          grid[idx(empty, c)] = grid[idx(r, c)];
-          if (empty !== r) grid[idx(r, c)] = null;
-          empty--;
+    /* ─────────────────────────────────────────
+       TIMER — identical to arena
+    ───────────────────────────────────────── */
+    function startGameTimer() {
+        const arc = document.getElementById('arc'), timerText = document.getElementById('timer-text');
+        gameTimer = setInterval(async () => {
+            timeLeft--;
+            arc.style.strokeDashoffset = 176 * (1 - timeLeft / GAME_SECS);
+            timerText.innerText = timeLeft;
+            if (timeLeft <= 10) { arc.classList.add('danger'); timerText.classList.add('danger'); }
+            if (timeLeft <= 0)  { clearInterval(gameTimer); gameLive = false; isProcessing = true; endGame(); }
+        }, 1000);
+    }
+
+    /* ─────────────────────────────────────────
+       END GAME — no Supabase, local best only
+    ───────────────────────────────────────── */
+    function endGame() {
+        disarmWatchdog();
+
+        // Personal best check
+        const prev = loadBest();
+        const isNewBest = score > prev;
+        if (isNewBest) saveBest(score);
+        const displayBest = isNewBest ? score : prev;
+
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('best-score-display').innerText = displayBest;
+
+        const bestRow = document.getElementById('best-row');
+        const newBestLabel = document.getElementById('new-best-label');
+        if (isNewBest) {
+            bestRow.classList.add('new-best');
+            newBestLabel.style.display = 'block';
+        } else {
+            bestRow.classList.remove('new-best');
+            newBestLabel.style.display = 'none';
         }
-      }
-      for (let r = empty; r >= 0; r--) grid[idx(r, c)] = rand();
+
+        document.getElementById('gameover').classList.add('show');
     }
 
-    render();
-    await wait(200);
+    /* ─────────────────────────────────────────
+       REPLAY — reset everything and go again
+    ───────────────────────────────────────── */
+    function replayGame() {
+        // Reset state
+        score = 0; combo = 1; timeLeft = GAME_SECS; gameLive = false;
+        isProcessing = false; clearInterval(gameTimer); gameTimer = null;
 
-    const next = findMatches();
-    if (next.length) { combo++; await cascade(next); }
-    else { combo = 1; updateCombo(); }
-  }
+        // Reset HUD
+        updateScore(); updateCombo();
+        const arc = document.getElementById('arc');
+        const timerText = document.getElementById('timer-text');
+        arc.style.strokeDashoffset = 0;
+        arc.classList.remove('danger');
+        timerText.innerText = GAME_SECS;
+        timerText.classList.remove('danger');
 
-  /* ── Score display ── */
-  function addScore(pts) {
-    score += pts;
-    scoreEl.textContent = score;
-    scoreEl.classList.remove('bump');
-    void scoreEl.offsetWidth;
-    scoreEl.classList.add('bump');
-  }
+        // Hide game over
+        document.getElementById('gameover').classList.remove('show');
 
-  function flashCombo(c, n) {
-    updateCombo();
-    if (c >= 2) {
-      comboStrip.textContent = `${c}× COMBO!  +${c * n * PTS_PER_GEM} PTS`;
-      comboStrip.classList.add('show');
-      setTimeout(() => comboStrip.classList.remove('show'), 950);
-    } else if (n >= 4) {
-      comboStrip.textContent = `${n}-GEM CLEAR!  +${n * PTS_PER_GEM} PTS`;
-      comboStrip.classList.add('show');
-      setTimeout(() => comboStrip.classList.remove('show'), 800);
+        // Rebuild board and show intro again
+        initBoard();
+        runIntro();
     }
-  }
 
-  function updateCombo() {
-    comboEl.textContent = `x${combo}`;
-    comboEl.style.color = combo >= 3 ? '#f97316' : combo >= 2 ? 'var(--blue-lt)' : 'var(--white)';
-  }
+    /* ─────────────────────────────────────────
+       INTRO COUNTDOWN — identical to arena
+    ───────────────────────────────────────── */
+    function runIntro() {
+        const intro   = document.getElementById('intro');
+        const numEl   = document.getElementById('intro-number');
+        const labelEl = document.getElementById('intro-label');
+        intro.style.display = 'flex';
+        const steps = [
+            { text: '3', label: 'GET READY',        ms: 900 },
+            { text: '2', label: 'STEADY...',         ms: 900 },
+            { text: '1', label: 'ALMOST...',         ms: 900 },
+            { text: 'GO', label: '🐔 MATCH TO WIN!', ms: 700 },
+        ];
+        let i = 0;
+        function next() {
+            if (i >= steps.length) {
+                intro.style.display = 'none';
+                gameLive = true;
+                startGameTimer();
+                return;
+            }
+            const s = steps[i++];
+            numEl.style.animation = 'none'; void numEl.offsetWidth; numEl.style.animation = 'intro-pop 0.8s ease';
+            numEl.innerText = s.text; labelEl.innerText = s.label;
+            setTimeout(next, s.ms);
+        }
+        next();
+    }
 
-  /* ── Timer ── */
-  function startTimer() {
-    timer = setInterval(() => {
-      timeLeft--;
-      timerEl.textContent = timeLeft;
-      if (timeLeft <= 10) timerEl.classList.add('urgent');
-      if (timeLeft <= 0) endGame();
-    }, 1000);
-  }
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  /* ── Game lifecycle ── */
-  function startGame() {
-    score = 0; timeLeft = DURATION; combo = 1;
-    selected = null; busy = false;
-    scoreEl.textContent = '0';
-    timerEl.textContent = DURATION;
-    timerEl.classList.remove('urgent');
-    updateCombo();
-    comboStrip.classList.remove('show');
-    resultEl.classList.remove('show');
-    clearInterval(timer);
-
-    buildGrid(); render();
-    running = true;
-    startBtn.disabled = true;
-    startBtn.textContent = 'RUNNING…';
-    footerMsg.innerHTML = 'Swap gems to match <b>3 or more</b> in a row or column!';
-    startTimer();
-  }
-
-  async function endGame() {
-    clearInterval(timer);
-    running = false; busy = true;
-    resultScore.textContent = score;
-    resultPB.textContent = score > personalBest ? '' : `Your best is ${personalBest}`;
-    resultSave.textContent = '';
-    resultEl.classList.add('show');
-    startBtn.disabled = false;
-    startBtn.textContent = 'START →';
-    footerMsg.innerHTML = 'Good run! Hit <b>START</b> to go again.';
-    await saveBest(score);
-  }
-
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-
-  /* ── Wire up ── */
-  startBtn.addEventListener('click', () => { if (!running) startGame(); });
-  replayBtn.addEventListener('click', startGame);
-
-  /* ── Boot ── */
-  loadBest();
-  buildGrid();
-  render();
-
-})();
+    /* ─────────────────────────────────────────
+       BOOT
+    ───────────────────────────────────────── */
+    computeLayout();
+    initBoard();
+    runIntro();
 </script>
 </body>
 </html>
