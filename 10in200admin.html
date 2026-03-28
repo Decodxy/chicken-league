@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 in 200 Admin - Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #131314;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+
+    <div class="max-w-md mx-auto">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <a href="admin.html" class="text-[#4285F4] text-sm">← Dashboard</a>
+            <h1 class="text-2xl font-black">10 IN 200 ADMIN</h1>
+            <div class="w-16"></div>
+        </div>
+
+        <!-- PIN Entry (shown first) -->
+        <div id="pinScreen" class="space-y-4">
+            <div class="bg-[#1a1a1b] border border-gray-700 rounded-lg p-6">
+                <label class="block text-sm font-bold text-gray-400 mb-2">ADMIN PIN</label>
+                <input type="password" id="pinInput" maxlength="6" placeholder="Enter 6-digit PIN" 
+                    class="w-full bg-[#0a0a0b] border border-gray-700 rounded-lg px-4 py-3 text-white text-center text-lg tracking-widest focus:outline-none focus:border-[#4285F4]">
+            </div>
+            <button onclick="verifyPin()" class="w-full bg-[#4285F4] hover:bg-[#3367d6] text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200">
+                UNLOCK CONTROLS
+            </button>
+        </div>
+
+        <!-- Admin Controls (hidden until PIN verified) -->
+        <div id="adminControls" class="space-y-6 hidden">
+
+            <!-- Lobby Status -->
+            <div class="bg-[#1a1a1b] border border-gray-700 rounded-lg p-6">
+                <h2 class="text-lg font-bold mb-4">LOBBY STATUS</h2>
+                <div class="grid grid-cols-2 gap-4 text-center mb-4">
+                    <div>
+                        <p class="text-3xl font-black text-[#4285F4]" id="playerCount">0</p>
+                        <p class="text-xs text-gray-500">Players Ready</p>
+                    </div>
+                    <div>
+                        <p class="text-3xl font-black text-white">10</p>
+                        <p class="text-xs text-gray-500">Max Slots</p>
+                    </div>
+                </div>
+                <div id="lobbyStatus" class="text-center text-sm">
+                    <span class="inline-block px-3 py-1 bg-gray-700 rounded-full text-gray-400">OFFLINE</span>
+                </div>
+            </div>
+
+            <!-- Open/Close Lobby -->
+            <div class="bg-[#1a1a1b] border border-gray-700 rounded-lg p-6">
+                <h2 class="text-lg font-bold mb-4">LOBBY CONTROL</h2>
+                <button id="toggleLobbyBtn" onclick="toggleLobby()" 
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200">
+                    OPEN LOBBY
+                </button>
+            </div>
+
+            <!-- Countdown Timer -->
+            <div class="bg-[#1a1a1b] border border-gray-700 rounded-lg p-6">
+                <h2 class="text-lg font-bold mb-4">START COUNTDOWN</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Countdown (seconds)</label>
+                        <input type="number" id="countdownInput" value="10" min="5" max="60"
+                            class="w-full bg-[#0a0a0b] border border-gray-700 rounded-lg px-4 py-2 text-white text-center focus:outline-none focus:border-[#4285F4]">
+                    </div>
+                    <button id="startCountdownBtn" onclick="startCountdown()" 
+                        class="w-full bg-[#4285F4] hover:bg-[#3367d6] text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200" disabled>
+                        START COUNTDOWN
+                    </button>
+                </div>
+            </div>
+
+            <!-- Emergency Actions -->
+            <div class="bg-[#1a1a1b] border border-red-900/30 rounded-lg p-6">
+                <h2 class="text-lg font-bold mb-4 text-red-400">EMERGENCY CONTROLS</h2>
+                <div class="space-y-3">
+                    <button onclick="clearLobby()" 
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                        CLEAR ALL PLAYERS
+                    </button>
+                    <button onclick="resetSignals()" 
+                        class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                        RESET SIGNALS
+                    </button>
+                </div>
+            </div>
+
+            <!-- Player List -->
+            <div class="bg-[#1a1a1b] border border-gray-700 rounded-lg p-6">
+                <h2 class="text-lg font-bold mb-4">CURRENT PLAYERS</h2>
+                <div id="playerList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-sm text-gray-500 text-center py-4">No players joined yet</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const LOBBY_ID = '10in200';
+        const MAX_SLOTS = 10;
+        const ADMIN_PIN = '000000';
+        const SUPABASE_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwNDQwMjgsImV4cCI6MjA1MjYyMDAyOH0.zthxq26pKWU0Zk_2hTwvvGDEZF98D8QWUKdH6A2ZcOw';
+
+        let isLobbyOpen = false;
+        let supabaseChannel;
+
+        function verifyPin() {
+            const pin = document.getElementById('pinInput').value;
+            if (pin === ADMIN_PIN) {
+                document.getElementById('pinScreen').classList.add('hidden');
+                document.getElementById('adminControls').classList.remove('hidden');
+                initAdmin();
+            } else {
+                alert('Incorrect PIN');
+                document.getElementById('pinInput').value = '';
+            }
+        }
+
+        async function initAdmin() {
+            await loadLobbyStatus();
+            subscribeToLobby();
+        }
+
+        async function loadLobbyStatus() {
+            try {
+                // Get signal status
+                const signalRes = await fetch(`${SUPABASE_URL}/rest/v1/lobby_signals?lobby_id=eq.${LOBBY_ID}&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const signals = await signalRes.json();
+                
+                if (signals.length > 0) {
+                    isLobbyOpen = signals[0].is_live;
+                    updateLobbyUI();
+                }
+
+                // Get players
+                await loadPlayers();
+
+            } catch (error) {
+                console.error('Load status error:', error);
+            }
+        }
+
+        async function loadPlayers() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/lobby_players?lobby_id=eq.${LOBBY_ID}&is_active=eq.true&select=*&order=joined_at.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const players = await res.json();
+                
+                document.getElementById('playerCount').textContent = players.length;
+                document.getElementById('startCountdownBtn').disabled = players.length < 1;
+
+                const listEl = document.getElementById('playerList');
+                if (players.length === 0) {
+                    listEl.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No players joined yet</p>';
+                } else {
+                    listEl.innerHTML = players.map((p, i) => `
+                        <div class="flex items-center justify-between bg-[#0a0a0b] rounded px-3 py-2">
+                            <span class="text-sm">${i + 1}. ${p.player_username}</span>
+                            <button onclick="kickPlayer('${p.id}')" class="text-red-400 text-xs hover:text-red-300">KICK</button>
+                        </div>
+                    `).join('');
+                }
+
+            } catch (error) {
+                console.error('Load players error:', error);
+            }
+        }
+
+        function subscribeToLobby() {
+            const { createClient } = supabase;
+            const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            supabaseChannel = sb.channel(`admin-${LOBBY_ID}`)
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'lobby_players', filter: `lobby_id=eq.${LOBBY_ID}` },
+                    () => loadPlayers()
+                )
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: 'lobby_signals', filter: `lobby_id=eq.${LOBBY_ID}` },
+                    () => loadLobbyStatus()
+                )
+                .subscribe();
+        }
+
+        async function toggleLobby() {
+            try {
+                const newState = !isLobbyOpen;
+
+                // Upsert signal
+                await fetch(`${SUPABASE_URL}/rest/v1/lobby_signals`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates'
+                    },
+                    body: JSON.stringify({
+                        lobby_id: LOBBY_ID,
+                        is_live: newState,
+                        open_at: newState ? new Date().toISOString() : null,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+
+                isLobbyOpen = newState;
+                updateLobbyUI();
+
+            } catch (error) {
+                console.error('Toggle lobby error:', error);
+                alert('Failed to toggle lobby');
+            }
+        }
+
+        function updateLobbyUI() {
+            const btn = document.getElementById('toggleLobbyBtn');
+            const status = document.getElementById('lobbyStatus');
+
+            if (isLobbyOpen) {
+                btn.textContent = 'CLOSE LOBBY';
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+                status.innerHTML = '<span class="inline-block px-3 py-1 bg-green-600 rounded-full text-white">OPEN</span>';
+            } else {
+                btn.textContent = 'OPEN LOBBY';
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                status.innerHTML = '<span class="inline-block px-3 py-1 bg-gray-700 rounded-full text-gray-400">CLOSED</span>';
+            }
+        }
+
+        async function startCountdown() {
+            const duration = parseInt(document.getElementById('countdownInput').value);
+            
+            if (!confirm(`Start ${duration}s countdown? All players will be redirected to the arena.`)) return;
+
+            try {
+                // Update signal with timer
+                await fetch(`${SUPABASE_URL}/rest/v1/lobby_signals?lobby_id=eq.${LOBBY_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timer_set_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                });
+
+                // Insert countdown trigger
+                await fetch(`${SUPABASE_URL}/rest/v1/lobby_countdown`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        lobby_id: LOBBY_ID,
+                        duration_seconds: duration,
+                        started_at: new Date().toISOString()
+                    })
+                });
+
+                alert('Countdown started!');
+
+            } catch (error) {
+                console.error('Start countdown error:', error);
+                alert('Failed to start countdown');
+            }
+        }
+
+        async function clearLobby() {
+            if (!confirm('Remove ALL players from lobby? This cannot be undone.')) return;
+
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/lobby_players?lobby_id=eq.${LOBBY_ID}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                alert('Lobby cleared');
+                loadPlayers();
+
+            } catch (error) {
+                console.error('Clear lobby error:', error);
+                alert('Failed to clear lobby');
+            }
+        }
+
+        async function resetSignals() {
+            if (!confirm('Reset all lobby signals? This will close the lobby.')) return;
+
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/lobby_signals?lobby_id=eq.${LOBBY_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        is_live: false,
+                        open_at: null,
+                        timer_set_at: null,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+
+                isLobbyOpen = false;
+                updateLobbyUI();
+                alert('Signals reset');
+
+            } catch (error) {
+                console.error('Reset signals error:', error);
+                alert('Failed to reset signals');
+            }
+        }
+
+        async function kickPlayer(playerId) {
+            if (!confirm('Kick this player?')) return;
+
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/lobby_players?id=eq.${playerId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+            } catch (error) {
+                console.error('Kick player error:', error);
+                alert('Failed to kick player');
+            }
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (supabaseChannel) supabaseChannel.unsubscribe();
+        });
+    </script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</body>
+</html>
