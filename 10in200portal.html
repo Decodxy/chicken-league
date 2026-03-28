@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Easter Championship Access | Chicken League</title>
+    <title>Arena Access | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -175,57 +175,75 @@
             cursor: pointer; margin-bottom: 10px;
             transition: background 0.15s, border-color 0.15s;
         }
-        .share-opt:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+        .share-opt:hover { background: rgba(255,255,255,0.06); border-color: var(--blue); }
         .share-icon {
-            width: 40px; height: 40px; border-radius: 10px;
+            width: 40px; height: 40px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
+            font-size: 1.15rem; flex-shrink: 0;
         }
-        .share-lbl { font-size: 0.82rem; font-weight: 600; color: var(--white); }
-        .share-sub { font-size: 0.65rem; color: var(--grey); margin-top: 2px; }
+        .share-lbl { font-size: 0.82rem; font-weight: 700; color: var(--white); }
+        .share-sub { font-size: 0.62rem; color: var(--grey); font-family: 'Orbitron', monospace; letter-spacing: 0.04em; margin-top: 2px; }
+
+        /* ── Scrollable page body ── */
+        #access-body {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 24px 0;
+        }
+        #access-inner {
+            width: 100%;
+            max-width: 380px;
+            padding-bottom: 100px;
+        }
+
+        /* ── Animations ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideup {
             from { transform: translateY(100%); }
             to   { transform: translateY(0); }
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Access body ── */
-        #access-body {
-            padding: 100px 20px 30px;
-            max-width: 420px;
-            margin: 0 auto;
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        #access-inner { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in { animation: fadein 0.35s ease forwards; }
     </style>
 </head>
 <body>
 
 <div id="toast"></div>
 
-<!-- ── HEADER ── -->
-<div id="page-header">
-    <div class="header-center">
-
-    </div>
-</div>
-
-<!-- ── CORNER BUTTONS ── -->
-<a id="btn-invite" class="corner-btn" onclick="inviteFriends(); return false;">
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+<!-- ── INVITE FRIENDS — top-left corner ── -->
+<button id="btn-invite" class="corner-btn" onclick="inviteFriends()">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <circle cx="18" cy="5" r="3"/>
+        <circle cx="6" cy="12" r="3"/>
+        <circle cx="18" cy="19" r="3"/>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
     </svg>
-    INVITE
-</a>
-<a id="btn-practice" class="corner-btn" href="1in15demo.html">
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    INVITE FRIENDS
+</button>
+
+<!-- ── PRACTICE DEMO — top-right corner ── -->
+<a id="btn-practice" href="1in15demo.html" class="corner-btn">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="6" width="20" height="12" rx="3"/>
+        <path d="M12 2v4M8 14h8M10 11v2M14 11v2"/>
+        <circle cx="8" cy="11" r="1" fill="currentColor"/>
     </svg>
-    PRACTICE
+    PRACTICE DEMO
 </a>
 
-<!-- ── SHARE SHEET ── -->
+<!-- ── PAGE HEADER ── -->
+<header id="page-header">
+    <div class="header-center">10IN200 <span>ARENA</span></div>
+</header>
+
+<!-- ── SHARE SHEET (fallback) ── -->
 <div id="share-sheet" onclick="closeShareSheet(event)">
     <div id="share-inner">
         <div class="share-handle"></div>
@@ -272,8 +290,8 @@
                     <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
             </div>
-            <div class="orbitron mb-1" style="font-size:0.6rem; letter-spacing:0.3em; color:var(--blue-lt);">EASTER CHAMPIONSHIP</div>
-
+            <div class="orbitron mb-1" style="font-size:0.6rem; letter-spacing:0.3em; color:var(--blue-lt);">CHICKEN LEAGUE</div>
+            <h2 class="orbitron font-black uppercase tracking-tighter mb-1" style="font-size:1.25rem;">Arena Access</h2>
             <p class="orbitron mb-7" style="font-size:0.62rem; letter-spacing:0.18em; color:var(--grey);">ENTER YOUR SECRET CODE TO JOIN</p>
 
             <input id="secret-code-input" type="text" maxlength="10" placeholder="XXXXXXXXXX"
@@ -292,7 +310,7 @@
             <p class="mb-3" style="font-size:0.72rem; color:var(--grey);">
                 Don't have an access code?
             </p>
-            <a href="https://wa.me/2347074150855?text=Hi%2C%20I%20want%20to%20join%20the%2010in200%20Easter%20Championship%20Arena.%20Please%20send%20me%20my%20access%20code."
+            <a href="https://wa.me/2347074150855?text=Hi%2C%20I%20want%20to%20join%20the%2010in200%20Chicken%20League%20Arena.%20Please%20send%20me%20my%20access%20code."
                target="_blank"
                class="inline-flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold orbitron"
                style="background:rgba(37,211,102,0.08); border:1px solid rgba(37,211,102,0.22); color:#25d366; font-size:0.72rem; letter-spacing:0.08em; text-decoration:none; transition:background 0.15s;"
@@ -327,7 +345,7 @@
         if (!savedCode) return;
         const { data } = await sb.from('lobby_codes')
             .select('*').eq('lobby_id', LOBBY_ID)
-            .eq('code', savedCode).eq('used_by', currentUser).maybeSingle();
+            .eq('code', savedCode).eq('claimed_by', currentUser).maybeSingle();
         if (data) window.location.replace('10in200lobby.html');
     })();
 
@@ -351,11 +369,11 @@
         btn.classList.remove('btn-loading'); btn.textContent = 'VERIFY & ENTER →';
 
         if (error || !data) { showToast('INVALID CODE', 'error'); return; }
-        if (data.used_by && data.used_by !== currentUser) { showToast('CODE ALREADY USED', 'error'); return; }
+        if (data.claimed_by && data.claimed_by !== currentUser) { showToast('CODE ALREADY USED', 'error'); return; }
 
-        if (!data.used_by) {
+        if (!data.claimed_by) {
             await sb.from('lobby_codes')
-                .update({ used_by: currentUser })
+                .update({ claimed_by: currentUser, is_used: true, claimed_at: new Date().toISOString() })
                 .eq('code', input).eq('lobby_id', LOBBY_ID);
         }
         localStorage.setItem('league_code_' + LOBBY_ID, input);
@@ -365,12 +383,12 @@
 
     /* ── Share / Invite ── */
     const INVITE_URL = `${location.origin}/1in15demo.html`;
-    const INVITE_MSG = `🐔 Join the Easter Championship on Chicken League!\n\n10in200 Arena — top 10 players win BIG prizes!\n🥇 Grand Prize for 1st place\n🎟️ Free codes for ranks 2-10\n\nTry the demo first: ${INVITE_URL}\n\nGet your access code: https://wa.me/2347074150855`;
+    const INVITE_MSG = `🐔 Join me on Chicken League!\nCompete in the 10in200 Arena — top 10 players win broiler chickens.\n\nTry the demo first: ${INVITE_URL}\n\nGet your access code: https://wa.me/2347074150855`;
 
     async function inviteFriends() {
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Chicken League — Easter Championship', text: INVITE_MSG, url: INVITE_URL });
+                await navigator.share({ title: 'Chicken League — 10in200 Arena', text: INVITE_MSG, url: INVITE_URL });
                 return;
             } catch (err) {
                 if (err.name === 'AbortError') return;
@@ -395,7 +413,7 @@
     }
     function shareNative() {
         if (navigator.share) {
-            navigator.share({ title: 'Chicken League — Easter Championship', text: INVITE_MSG, url: INVITE_URL }).catch(()=>{});
+            navigator.share({ title: 'Chicken League — 10in200 Arena', text: INVITE_MSG, url: INVITE_URL }).catch(()=>{});
         } else { copyLink(); return; }
         document.getElementById('share-sheet').classList.remove('open');
     }
