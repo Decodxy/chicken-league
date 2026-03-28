@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arena Access | Chicken League</title>
+    <title>Easter Arena Access | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --blue:      #2563eb;
-            --blue-lt:   #3b82f6;
-            --blue-glow: rgba(37,99,235,0.35);
+            --gold:      #f59e0b;
+            --gold-lt:   #fbbf24;
+            --gold-glow: rgba(245,158,11,0.35);
             --black:     #0a0a0a;
             --surface:   #181818;
             --card:      #1c1c1c;
@@ -58,7 +58,25 @@
             letter-spacing: 0.15em;
             color: var(--white);
         }
-        .header-center span { color: var(--blue-lt); }
+        .header-center span { color: var(--gold-lt); }
+
+        /* ── Easter badge ── */
+        #easter-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 5px 16px;
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.22);
+            border-radius: 99px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: var(--gold-lt);
+            margin-bottom: 20px;
+        }
 
         /* ── Corner action buttons ── */
         .corner-btn {
@@ -84,8 +102,8 @@
             white-space: nowrap;
         }
         .corner-btn:hover {
-            background: rgba(37,99,235,0.18);
-            border-color: var(--blue);
+            background: rgba(245,158,11,0.18);
+            border-color: var(--gold);
             color: var(--white);
             transform: translateY(-1px);
         }
@@ -108,29 +126,48 @@
             border-radius: 14px;
         }
         .code-input:focus {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
         }
         .code-input::placeholder { color: rgba(255,255,255,0.15); letter-spacing: 0.2em; }
 
         /* ── Buttons ── */
-        .btn-blue {
-            background: var(--blue);
-            color: var(--white);
+        .btn-gold {
+            background: var(--gold);
+            color: #000;
             border: none;
-            box-shadow: 0 0 18px var(--blue-glow);
+            box-shadow: 0 0 18px var(--gold-glow);
             transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
             cursor: pointer;
         }
-        .btn-blue:hover { background: var(--blue-lt); box-shadow: 0 0 26px var(--blue-glow); }
-        .btn-blue:active { transform: scale(0.97); }
+        .btn-gold:hover { background: var(--gold-lt); box-shadow: 0 0 26px var(--gold-glow); }
+        .btn-gold:active { transform: scale(0.97); }
         .btn-loading { position: relative; pointer-events: none; opacity: 0.65; }
         .btn-loading::after {
             content: ""; position: absolute;
             width: 16px; height: 16px;
             top: 0; left: 0; right: 0; bottom: 0; margin: auto;
-            border: 2px solid transparent; border-top-color: var(--white);
+            border: 2px solid transparent; border-top-color: #000;
             border-radius: 50%; animation: spin 0.6s linear infinite;
+        }
+
+        /* ── Prize strip ── */
+        .prize-strip {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .prize-card {
+            flex: 1;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 10px 6px;
+            text-align: center;
+        }
+        .prize-card.gold-card {
+            background: rgba(245,158,11,0.06);
+            border-color: rgba(245,158,11,0.25);
         }
 
         /* ── Toast ── */
@@ -144,7 +181,7 @@
         }
         #toast.show    { opacity: 1; }
         #toast.error   { border-color: #ef4444; color: #ef4444; }
-        #toast.success { border-color: var(--blue); color: var(--blue-lt); }
+        #toast.success { border-color: var(--gold); color: var(--gold-lt); }
 
         /* ── Share sheet ── */
         #share-sheet {
@@ -175,7 +212,7 @@
             cursor: pointer; margin-bottom: 10px;
             transition: background 0.15s, border-color 0.15s;
         }
-        .share-opt:hover { background: rgba(255,255,255,0.06); border-color: var(--blue); }
+        .share-opt:hover { background: rgba(255,255,255,0.06); border-color: var(--gold); }
         .share-icon {
             width: 40px; height: 40px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
@@ -240,7 +277,7 @@
 
 <!-- ── PAGE HEADER ── -->
 <header id="page-header">
-    <div class="header-center">10IN200 <span>ARENA</span></div>
+    <div class="header-center">10IN200 <span>EASTER ARENA</span></div>
 </header>
 
 <!-- ── SHARE SHEET (fallback) ── -->
@@ -256,7 +293,7 @@
             </div>
         </div>
         <div class="share-opt" onclick="copyLink()">
-            <div class="share-icon" style="background:rgba(37,99,235,0.1);">🔗</div>
+            <div class="share-icon" style="background:rgba(245,158,11,0.1);">🔗</div>
             <div>
                 <div class="share-lbl">Copy Invite Link</div>
                 <div class="share-sub">Paste anywhere</div>
@@ -281,17 +318,41 @@
 <div id="access-body">
     <div id="access-inner" class="fade-in">
 
+        <!-- Easter badge -->
+        <div id="easter-badge">
+            🐣 EASTER CHAMPIONSHIP 2025 🐣
+        </div>
+
+        <!-- Prize strip -->
+        <div class="prize-strip">
+            <div class="prize-card gold-card">
+                <div style="font-size:1.4rem; margin-bottom:4px;">🏆</div>
+                <div class="orbitron" style="font-size:0.55rem; color:var(--gold-lt); letter-spacing:0.1em;">1ST PLACE</div>
+                <div class="orbitron" style="font-size:0.6rem; font-weight:900; color:var(--white); margin-top:2px;">GRAND PRIZE</div>
+            </div>
+            <div class="prize-card">
+                <div style="font-size:1.4rem; margin-bottom:4px;">🎟️</div>
+                <div class="orbitron" style="font-size:0.55rem; color:var(--grey); letter-spacing:0.1em;">2ND – 10TH</div>
+                <div class="orbitron" style="font-size:0.6rem; font-weight:900; color:var(--white); margin-top:2px;">FREE NEXT CODE</div>
+            </div>
+            <div class="prize-card">
+                <div style="font-size:1.4rem; margin-bottom:4px;">👥</div>
+                <div class="orbitron" style="font-size:0.55rem; color:var(--grey); letter-spacing:0.1em;">200 SLOTS</div>
+                <div class="orbitron" style="font-size:0.6rem; font-weight:900; color:var(--white); margin-top:2px;">BATTLE ROYALE</div>
+            </div>
+        </div>
+
         <!-- Access card -->
         <div class="glass-panel rounded-[2rem] p-8 text-center mb-6">
             <div class="mx-auto mb-5 flex items-center justify-center rounded-2xl"
-                 style="width:56px; height:56px; background:rgba(37,99,235,0.1); border:1px solid rgba(37,99,235,0.25);">
+                 style="width:56px; height:56px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25);">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3b82f6" stroke-width="1.5"/>
-                    <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
+                    <rect x="5" y="11" width="14" height="10" rx="2" stroke="#fbbf24" stroke-width="1.5"/>
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
             </div>
-            <div class="orbitron mb-1" style="font-size:0.6rem; letter-spacing:0.3em; color:var(--blue-lt);">CHICKEN LEAGUE</div>
-            <h2 class="orbitron font-black uppercase tracking-tighter mb-1" style="font-size:1.25rem;">Arena Access</h2>
+            <div class="orbitron mb-1" style="font-size:0.6rem; letter-spacing:0.3em; color:var(--gold-lt);">CHICKEN LEAGUE</div>
+            <h2 class="orbitron font-black uppercase tracking-tighter mb-1" style="font-size:1.25rem;">Easter Arena Access</h2>
             <p class="orbitron mb-7" style="font-size:0.62rem; letter-spacing:0.18em; color:var(--grey);">ENTER YOUR SECRET CODE TO JOIN</p>
 
             <input id="secret-code-input" type="text" maxlength="10" placeholder="XXXXXXXXXX"
@@ -299,18 +360,18 @@
                 onkeydown="if(event.key==='Enter') verifySecretCode()" />
 
             <button id="code-submit-btn" onclick="verifySecretCode()"
-                class="btn-blue w-full py-4 rounded-2xl font-black uppercase tracking-tighter orbitron"
+                class="btn-gold w-full py-4 rounded-2xl font-black uppercase tracking-tighter orbitron"
                 style="font-size:0.82rem;">
                 VERIFY & ENTER →
             </button>
         </div>
 
-        <!-- "Don't have an access code?" — block flow, stays above sticky nav -->
+        <!-- "Don't have an access code?" -->
         <div class="text-center">
             <p class="mb-3" style="font-size:0.72rem; color:var(--grey);">
                 Don't have an access code?
             </p>
-            <a href="https://wa.me/2347074150855?text=Hi%2C%20I%20want%20to%20join%20the%2010in200%20Chicken%20League%20Arena.%20Please%20send%20me%20my%20access%20code."
+            <a href="https://wa.me/2347074150855?text=Hi%2C%20I%20want%20to%20join%20the%2010in200%20Easter%20Chicken%20League%20Arena.%20Please%20send%20me%20my%20access%20code."
                target="_blank"
                class="inline-flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold orbitron"
                style="background:rgba(37,211,102,0.08); border:1px solid rgba(37,211,102,0.22); color:#25d366; font-size:0.72rem; letter-spacing:0.08em; text-decoration:none; transition:background 0.15s;"
@@ -331,7 +392,9 @@
     const SB_URL   = 'https://tbvmgcknkwsucstedigd.supabase.co';
     const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
     const sb       = window.supabase.createClient(SB_URL, SB_KEY);
-    const LOBBY_ID = '10in200';
+    const LOBBY_ID       = '10in200';
+    const LOBBY_CODE_KEY = 'league_code_10in200';
+    const LOBBY_URL      = '10in200lobby.html';
 
     let currentUser = localStorage.getItem('league_user');
     if (!currentUser) {
@@ -339,14 +402,26 @@
         localStorage.setItem('league_user', currentUser);
     }
 
-    /* ── If already verified, skip straight to the lobby ── */
+    /* ─────────────────────────────────────────────────────────
+       If a valid code is already saved, skip straight to lobby.
+       IMPORTANT: only redirect if Supabase confirms it —
+       never redirect on error or missing data (that causes the loop).
+    ───────────────────────────────────────────────────────── */
     (async function checkExistingCode() {
-        const savedCode = localStorage.getItem('league_code_' + LOBBY_ID);
-        if (!savedCode) return;
-        const { data } = await sb.from('lobby_codes')
-            .select('*').eq('lobby_id', LOBBY_ID)
-            .eq('code', savedCode).eq('claimed_by', currentUser).maybeSingle();
-        if (data) window.location.replace('10in200lobby.html');
+        const savedCode = localStorage.getItem(LOBBY_CODE_KEY);
+        if (!savedCode) return;                          // nothing saved → stay on portal
+        try {
+            const { data, error } = await sb.from('lobby_codes')
+                .select('code, used_by')
+                .eq('lobby_id', LOBBY_ID)
+                .eq('code', savedCode)
+                .eq('used_by', currentUser)
+                .maybeSingle();
+            if (error || !data) return;                  // DB problem or code not found → stay
+            window.location.replace(LOBBY_URL);          // confirmed → go to lobby
+        } catch (_) {
+            // network error → stay on portal, don't reload
+        }
     })();
 
     /* ── Toast ── */
@@ -356,39 +431,58 @@
         setTimeout(() => { t.className = ''; }, 3500);
     }
 
-    /* ── Verify code → redirect to lobby ── */
+    /* ── Verify code → mark used → redirect to lobby ── */
     async function verifySecretCode() {
         const input = document.getElementById('secret-code-input').value.trim().toUpperCase();
         if (!input) { showToast('ENTER A CODE', 'error'); return; }
+
         const btn = document.getElementById('code-submit-btn');
+        const origText = btn.textContent;
         btn.classList.add('btn-loading'); btn.textContent = '';
 
-        const { data, error } = await sb.from('lobby_codes')
-            .select('*').eq('lobby_id', LOBBY_ID).eq('code', input).maybeSingle();
+        try {
+            const { data, error } = await sb.from('lobby_codes')
+                .select('code, used_by')
+                .eq('lobby_id', LOBBY_ID)
+                .eq('code', input)
+                .maybeSingle();
 
-        btn.classList.remove('btn-loading'); btn.textContent = 'VERIFY & ENTER →';
+            btn.classList.remove('btn-loading'); btn.textContent = origText;
 
-        if (error || !data) { showToast('INVALID CODE', 'error'); return; }
-        if (data.claimed_by && data.claimed_by !== currentUser) { showToast('CODE ALREADY USED', 'error'); return; }
+            if (error || !data)                               { showToast('INVALID CODE', 'error'); return; }
+            if (data.used_by && data.used_by !== currentUser) { showToast('CODE ALREADY USED', 'error'); return; }
 
-        if (!data.claimed_by) {
-            await sb.from('lobby_codes')
-                .update({ claimed_by: currentUser, is_used: true, claimed_at: new Date().toISOString() })
-                .eq('code', input).eq('lobby_id', LOBBY_ID);
+            if (!data.used_by) {
+                const { error: updateErr } = await sb.from('lobby_codes')
+                    .update({ used_by: currentUser })
+                    .eq('code', input)
+                    .eq('lobby_id', LOBBY_ID);
+                if (updateErr) { showToast('ERROR — TRY AGAIN', 'error'); return; }
+            }
+
+            localStorage.setItem(LOBBY_CODE_KEY, input);
+            showToast('ACCESS GRANTED 🐣', 'success');
+            setTimeout(() => { window.location.href = LOBBY_URL; }, 900);
+
+        } catch (_) {
+            btn.classList.remove('btn-loading'); btn.textContent = origText;
+            showToast('CONNECTION ERROR', 'error');
         }
-        localStorage.setItem('league_code_' + LOBBY_ID, input);
-        showToast('ACCESS GRANTED', 'success');
-        setTimeout(() => { window.location.href = '10in200lobby.html'; }, 900);
     }
 
     /* ── Share / Invite ── */
-    const INVITE_URL = `${location.origin}/1in15demo.html`;
-    const INVITE_MSG = `🐔 Join me on Chicken League!\nCompete in the 10in200 Arena — top 10 players win broiler chickens.\n\nTry the demo first: ${INVITE_URL}\n\nGet your access code: https://wa.me/2347074150855`;
+    const INVITE_URL = location.origin + '/10in200portal.html';
+    const INVITE_MSG =
+        `🐣 Join me on Chicken League!\n` +
+        `Easter Arena — 200 players, top 10 WIN PRIZES!\n` +
+        `Grand champion wins the GRAND PRIZE.\n\n` +
+        `Try the practice demo: ${location.origin}/1in15demo.html\n\n` +
+        `Get your access code: https://wa.me/2347074150855`;
 
     async function inviteFriends() {
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Chicken League — 10in200 Arena', text: INVITE_MSG, url: INVITE_URL });
+                await navigator.share({ title: 'Chicken League — 10in200 Easter Arena', text: INVITE_MSG, url: INVITE_URL });
                 return;
             } catch (err) {
                 if (err.name === 'AbortError') return;
@@ -413,7 +507,7 @@
     }
     function shareNative() {
         if (navigator.share) {
-            navigator.share({ title: 'Chicken League — 10in200 Arena', text: INVITE_MSG, url: INVITE_URL }).catch(()=>{});
+            navigator.share({ title: 'Chicken League — 10in200 Easter Arena', text: INVITE_MSG, url: INVITE_URL }).catch(()=>{});
         } else { copyLink(); return; }
         document.getElementById('share-sheet').classList.remove('open');
     }
