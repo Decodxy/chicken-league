@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Control | Chicken League</title>
+    <title>10 in 200 Admin | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -112,7 +112,7 @@
                     <path d="M9 12l2 2 4-4" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h2 class="orbitron text-base font-black uppercase tracking-tighter mb-1">Admin Access</h2>
+            <h2 class="orbitron text-base font-black uppercase tracking-tighter mb-1">10 in 200 Admin</h2>
             <p class="text-zinc-600 text-[9px] orbitron tracking-widest mb-6">CHICKEN LEAGUE · CONTROL PANEL</p>
             <input id="pin-input" type="password" maxlength="6" placeholder="ENTER PIN"
                 class="field text-center text-xl tracking-[0.5em] mb-4"
@@ -127,7 +127,7 @@
 
         <div class="mt-5 mb-6 flex items-center justify-between">
             <div>
-                <p class="text-[8px] orbitron text-zinc-600 tracking-widest mb-0.5">CHICKEN LEAGUE</p>
+                <p class="text-[8px] orbitron text-zinc-600 tracking-widest mb-0.5">10 IN 200 ARENA</p>
                 <h1 class="orbitron text-lg font-black uppercase tracking-tighter">Control Panel</h1>
             </div>
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-full" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);">
@@ -145,11 +145,11 @@
                     <div class="text-[8px] text-zinc-500 orbitron mt-1">JOINED</div>
                 </div>
                 <div class="text-center p-3 rounded-xl" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-                    <div class="orbitron text-2xl font-black text-zinc-300">15</div>
+                    <div class="orbitron text-2xl font-black text-zinc-300">200</div>
                     <div class="text-[8px] text-zinc-500 orbitron mt-1">MAX SLOTS</div>
                 </div>
                 <div class="text-center p-3 rounded-xl" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-                    <div id="stat-slots" class="orbitron text-2xl font-black text-zinc-400">15</div>
+                    <div id="stat-slots" class="orbitron text-2xl font-black text-zinc-400">200</div>
                     <div class="text-[8px] text-zinc-500 orbitron mt-1">OPEN</div>
                 </div>
             </div>
@@ -161,8 +161,8 @@
         <!-- Player Access Codes -->
         <div class="glass rounded-2xl p-5 mb-4">
             <p class="section-label">Player Access Codes</p>
-            <p class="text-zinc-600 text-[9px] orbitron mb-4">GENERATE ONE UNIQUE CODE PER PLAYER — DISTRIBUTE PRIVATELY</p>
-            <button onclick="generatePlayerCodes()" class="btn-gold mb-3">🎟 GENERATE 15 PLAYER CODES</button>
+            <p class="text-zinc-600 text-[9px] orbitron mb-4">GENERATE CODES FOR 200 PLAYERS — DISTRIBUTE PRIVATELY</p>
+            <button onclick="generatePlayerCodes()" class="btn-gold mb-3">🎟 GENERATE 200 PLAYER CODES</button>
             <div id="codes-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
             <button onclick="copyAllCodes()" id="copy-all-btn" class="btn-ghost mt-3" style="display:none;">📋 COPY ALL CODES</button>
         </div>
@@ -187,23 +187,24 @@
             <button onclick="resetLobby()" class="btn-danger">🔄 RESET ENTIRE LOBBY</button>
         </div>
 
-        <!-- Leaderboard -->
+        <!-- Leaderboard (Top 10 Winners) -->
         <div class="glass rounded-2xl p-5 mb-4">
-            <p class="section-label">Leaderboard</p>
+            <p class="section-label">Leaderboard (Top 10 Winners)</p>
             <div id="leaderboard-list" class="flex flex-col gap-2">
                 <div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO SCORES YET</div>
             </div>
             <button onclick="syncAll()" class="btn-ghost mt-3">↻ REFRESH</button>
         </div>
 
-        <button onclick="adminLogout()" class="btn-ghost">← LOGOUT</button>
+        <button onclick="window.location.href='admin.html'" class="btn-ghost">← BACK TO DASHBOARD</button>
     </main>
 
     <script>
         const SB_URL    = 'https://tbvmgcknkwsucstedigd.supabase.co';
         const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
         const sb        = window.supabase.createClient(SB_URL, SB_KEY);
-        const LOBBY     = '1in15';
+        const LOBBY     = '10in200';
+        const MAX_SLOTS = 200;
         const ADMIN_PIN = '000000';
 
         let cachedSignal = null, cachedPlayers = [], selectedMinutes = null, countdownInterval = null;
@@ -220,28 +221,22 @@
             }
         }
 
-        function adminLogout() {
-            document.getElementById('pin-gate').style.display = 'flex';
-            document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('pin-input').value = '';
-        }
-
         async function syncAll() {
             const [{ data: players }, { data: signal }, { data: scores }] = await Promise.all([
                 sb.from('lobby_players').select('*').eq('lobby_id', LOBBY).order('joined_at', { ascending: true }),
                 sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY).maybeSingle(),
-                sb.from('game_sessions').select('*').eq('lobby_id', LOBBY).order('score', { ascending: false })
+                sb.from('game_sessions').select('*').eq('lobby_id', LOBBY).order('score', { ascending: false }).limit(10)
             ]);
             cachedPlayers = players || [];
             cachedSignal  = signal;
             renderStats(); renderPlayers(); renderLiveStatus();
-            renderLeaderboard(scores || []); renderCodeDisplay(); startLiveCountdown();
-            await loadPlayerCodes(); // ← loads codes list every sync
+            renderLeaderboard(scores || []); startLiveCountdown();
+            await loadPlayerCodes();
         }
 
         function renderStats() {
             document.getElementById('stat-players').innerText = cachedPlayers.length;
-            document.getElementById('stat-slots').innerText   = 15 - cachedPlayers.length;
+            document.getElementById('stat-slots').innerText   = MAX_SLOTS - cachedPlayers.length;
         }
 
         function renderPlayers() {
@@ -268,11 +263,6 @@
                 : 'text-[9px] orbitron font-bold text-zinc-500';
         }
 
-        function renderCodeDisplay() {
-            const code = cachedSignal?.secret_code || '--------';
-            document.getElementById('code-display').innerText = code.split('').join(' ');
-        }
-
         function renderLeaderboard(scores) {
             const list   = document.getElementById('leaderboard-list');
             const medals = ['🥇','🥈','🥉'];
@@ -282,7 +272,7 @@
             }
             list.innerHTML = scores.map((s, i) => `
                 <div class="player-row justify-between">
-                    <span class="text-base">${medals[i] || `#${i+1}`}</span>
+                    <span class="text-base">${i < 3 ? medals[i] : `#${i+1}`}</span>
                     <span class="orbitron text-xs font-bold flex-1 ml-2">${s.player_username}</span>
                     <span class="orbitron text-yellow-400 font-black text-sm">${s.score} PTS</span>
                     <span class="text-[8px] ml-2 px-2 py-0.5 rounded-full orbitron
@@ -320,16 +310,14 @@
 
         // ── Player Codes ──
         async function generatePlayerCodes() {
-            if (!confirm('This will delete all existing unused codes and generate 15 fresh ones. Continue?')) return;
+            if (!confirm('This will delete all existing unused codes and generate 200 fresh ones. Continue?')) return;
 
-            // Delete old unused codes for this lobby
             await sb.from('lobby_codes').delete()
                 .eq('lobby_id', LOBBY).eq('is_used', false);
 
-            // Generate 15 unique codes
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             const codes = [];
-            while (codes.length < 15) {
+            while (codes.length < MAX_SLOTS) {
                 let code = '';
                 for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
                 if (!codes.includes(code)) codes.push(code);
@@ -339,7 +327,7 @@
             const { error } = await sb.from('lobby_codes').insert(rows);
 
             if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
-            showToast('✓ 15 CODES GENERATED', 'success');
+            showToast('✓ 200 CODES GENERATED', 'success');
             await loadPlayerCodes();
         }
 
@@ -359,7 +347,7 @@
             copyBtn.style.display = 'block';
             list.innerHTML = codes.map((c, i) => `
                 <div class="player-row justify-between">
-                    <span class="text-zinc-500 orbitron text-[9px] w-5">#${i+1}</span>
+                    <span class="text-zinc-500 orbitron text-[9px] w-7">#${i+1}</span>
                     <span class="orbitron text-sm font-black tracking-widest flex-1 ml-2
                         ${c.is_used ? 'text-zinc-600 line-through' : 'text-yellow-400'}">
                         ${c.code}
@@ -383,26 +371,6 @@
         }
 
         // ── Timer ──
-        function generateCode() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let code = '';
-            for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
-            document.getElementById('custom-code-input').value = code;
-            document.getElementById('code-display').innerText  = code.split('').join(' ');
-            showToast('CODE GENERATED — CLICK SAVE TO CONFIRM', 'info');
-        }
-
-        async function saveCustomCode() {
-            const raw = document.getElementById('custom-code-input').value.trim().toUpperCase();
-            if (!raw || raw.length < 4) { showToast('CODE MUST BE AT LEAST 4 CHARS', 'error'); return; }
-            const { error } = await sb.from('lobby_signals')
-                .update({ secret_code: raw, updated_at: new Date().toISOString() })
-                .eq('lobby_id', LOBBY);
-            if (error) { showToast('SAVE FAILED: ' + error.message, 'error'); return; }
-            showToast('✓ CODE SAVED: ' + raw, 'success');
-            await syncAll();
-        }
-
         function selectPreset(mins) {
             selectedMinutes = mins;
             document.getElementById('custom-minutes').value = mins;
@@ -434,17 +402,13 @@
         }
 
         async function resetLobby() {
-            if (!confirm('Reset entire lobby? This clears all players, scores, timer, codes and generates a new secret code.')) return;
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let newCode = '';
-            for (let i = 0; i < 8; i++) newCode += chars[Math.floor(Math.random() * chars.length)];
+            if (!confirm('Reset entire lobby? This clears all players, scores, timer, and codes.')) return;
             await Promise.all([
                 sb.from('lobby_players').delete().eq('lobby_id', LOBBY),
                 sb.from('game_sessions').delete().eq('lobby_id', LOBBY),
-                sb.from('lobby_codes').delete().eq('lobby_id', LOBBY), // ← wipes all codes on reset
+                sb.from('lobby_codes').delete().eq('lobby_id', LOBBY),
                 sb.from('lobby_signals').update({
-                    is_live: false, open_at: null, timer_set_at: null,
-                    secret_code: newCode, updated_at: new Date().toISOString()
+                    is_live: false, open_at: null, timer_set_at: null, updated_at: new Date().toISOString()
                 }).eq('lobby_id', LOBBY)
             ]);
             showToast(`✓ RESET COMPLETE — GENERATE NEW CODES FOR NEXT ROUND`, 'success');
@@ -459,7 +423,7 @@
         }
 
         function startRealtime() {
-            sb.channel('admin_watch')
+            sb.channel('admin_10in200')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players' }, syncAll)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals' }, syncAll)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, syncAll)
