@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>10in200 Arena | Chicken League</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green:    #10b981; --green-lt: #34d399;
+            --green-glow: rgba(16,185,129,0.4);
+            --bg: #050505;
+            --surface: #111111;
+            --border: #222222;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); color: white;
+            font-family: 'Orbitron', monospace;
+            min-height: 100dvh; overflow: hidden;
+            user-select: none; -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        /* ── HUD ── */
+        #hud {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+            background: rgba(5,5,5,0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        }
+        .hud-score {
+            font-size: 1.5rem; font-weight: 900;
+            color: var(--green); text-shadow: 0 0 16px var(--green-glow);
+            letter-spacing: 0.05em; line-height: 1;
+        }
+        .hud-label { font-size: 0.5rem; letter-spacing: 0.2em; color: #555; margin-top: 2px; }
+        .hud-timer-wrap {
+            display: flex; flex-direction: column; align-items: center;
+        }
+        #timer-ring { position: relative; width: 52px; height: 52px; }
+        #timer-ring svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
+        .tr-bg   { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+        .tr-fill {
+            fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round;
+            stroke-dasharray: 138; stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.5s;
+            filter: drop-shadow(0 0 4px var(--green));
+        }
+        #timer-ring .ring-center {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; font-weight: 900;
+        }
+        #combo-display {
+            font-size: 0.6rem; letter-spacing: 0.15em; color: #444;
+            transition: color 0.2s;
+        }
+        #combo-display.active { color: var(--green-lt); text-shadow: 0 0 8px var(--green-glow); }
+
+        /* ── Game board ── */
+        #board-wrap {
+            position: fixed;
+            top: 74px; left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center;
+            padding: 8px;
+        }
+        #game-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            width: 100%; max-width: 360px;
+            touch-action: none;
+        }
+        .tile {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; font-weight: 900;
+            color: rgba(255,255,255,0.9);
+            transition: transform 0.1s, opacity 0.15s;
+            cursor: pointer; position: relative;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .tile.clearing {
+            animation: popOut 0.18s ease-out forwards;
+        }
+        .tile.selected {
+            transform: scale(0.88);
+            box-shadow: 0 0 0 2px white;
+        }
+        .tile.empty { background: rgba(255,255,255,0.03) !important; }
+
+        @keyframes popOut {
+            0%   { transform: scale(1); opacity: 1; }
+            50%  { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes dropIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+        .tile.drop-in { animation: dropIn 0.2s ease-out; }
+
+        /* ── Score popup ── */
+        .score-pop {
+            position: fixed; pointer-events: none; z-index: 50;
+            font-family: 'Orbitron', monospace; font-weight: 900;
+            font-size: 1rem; color: var(--green-lt);
+            text-shadow: 0 0 10px var(--green-glow);
+            animation: scoreRise 0.7s ease-out forwards;
+        }
+        @keyframes scoreRise {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+        }
+
+        /* ── Overlays ── */
+        .overlay {
+            position: fixed; inset: 0; z-index: 80;
+            background: rgba(5,5,5,0.96); backdrop-filter: blur(12px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 24px; text-align: center;
+        }
+        .overlay h2 { font-size: 2rem; font-weight: 900; letter-spacing: 0.1em; margin-bottom: 8px; }
+        .overlay p  { font-size: 0.65rem; letter-spacing: 0.2em; color: #555; margin-bottom: 24px; }
+        .overlay .big-score {
+            font-size: 3.5rem; font-weight: 900; color: var(--green);
+            text-shadow: 0 0 30px var(--green-glow); margin: 16px 0;
+        }
+        .btn-green {
+            background: var(--green); color: #000; border: none;
+            font-family: 'Orbitron', monospace; font-weight: 900;
+            font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 16px 32px; border-radius: 16px; cursor: pointer;
+            transition: all 0.15s; width: 100%; max-width: 300px;
+        }
+        .btn-green:hover { filter: brightness(1.1); }
+        .btn-ghost {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4); font-family: 'Orbitron', monospace;
+            font-size: 0.65rem; letter-spacing: 0.1em;
+            padding: 14px 24px; border-radius: 14px; cursor: pointer;
+            width: 100%; max-width: 300px; transition: all 0.15s; margin-top: 10px;
+        }
+        .btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.25); }
+        #submitting-msg { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--green); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    </style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+    <div>
+        <div class="hud-score" id="score-display">0</div>
+        <div class="hud-label">SCORE</div>
+    </div>
+    <div style="text-align:center;">
+        <div class="hud-label" style="margin-bottom:2px;">10IN200</div>
+        <div id="combo-display">COMBO ×1</div>
+    </div>
+    <div class="hud-timer-wrap">
+        <div id="timer-ring">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle class="tr-bg" cx="26" cy="26" r="22"/>
+                <circle class="tr-fill" id="tr-fill" cx="26" cy="26" r="22"/>
+            </svg>
+            <div class="ring-center" id="timer-display">60</div>
+        </div>
+    </div>
+</div>
+
+<!-- GAME BOARD -->
+<div id="board-wrap">
+    <div id="game-grid"></div>
+</div>
+
+<!-- START OVERLAY -->
+<div class="overlay" id="start-overlay">
+    <div style="font-size:3rem; margin-bottom:16px;">🐔</div>
+    <h2 style="color:var(--green);">READY?</h2>
+    <p>10IN200 ARENA · TOP 10 SCORES WIN A BROILER CHICKEN</p>
+    <div style="font-size:0.65rem; letter-spacing:0.12em; color:#444; margin-bottom:24px;">
+        SWIPE TILES TO MATCH 3 OR MORE · 60 SECONDS
+    </div>
+    <button class="btn-green" onclick="startGame()">START GAME →</button>
+    <button class="btn-ghost" onclick="window.location.href='10in200lobby.html'">← BACK TO LOBBY</button>
+</div>
+
+<!-- END OVERLAY -->
+<div class="overlay" id="end-overlay" style="display:none;">
+    <div style="font-size:0.65rem; letter-spacing:0.25em; color:var(--green); margin-bottom:4px;">10IN200 ARENA</div>
+    <h2>TIME'S UP!</h2>
+    <p>YOUR FINAL SCORE</p>
+    <div class="big-score" id="final-score">0</div>
+    <div id="submitting-msg">SUBMITTING SCORE...</div>
+    <div id="result-msg" style="display:none; font-size:0.65rem; letter-spacing:0.12em; color:#555; margin-top:8px; margin-bottom:20px;"></div>
+    <button class="btn-green" id="result-btn" onclick="goToLeaderboard()" style="display:none;">
+        VIEW LEADERBOARD →
+    </button>
+    <button class="btn-ghost" onclick="window.location.href='10in200lobby.html'" style="display:none;" id="back-btn">
+        ← BACK TO LOBBY
+    </button>
+</div>
+
+<script>
+    /* ── Supabase ── */
+    const SB_URL  = 'https://tbvmgcknkwsucstedigd.supabase.co';
+    const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+    const sb      = window.supabase.createClient(SB_URL, SB_KEY);
+
+    const params  = new URLSearchParams(location.search);
+    const PLAYER  = params.get('user') || localStorage.getItem('league_user') || 'GUEST';
+    const LEAGUE  = params.get('league') || '10in200';
+
+    /* ── Game constants ── */
+    const COLS = 6, ROWS = 9, TYPES = 5, GAME_SECS = 60;
+    const COLORS  = ['#ef4444','#3b82f6','#10b981','#f59e0b','#a855f7'];
+    const SYMBOLS = ['●','■','▲','◆','★'];
+    const ringMax = 138; // 2π×22
+
+    let board = [], score = 0, timeLeft = GAME_SECS;
+    let gameActive = false, processing = false;
+    let watchdog = null, gameTimer = null, comboCount = 1;
+    let touchStart = null;
+
+    /* ── Guard: check if already played ── */
+    (async function guardAlreadyPlayed() {
+        const { data } = await sb.from('game_sessions')
+            .select('is_complete').eq('lobby_id', LEAGUE)
+            .eq('player_username', PLAYER).eq('is_complete', true).maybeSingle();
+        if (data) {
+            document.getElementById('start-overlay').innerHTML = `
+                <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+                <h2 style="color:var(--green);font-size:1.2rem;">SCORE SUBMITTED</h2>
+                <p style="margin-bottom:24px;">YOUR SCORE HAS BEEN RECORDED.<br>AWAIT THE LEADERBOARD RESULTS.</p>
+                <button class="btn-green" onclick="goToLeaderboard()">VIEW LEADERBOARD →</button>
+                <button class="btn-ghost" onclick="window.location.href='10in200lobby.html'" style="margin-top:10px;">← BACK TO LOBBY</button>`;
+        }
+    })();
+
+    /* ── Board init ── */
+    function safeTile(r, c) {
+        const bad = new Set();
+        if (c >= 2 && board[r][c-1] === board[r][c-2]) bad.add(board[r][c-1]);
+        if (r >= 2 && board[r-1][c] === board[r-2][c]) bad.add(board[r-1][c]);
+        let t;
+        do { t = Math.floor(Math.random() * TYPES); } while (bad.has(t));
+        return t;
+    }
+
+    function initBoard() {
+        board = [];
+        for (let r = 0; r < ROWS; r++) {
+            board[r] = [];
+            for (let c = 0; c < COLS; c++) board[r][c] = safeTile(r, c);
+        }
+    }
+
+    function renderBoard() {
+        const grid = document.getElementById('game-grid');
+        grid.innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.row = r;
+                tile.dataset.col = c;
+                if (board[r][c] === -1) {
+                    tile.className += ' empty';
+                    tile.style.background = 'rgba(255,255,255,0.03)';
+                } else {
+                    tile.style.background = COLORS[board[r][c]];
+                    tile.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 8px rgba(0,0,0,0.4)`;
+                    tile.textContent = SYMBOLS[board[r][c]];
+                }
+                grid.appendChild(tile);
+            }
+        }
+    }
+
+    /* ── Touch handling ── */
+    const grid = document.getElementById('game-grid');
+
+    grid.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (!gameActive || processing) return;
+        const touch = e.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!el?.dataset?.row) return;
+        touchStart = { r: +el.dataset.row, c: +el.dataset.col, x: touch.clientX, y: touch.clientY };
+    }, { passive: false });
+
+    grid.addEventListener('touchend', e => {
+        e.preventDefault();
+        if (!touchStart || !gameActive || processing) { touchStart = null; return; }
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStart.x;
+        const dy = touch.clientY - touchStart.y;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) { touchStart = null; return; }
+        let r2 = touchStart.r, c2 = touchStart.c;
+        if (Math.abs(dx) > Math.abs(dy)) { c2 += dx > 0 ? 1 : -1; }
+        else { r2 += dy > 0 ? 1 : -1; }
+        if (r2 >= 0 && r2 < ROWS && c2 >= 0 && c2 < COLS) trySwap(touchStart.r, touchStart.c, r2, c2);
+        touchStart = null;
+    }, { passive: false });
+
+    grid.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
+
+    /* ── Match-3 engine ── */
+    async function trySwap(r1, c1, r2, c2) {
+        processing = true;
+        resetWatchdog();
+        comboCount = 1;
+        updateComboDisplay();
+
+        [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+        renderBoard();
+        await sleep(80);
+
+        let matches = findMatches();
+        if (!matches.length) {
+            [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+            renderBoard();
+        } else {
+            while (matches.length > 0) {
+                const pts = calcScore(matches.length, comboCount);
+                score += pts;
+                updateScoreDisplay();
+                showScorePop(pts, r1, c1);
+                clearMatchedTiles(matches);
+                await sleep(180);
+                dropTiles();
+                renderBoard();
+                await sleep(150);
+                matches = findMatches();
+                if (matches.length > 0) { comboCount++; updateComboDisplay(); }
+            }
+            comboCount = 1; updateComboDisplay();
+        }
+        processing = false;
+        clearWatchdog();
+    }
+
+    function findMatches() {
+        const matched = new Set();
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS - 2; c++) {
+                const t = board[r][c];
+                if (t < 0) continue;
+                if (t === board[r][c+1] && t === board[r][c+2]) {
+                    let e = c+3;
+                    while (e < COLS && board[r][e] === t) e++;
+                    for (let i = c; i < e; i++) matched.add(`${r},${i}`);
+                }
+            }
+        }
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS - 2; r++) {
+                const t = board[r][c];
+                if (t < 0) continue;
+                if (t === board[r+1][c] && t === board[r+2][c]) {
+                    let e = r+3;
+                    while (e < ROWS && board[e][c] === t) e++;
+                    for (let i = r; i < e; i++) matched.add(`${i},${c}`);
+                }
+            }
+        }
+        return [...matched].map(k => k.split(',').map(Number));
+    }
+
+    function calcScore(count, combo) {
+        let base = count === 3 ? 30 : count === 4 ? 80 : count >= 5 ? 150 + (count-5)*30 : 30;
+        return base * combo;
+    }
+
+    function clearMatchedTiles(matches) {
+        matches.forEach(([r, c]) => { board[r][c] = -1; });
+        renderBoard();
+    }
+
+    function dropTiles() {
+        for (let c = 0; c < COLS; c++) {
+            let empty = ROWS - 1;
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (board[r][c] !== -1) {
+                    board[empty][c] = board[r][c];
+                    if (empty !== r) board[r][c] = -1;
+                    empty--;
+                }
+            }
+            for (let r = empty; r >= 0; r--) board[r][c] = Math.floor(Math.random() * TYPES);
+        }
+    }
+
+    /* ── UI helpers ── */
+    function updateScoreDisplay() {
+        document.getElementById('score-display').textContent = score.toLocaleString();
+        document.getElementById('final-score').textContent   = score.toLocaleString();
+    }
+
+    function updateComboDisplay() {
+        const el = document.getElementById('combo-display');
+        el.textContent = `COMBO ×${comboCount}`;
+        el.className   = comboCount > 1 ? 'active' : '';
+    }
+
+    function showScorePop(pts, r, c) {
+        const gridEl = document.getElementById('game-grid');
+        const rect   = gridEl.getBoundingClientRect();
+        const pop = document.createElement('div');
+        pop.className   = 'score-pop';
+        pop.textContent = `+${pts}`;
+        pop.style.left  = (rect.left + rect.width * 0.5) + 'px';
+        pop.style.top   = (rect.top + rect.height * (r / ROWS)) + 'px';
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 700);
+    }
+
+    function setTimerRing(pct) {
+        document.getElementById('tr-fill').style.strokeDashoffset = ringMax * (1 - pct);
+        const fill = document.getElementById('tr-fill');
+        if (pct < 0.25) { fill.style.stroke = '#ef4444'; }
+        else if (pct < 0.5) { fill.style.stroke = '#f59e0b'; }
+        else { fill.style.stroke = 'var(--green)'; }
+    }
+
+    /* ── Watchdog (unstick processing) ── */
+    function resetWatchdog() { clearWatchdog(); watchdog = setTimeout(() => { processing = false; }, 4000); }
+    function clearWatchdog() { clearTimeout(watchdog); watchdog = null; }
+    function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+    /* ── Game lifecycle ── */
+    function startGame() {
+        initBoard();
+        renderBoard();
+        document.getElementById('start-overlay').style.display = 'none';
+        timeLeft   = GAME_SECS;
+        score      = 0;
+        comboCount = 1;
+        gameActive = true;
+        updateScoreDisplay();
+        updateComboDisplay();
+        setTimerRing(1);
+
+        gameTimer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer-display').textContent = timeLeft;
+            setTimerRing(timeLeft / GAME_SECS);
+            if (timeLeft <= 0) {
+                clearInterval(gameTimer);
+                gameActive = false;
+                endGame();
+            }
+        }, 1000);
+    }
+
+    async function endGame() {
+        processing = true;
+        document.getElementById('final-score').textContent = score.toLocaleString();
+        document.getElementById('end-overlay').style.display = 'flex';
+        document.getElementById('submitting-msg').style.display = 'block';
+
+        try {
+            const { error } = await sb.from('game_sessions').insert([{
+                lobby_id:        LEAGUE,
+                player_username: PLAYER,
+                score:           score,
+                is_complete:     true,
+                played_at:       new Date().toISOString()
+            }]);
+
+            document.getElementById('submitting-msg').style.display = 'none';
+            if (error) throw error;
+            document.getElementById('result-msg').textContent = 'SCORE RECORDED — CHECK THE LEADERBOARD';
+        } catch (e) {
+            document.getElementById('submitting-msg').style.display = 'none';
+            document.getElementById('result-msg').textContent = 'SUBMIT ERROR — CONTACT ADMIN WITH YOUR SCORE';
+        }
+        document.getElementById('result-msg').style.display = 'block';
+        document.getElementById('result-btn').style.display  = 'block';
+        document.getElementById('back-btn').style.display    = 'block';
+    }
+
+    function goToLeaderboard() { window.location.href = '10in200leaderboard.html'; }
+</script>
+</body>
+</html>
