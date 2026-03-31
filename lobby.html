@@ -11,11 +11,10 @@
     :root { --arena-gold: #fbbf24; --bg-dark: #050505; }
     body {
       background: var(--bg-dark); color: white; font-family: 'Inter', sans-serif;
-      min-height: 100vh; overflow-x: hidden;
+      min-height: 100vh; overflow-x: hidden; padding-bottom: 90px;
       background-image: radial-gradient(circle at 50% 20%, rgba(251,191,36,0.04) 0%, transparent 60%);
     }
     .orbitron { font-family: 'Orbitron', sans-serif; }
-
     .league-card {
       display: flex; align-items: center; justify-content: space-between;
       background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
@@ -24,47 +23,31 @@
       transition: border-color 0.2s, background 0.2s, transform 0.15s;
       animation: cardIn 0.35s ease-out both;
     }
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes cardIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
     .league-card:hover  { border-color: rgba(251,191,36,0.35); background: rgba(251,191,36,0.04); }
     .league-card:active { transform: scale(0.97); }
     .league-card.is-live { border-color: rgba(251,191,36,0.2); }
-
     .league-icon {
       width: 48px; height: 48px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
       font-size: 22px; flex-shrink: 0;
       background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25);
     }
-
-    /* Player slots mini bar */
     .slot-bar { display: flex; gap: 3px; margin-top: 5px; }
-    .slot-pip {
-      width: 6px; height: 6px; border-radius: 2px;
-      background: rgba(255,255,255,0.1);
-      transition: background 0.3s;
-    }
+    .slot-pip { width: 6px; height: 6px; border-radius: 2px; background: rgba(255,255,255,0.1); transition: background 0.3s; }
     .slot-pip.filled { background: #fbbf24; }
-    .slot-pip.filled.me { background: #ffffff; }
-
-    /* Status badges */
     .badge-live    { color: #4ade80; }
     .badge-waiting { color: #fbbf24; }
+    .badge-ready   { color: #60a5fa; }
     .badge-closed  { color: #71717a; }
-
     .skeleton {
       background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
       background-size: 200% 100%; animation: shimmer 1.4s infinite;
       border-radius: 20px; height: 96px;
     }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-    /* New league flash */
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     @keyframes newFlash {
-      0%,100% { box-shadow: none; }
-      50%      { box-shadow: 0 0 0 3px rgba(251,191,36,0.4); }
+      0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 3px rgba(251,191,36,0.4)}
     }
     .league-card.new-flash { animation: cardIn 0.35s ease-out both, newFlash 0.8s ease 0.35s 2; }
   </style>
@@ -78,16 +61,13 @@
       <p class="text-zinc-500 text-[10px] mt-1">All active lobbies — auto updates in real time</p>
     </div>
 
-    <!-- Loading skeletons -->
     <div id="skeleton-wrap" class="flex flex-col gap-3">
       <div class="skeleton"></div>
       <div class="skeleton" style="opacity:0.5"></div>
     </div>
 
-    <!-- Live lobby cards render here -->
     <div id="league-list" class="flex flex-col gap-3" style="display:none!important"></div>
 
-    <!-- Empty state -->
     <div id="empty-msg" class="hidden text-center mt-16">
       <div class="text-4xl mb-3 opacity-30">🐔</div>
       <p class="orbitron text-zinc-600 text-[10px] tracking-widest">NO ACTIVE LOBBIES RIGHT NOW</p>
@@ -101,96 +81,126 @@
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-  // ── Config: maps lobby_id → display info ────────────────────────────────
-  // Add a new entry here each time you create a new league page.
-  // If a lobby_id is NOT in this map, a generic card is still shown automatically.
+  // ── League display config — add a new entry for each league ──────────────
+  // playersTable: which Supabase table holds the player rows
+  // useLobbyId:   whether to filter that table by lobby_id column
   const LOBBY_CONFIG = {
-const LOBBY_CONFIG = {
-  '1in15': {
-    name:     '1in15 Arena',
-    emoji:    '🐔',
-    prize:    '🐔 1 BROILER',
-    max:      15,
-    file:     '1in15lobby.html',
-    subtitle: 'CHICKEN LEAGUE · 15 PLAYERS',
-  },
-  '10in200': {
-    name:     '10in200 Easter Championship',
-    emoji:    '🏆',
-    prize:    '🎁 TOP 10 WIN',
-    max:      200,
-    file:     '10in200portal.html',
-    subtitle: 'EASTER SPECIAL · 200 PLAYERS',
-  },
-};
-
-    
     '1in15': {
-      name:     '1in15 Arena',
-      emoji:    '🐔',
-      prize:    '🐔 1 BROILER',
-      max:      15,
-      file:     '1in15lobby.html',
-      subtitle: 'CHICKEN LEAGUE · 15 PLAYERS',
+      name:         '1in15 Arena',
+      emoji:        '🐔',
+      prize:        '🐔 1 BROILER',
+      max:          15,
+      file:         '1in15lobby.html',
+      subtitle:     'CHICKEN LEAGUE · 15 PLAYERS',
+      playersTable: 'lobby_players',
+      useLobbyId:   true,
+    },
+    '10in200': {
+      name:         '10in200 Arena',
+      emoji:        '🏆',
+      prize:        '🐔 TOP 10 WIN',
+      max:          200,
+      file:         '10in200portal.html',
+      subtitle:     'CHICKEN LEAGUE · 200 PLAYERS',
+      playersTable: 'lobby_10in200_players',
+      useLobbyId:   true,
     },
   };
 
-  // ── State ────────────────────────────────────────────────────────────────
   const currentUser = localStorage.getItem('league_user') || null;
-  let   knownLobbies = {}; // lobby_id → { signal, playerCount, iAmIn }
+  let   knownLobbies = {};
   let   firstLoad    = true;
 
-  // ── Fetch everything and rebuild state ──────────────────────────────────
+  // ── Fetch all data sources and rebuild lobby map ─────────────────────────
   async function fetchAll() {
     const [
-      { data: signals },
-      { data: players },
+      { data: signals1in15 },     // legacy lobby_signals  (1in15)
+      { data: registryReady },    // leagues_registry where lobby_ready = true (10in200+)
+      { data: players1in15 },     // lobby_players (1in15)
+      { data: players10in200 },   // lobby_10in200_players (10in200)
+      { data: signal10in200 },    // lobby_10in200_signals (arena open status)
     ] = await Promise.all([
-      sb.from('lobby_signals').select('lobby_id, is_live, open_at, updated_at'),
+      sb.from('lobby_signals').select('lobby_id, is_live, open_at'),
+      sb.from('leagues_registry').select('*').eq('lobby_ready', true),
       sb.from('lobby_players').select('lobby_id, player_username, is_active').eq('is_active', true),
+      sb.from('lobby_10in200_players').select('player_username, is_active, lobby_id').eq('is_active', true),
+      sb.from('lobby_10in200_signals').select('is_live, open_at').eq('lobby_id', '10in200').maybeSingle(),
     ]);
 
-    // Rebuild knownLobbies map
     const fresh = {};
-    (signals || []).forEach(s => {
-      const cfg      = LOBBY_CONFIG[s.lobby_id] || {};
-      const lobbyPlayers = (players || []).filter(p => p.lobby_id === s.lobby_id);
-      const iAmIn    = currentUser ? lobbyPlayers.some(p => p.player_username === currentUser) : false;
+
+    // ── Source 1: lobby_signals (1in15 backward compat) ──────────────────
+    (signals1in15 || []).forEach(s => {
+      if (!s.is_live) return; // only show if admin set it live
+      const cfg       = LOBBY_CONFIG[s.lobby_id] || {};
+      const lPlayers  = (players1in15 || []).filter(p => p.lobby_id === s.lobby_id);
+      const iAmIn     = currentUser ? lPlayers.some(p => p.player_username === currentUser) : false;
       fresh[s.lobby_id] = {
         lobby_id:    s.lobby_id,
         is_live:     s.is_live,
         open_at:     s.open_at,
-        playerCount: lobbyPlayers.length,
+        playerCount: lPlayers.length,
         iAmIn,
-        name:     cfg.name     || s.lobby_id.toUpperCase() + ' Arena',
-        emoji:    cfg.emoji    || '🏆',
-        prize:    cfg.prize    || '—',
-        max:      cfg.max      || 15,
-        file:     cfg.file     || `${s.lobby_id}lobby.html`,
-        subtitle: cfg.subtitle || 'CHICKEN LEAGUE',
-        isNew:    !knownLobbies[s.lobby_id], // brand new lobby not seen before
+        isNew:       !knownLobbies[s.lobby_id],
+        name:        cfg.name     || s.lobby_id.toUpperCase() + ' Arena',
+        emoji:       cfg.emoji    || '🏆',
+        prize:       cfg.prize    || '—',
+        max:         cfg.max      || 15,
+        file:        cfg.file     || `${s.lobby_id}lobby.html`,
+        subtitle:    cfg.subtitle || 'CHICKEN LEAGUE',
       };
     });
 
-    const prevIds = Object.keys(knownLobbies);
-    knownLobbies  = fresh;
+    // ── Source 2: leagues_registry (10in200 + future dedicated leagues) ───
+    // Triggered when admin generates codes → lobby_ready = true
+    (registryReady || []).forEach(l => {
+      if (fresh[l.id]) return; // already added from signals
+
+      const cfg = LOBBY_CONFIG[l.id] || {};
+      let playerCount = 0, iAmIn = false, is_live = false, open_at = null;
+
+      if (l.id === '10in200') {
+        const p10 = (players10in200 || []);
+        playerCount = p10.length;
+        iAmIn       = currentUser ? p10.some(p => p.player_username === currentUser) : false;
+        is_live     = signal10in200?.is_live  || l.is_active || false;
+        open_at     = signal10in200?.open_at  || null;
+      }
+
+      fresh[l.id] = {
+        lobby_id:    l.id,
+        is_live,
+        open_at,
+        playerCount,
+        iAmIn,
+        isNew:       !knownLobbies[l.id],
+        name:        cfg.name     || l.league_name || l.id.toUpperCase() + ' Arena',
+        emoji:       cfg.emoji    || '🏆',
+        prize:       cfg.prize    || '—',
+        max:         cfg.max      || 200,
+        file:        cfg.file     || `${l.id}portal.html`,
+        subtitle:    cfg.subtitle || 'CHICKEN LEAGUE',
+      };
+    });
+
+    const prevIds  = Object.keys(knownLobbies);
+    knownLobbies   = fresh;
     renderAll(prevIds);
     firstLoad = false;
   }
 
-  // ── Render all lobby cards ───────────────────────────────────────────────
+  // ── Render all cards ──────────────────────────────────────────────────────
   function renderAll(prevIds = []) {
-    const list    = document.getElementById('league-list');
-    const empty   = document.getElementById('empty-msg');
+    const list     = document.getElementById('league-list');
+    const empty    = document.getElementById('empty-msg');
     const skelWrap = document.getElementById('skeleton-wrap');
 
-    skelWrap.style.display = 'none';
-    list.style.display     = 'flex';
+    skelWrap.style.display   = 'none';
+    list.style.display       = 'flex';
     list.style.flexDirection = 'column';
     list.style.gap           = '12px';
 
     const lobbies = Object.values(knownLobbies);
-
     if (lobbies.length === 0) {
       list.innerHTML = '';
       empty.classList.remove('hidden');
@@ -198,8 +208,11 @@ const LOBBY_CONFIG = {
     }
     empty.classList.add('hidden');
 
-    // Sort: live first, then waiting, then by player count desc
+    // Sort: arena-open first, then waiting/ready, then by player count
     lobbies.sort((a, b) => {
+      const aOpen = a.is_live && a.open_at && new Date() >= new Date(a.open_at);
+      const bOpen = b.is_live && b.open_at && new Date() >= new Date(b.open_at);
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
       if (a.is_live !== b.is_live) return a.is_live ? -1 : 1;
       return b.playerCount - a.playerCount;
     });
@@ -212,42 +225,39 @@ const LOBBY_CONFIG = {
     });
   }
 
-  // ── Build a single lobby card ────────────────────────────────────────────
+  // ── Build a single lobby card ─────────────────────────────────────────────
   function buildCard(lobby, isNewArrival) {
     const now      = new Date();
     const openAt   = lobby.open_at ? new Date(lobby.open_at) : null;
     const arenaOpen = lobby.is_live && openAt && now >= openAt;
     const waiting   = lobby.is_live && openAt && now < openAt;
-    const fillPct   = Math.round((lobby.playerCount / lobby.max) * 100);
+    const codesReady = !lobby.is_live; // lobby visible but arena not yet open
 
-    // Status label + colour
     let statusHtml;
     if (arenaOpen) {
       statusHtml = `
         <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-        <span class="text-[9px] orbitron badge-live font-bold">OPEN</span>`;
+        <span class="text-[9px] orbitron badge-live font-bold">ARENA OPEN</span>`;
     } else if (waiting) {
       statusHtml = `
         <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></span>
-        <span class="text-[9px] orbitron badge-waiting font-bold">STARTING</span>`;
+        <span class="text-[9px] orbitron badge-waiting font-bold">STARTING SOON</span>`;
     } else if (lobby.is_live) {
       statusHtml = `
         <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></span>
         <span class="text-[9px] orbitron badge-waiting font-bold">LIVE</span>`;
     } else {
       statusHtml = `
-        <span class="w-1.5 h-1.5 bg-zinc-600 rounded-full"></span>
-        <span class="text-[9px] orbitron badge-closed font-bold">FILLING</span>`;
+        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+        <span class="text-[9px] orbitron badge-ready font-bold">OPEN</span>`;
     }
 
-    // Mini slot pip bar (max 15 shown)
+    // Slot pips (max 15 shown for readability)
     const displayMax = Math.min(lobby.max, 15);
-    const pips = Array.from({ length: displayMax }, (_, i) => {
-      const filled = i < lobby.playerCount;
-      return `<div class="slot-pip ${filled ? 'filled' : ''}"></div>`;
-    }).join('');
+    const pips = Array.from({ length: displayMax }, (_, i) =>
+      `<div class="slot-pip ${i < lobby.playerCount ? 'filled' : ''}"></div>`
+    ).join('');
 
-    // YOU badge
     const youBadge = lobby.iAmIn
       ? `<span class="ml-1 text-[8px] orbitron bg-white/10 text-white px-2 py-0.5 rounded-full border border-white/20">YOU'RE IN</span>`
       : '';
@@ -276,25 +286,20 @@ const LOBBY_CONFIG = {
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.3)" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
         </svg>
-      </div>
-    `;
+      </div>`;
     return card;
   }
 
-  // ── Real-time listeners — watch ALL 3 relevant tables ───────────────────
+  // ── Realtime: watch all relevant tables ──────────────────────────────────
   sb.channel('lobby-page-listener')
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'lobby_signals'
-    }, () => fetchAll())
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'lobby_players'
-    }, () => fetchAll())
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'leagues_registry'
-    }, () => fetchAll())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals'          }, fetchAll)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players'          }, fetchAll)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'leagues_registry'       }, fetchAll)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_10in200_players'  }, fetchAll)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_10in200_signals'  }, fetchAll)
     .subscribe();
 
-  // ── Boot ─────────────────────────────────────────────────────────────────
+  // Boot
   fetchAll();
   </script>
 </body>
