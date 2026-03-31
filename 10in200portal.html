@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arena Access | Chicken League</title>
+    <title>10in200 Access | Chicken League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -37,7 +37,6 @@
             border: 1px solid var(--border);
         }
 
-        /* ── Page header ── */
         #page-header {
             position: sticky;
             top: 0;
@@ -60,7 +59,6 @@
         }
         .header-center span { color: var(--blue-lt); }
 
-        /* ── Corner action buttons ── */
         .corner-btn {
             position: fixed;
             top: 12px;
@@ -94,7 +92,6 @@
         #btn-invite   { left: 12px; }
         #btn-practice { right: 12px; }
 
-        /* ── Code input ── */
         .code-input {
             background: rgba(255,255,255,0.04);
             border: 1px solid var(--border);
@@ -113,7 +110,6 @@
         }
         .code-input::placeholder { color: rgba(255,255,255,0.15); letter-spacing: 0.2em; }
 
-        /* ── Buttons ── */
         .btn-blue {
             background: var(--blue);
             color: var(--white);
@@ -133,7 +129,6 @@
             border-radius: 50%; animation: spin 0.6s linear infinite;
         }
 
-        /* ── Toast ── */
         #toast {
             position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
             background: var(--card); border: 1px solid var(--border);
@@ -146,7 +141,6 @@
         #toast.error   { border-color: #ef4444; color: #ef4444; }
         #toast.success { border-color: var(--blue); color: var(--blue-lt); }
 
-        /* ── Share sheet ── */
         #share-sheet {
             position: fixed; inset: 0; z-index: 100;
             background: rgba(10,10,10,0.88);
@@ -184,7 +178,6 @@
         .share-lbl { font-size: 0.82rem; font-weight: 700; color: var(--white); }
         .share-sub { font-size: 0.62rem; color: var(--grey); font-family: 'Orbitron', monospace; letter-spacing: 0.04em; margin-top: 2px; }
 
-        /* ── Scrollable page body ── */
         #access-body {
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
@@ -199,7 +192,6 @@
             padding-bottom: 100px;
         }
 
-        /* ── Animations ── */
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideup {
             from { transform: translateY(100%); }
@@ -216,7 +208,6 @@
 
 <div id="toast"></div>
 
-<!-- ── INVITE FRIENDS — top-left corner ── -->
 <button id="btn-invite" class="corner-btn" onclick="inviteFriends()">
     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <circle cx="18" cy="5" r="3"/>
@@ -228,7 +219,6 @@
     INVITE FRIENDS
 </button>
 
-<!-- ── PRACTICE DEMO — top-right corner ── -->
 <a id="btn-practice" href="1in15demo.html" class="corner-btn">
     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <rect x="2" y="6" width="20" height="12" rx="3"/>
@@ -238,12 +228,10 @@
     PRACTICE DEMO
 </a>
 
-<!-- ── PAGE HEADER ── -->
 <header id="page-header">
     <div class="header-center">10IN200 <span>ARENA</span></div>
 </header>
 
-<!-- ── SHARE SHEET (fallback) ── -->
 <div id="share-sheet" onclick="closeShareSheet(event)">
     <div id="share-inner">
         <div class="share-handle"></div>
@@ -277,11 +265,9 @@
     </div>
 </div>
 
-<!-- ── ACCESS BODY — scrollable, clears bottom nav ── -->
 <div id="access-body">
     <div id="access-inner" class="fade-in">
 
-        <!-- Access card -->
         <div class="glass-panel rounded-[2rem] p-8 text-center mb-6">
             <div class="mx-auto mb-5 flex items-center justify-center rounded-2xl"
                  style="width:56px; height:56px; background:rgba(37,99,235,0.1); border:1px solid rgba(37,99,235,0.25);">
@@ -305,7 +291,6 @@
             </button>
         </div>
 
-        <!-- "Don't have an access code?" — block flow, stays above sticky nav -->
         <div class="text-center">
             <p class="mb-3" style="font-size:0.72rem; color:var(--grey);">
                 Don't have an access code?
@@ -331,7 +316,6 @@
     const SB_URL   = 'https://tbvmgcknkwsucstedigd.supabase.co';
     const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
     const sb       = window.supabase.createClient(SB_URL, SB_KEY);
-    const LOBBY_ID = '10in200';
 
     let currentUser = localStorage.getItem('league_user');
     if (!currentUser) {
@@ -339,55 +323,109 @@
         localStorage.setItem('league_user', currentUser);
     }
 
-    /* ── If already verified, skip straight to the lobby ── */
+    /* ── Check existing session ── */
     (async function checkExistingCode() {
-        const savedCode = localStorage.getItem('league_code_' + LOBBY_ID);
+        const savedCode = localStorage.getItem('league_code_10in200');
         if (!savedCode) return;
-        const { data } = await sb.from('lobby_codes')
-            .select('*').eq('lobby_id', LOBBY_ID)
-            .eq('code', savedCode).eq('claimed_by', currentUser).maybeSingle();
-        if (data && data.is_used) window.location.replace('10in200lobby.html');
+        
+        console.log('[PORTAL] Checking saved code:', savedCode);
+        
+        const { data } = await sb.from('lobby_10in200_codes')
+            .select('*')
+            .eq('code', savedCode)
+            .eq('claimed_by', currentUser)
+            .maybeSingle();
+        
+        if (data) {
+            console.log('[PORTAL] Valid session found, redirecting to lobby');
+            window.location.replace('10in200lobby.html');
+        } else {
+            console.log('[PORTAL] No valid session, clearing storage');
+            localStorage.removeItem('league_code_10in200');
+        }
     })();
 
-    /* ── Toast ── */
     function showToast(msg, type = 'success') {
         const t = document.getElementById('toast');
         t.textContent = msg; t.className = `show ${type}`;
         setTimeout(() => { t.className = ''; }, 3500);
     }
 
-    /* ── Verify code → redirect to lobby ── */
+    /* ── Verify code ── */
     async function verifySecretCode() {
         const input = document.getElementById('secret-code-input').value.trim().toUpperCase();
-        if (!input) { showToast('ENTER A CODE', 'error'); return; }
-        const btn = document.getElementById('code-submit-btn');
-        btn.classList.add('btn-loading'); btn.textContent = '';
-
-        const { data, error } = await sb.from('lobby_codes')
-            .select('*').eq('lobby_id', LOBBY_ID).eq('code', input).maybeSingle();
-
-        btn.classList.remove('btn-loading'); btn.textContent = 'VERIFY & ENTER →';
-
-        if (error || !data) { showToast('INVALID CODE', 'error'); return; }
-        if (data.claimed_by && data.claimed_by !== currentUser) { showToast('CODE ALREADY USED', 'error'); return; }
-
-        if (!data.claimed_by) {
-            const { error: updateErr } = await sb.from('lobby_codes')
-                .update({ claimed_by: currentUser, is_used: true, claimed_at: new Date().toISOString() })
-                .eq('code', input).eq('lobby_id', LOBBY_ID).eq('is_used', false);
-            
-            if (updateErr) {
-                showToast('CODE ALREADY TAKEN — TRY AGAIN', 'error');
-                return;
-            }
+        if (!input) { 
+            showToast('ENTER A CODE', 'error'); 
+            return; 
         }
         
-        localStorage.setItem('league_code_' + LOBBY_ID, input);
+        const btn = document.getElementById('code-submit-btn');
+        btn.classList.add('btn-loading'); 
+        btn.textContent = '';
+
+        console.log('[PORTAL] Verifying code:', input);
+
+        // Step 1: Check if code exists
+        const { data: codeData, error: fetchError } = await sb
+            .from('lobby_10in200_codes')
+            .select('*')
+            .eq('code', input)
+            .maybeSingle();
+
+        btn.classList.remove('btn-loading'); 
+        btn.textContent = 'VERIFY & ENTER →';
+
+        if (fetchError || !codeData) {
+            console.error('[PORTAL] Code not found:', fetchError);
+            showToast('INVALID CODE', 'error'); 
+            return;
+        }
+
+        console.log('[PORTAL] Code found:', codeData);
+
+        // Step 2: Check if already claimed by someone else
+        if (codeData.claimed_by && codeData.claimed_by !== currentUser) {
+            console.log('[PORTAL] Code already claimed by:', codeData.claimed_by);
+            showToast('CODE ALREADY USED', 'error'); 
+            return;
+        }
+
+        // Step 3: If already claimed by current user, just redirect
+        if (codeData.claimed_by === currentUser) {
+            console.log('[PORTAL] Code already claimed by you, redirecting');
+            localStorage.setItem('league_code_10in200', input);
+            showToast('ACCESS GRANTED', 'success');
+            setTimeout(() => { window.location.href = '10in200lobby.html'; }, 900);
+            return;
+        }
+
+        // Step 4: Claim the code (race condition safe)
+        console.log('[PORTAL] Attempting to claim code');
+        const { data: updateData, error: updateError } = await sb
+            .from('lobby_10in200_codes')
+            .update({ 
+                claimed_by: currentUser, 
+                is_used: true, 
+                claimed_at: new Date().toISOString() 
+            })
+            .eq('id', codeData.id)
+            .eq('is_used', false)  // Race condition guard
+            .select()
+            .maybeSingle();
+
+        if (updateError || !updateData) {
+            console.error('[PORTAL] Claim failed (race condition):', updateError);
+            showToast('CODE JUST TAKEN — TRY ANOTHER', 'error');
+            return;
+        }
+
+        console.log('[PORTAL] Code claimed successfully:', updateData);
+        localStorage.setItem('league_code_10in200', input);
         showToast('ACCESS GRANTED', 'success');
         setTimeout(() => { window.location.href = '10in200lobby.html'; }, 900);
     }
 
-    /* ── Share / Invite ── */
+    /* ── Share functions ── */
     const INVITE_URL = `${location.origin}/1in15demo.html`;
     const INVITE_MSG = `🐔 Join me on Chicken League!\nCompete in the 10in200 Arena — top 10 players win broiler chickens.\n\nTry the demo first: ${INVITE_URL}\n\nGet your access code: https://wa.me/2347074150855`;
 
