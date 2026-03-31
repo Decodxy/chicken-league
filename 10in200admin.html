@@ -97,8 +97,6 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-        /* Progress */
         .progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; margin: 8px 0; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-lt)); border-radius: 100px; transition: width 0.4s; }
     </style>
@@ -163,13 +161,10 @@
                     <div class="text-[7px] text-zinc-500 orbitron mt-1">SCORED</div>
                 </div>
             </div>
-
-            <!-- Fill progress -->
             <div class="progress-bar">
                 <div class="progress-fill" id="fill-bar" style="width:0%"></div>
             </div>
             <p class="text-[8px] orbitron text-zinc-700 text-center">LOBBY FILL PROGRESS</p>
-
             <div id="player-list" class="mt-4 flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
                 <div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO PLAYERS YET</div>
             </div>
@@ -179,7 +174,6 @@
         <div class="glass rounded-2xl p-5 mb-4">
             <p class="section-label">Player Access Codes (200)</p>
             <p class="text-zinc-600 text-[9px] orbitron mb-4">ONE CODE PER PLAYER — DISTRIBUTE PRIVATELY</p>
-
             <div id="codes-summary" class="grid grid-cols-3 gap-2 mb-4">
                 <div class="text-center p-2 rounded-xl" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.1);">
                     <div id="codes-available" class="orbitron text-lg font-black" style="color:var(--green);">0</div>
@@ -194,9 +188,7 @@
                     <div class="text-[7px] orbitron text-zinc-500 mt-0.5">TOTAL</div>
                 </div>
             </div>
-
             <button onclick="generatePlayerCodes()" class="btn-green mb-3">🎟 GENERATE 200 PLAYER CODES</button>
-
             <div id="codes-list" class="flex flex-col gap-1.5 max-h-64 overflow-y-auto"></div>
             <button onclick="copyAllCodes()" id="copy-all-btn" class="btn-ghost mt-3" style="display:none;">📋 COPY ALL AVAILABLE CODES</button>
         </div>
@@ -206,7 +198,6 @@
             <p class="section-label">Arena Open Timer</p>
             <div id="live-countdown" class="mb-3">--:--</div>
             <p id="open-at-display" class="text-center text-[9px] orbitron text-zinc-600 mb-4">NO TIMER SET</p>
-
             <p class="text-[8px] orbitron text-zinc-600 mb-2 tracking-widest">QUICK PRESETS</p>
             <div class="flex gap-1.5 mb-4 flex-wrap">
                 <div class="preset-btn" onclick="selectPreset(5, this)">5 MIN</div>
@@ -239,12 +230,19 @@
         const SB_URL    = 'https://tbvmgcknkwsucstedigd.supabase.co';
         const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
         const sb        = window.supabase.createClient(SB_URL, SB_KEY);
-        const LOBBY     = '10in200';
-        const MAX_SLOTS = 200;
-        const TOP_W     = 10;
-        const ADMIN_PIN = '000000';
+
+        // ── DEDICATED TABLE NAMES ───────────────────────────────────────────
+        const LOBBY       = '10in200';
+        const TBL_CODES   = 'lobby_10in200_codes';
+        const TBL_PLAYERS = 'lobby_10in200_players';
+        const TBL_SIGNALS = 'lobby_10in200_signals';
+        const TBL_SESSIONS= 'game_10in200_sessions';
+        const MAX_SLOTS   = 200;
+        const TOP_W       = 10;
+        const ADMIN_PIN   = '000000';
 
         let cachedSignal = null, cachedPlayers = [], selectedMinutes = null, countdownInterval = null;
+        let arenaAlreadyMarkedOpen = false;
 
         function verifyPin() {
             if (document.getElementById('pin-input').value.trim() === ADMIN_PIN) {
@@ -265,10 +263,10 @@
 
         async function syncAll() {
             const [{ data: players }, { data: signal }, { data: scores }, { data: codes }] = await Promise.all([
-                sb.from('lobby_players').select('*').eq('lobby_id', LOBBY).order('joined_at', { ascending: true }),
-                sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY).maybeSingle(),
-                sb.from('game_sessions').select('*').eq('lobby_id', LOBBY).order('score', { ascending: false }),
-                sb.from('lobby_codes').select('*').eq('lobby_id', LOBBY).order('created_at', { ascending: true })
+                sb.from(TBL_PLAYERS).select('*').eq('lobby_id', LOBBY).order('joined_at', { ascending: true }),
+                sb.from(TBL_SIGNALS).select('*').eq('lobby_id', LOBBY).maybeSingle(),
+                sb.from(TBL_SESSIONS).select('*').eq('lobby_id', LOBBY).order('score', { ascending: false }),
+                sb.from(TBL_CODES).select('*').eq('lobby_id', LOBBY).order('created_at', { ascending: true })
             ]);
             cachedPlayers = players || [];
             cachedSignal  = signal;
@@ -286,8 +284,7 @@
             document.getElementById('stat-players').innerText = joined;
             document.getElementById('stat-slots').innerText   = MAX_SLOTS - joined;
             document.getElementById('stat-done').innerText    = done;
-            const pct = (joined / MAX_SLOTS * 100).toFixed(0);
-            document.getElementById('fill-bar').style.width   = pct + '%';
+            document.getElementById('fill-bar').style.width   = (joined / MAX_SLOTS * 100).toFixed(0) + '%';
         }
 
         function renderPlayers() {
@@ -296,7 +293,6 @@
                 list.innerHTML = `<div class="text-center text-zinc-600 text-[9px] orbitron py-4">NO PLAYERS YET</div>`;
                 return;
             }
-            // Show first 20 + count
             const show = cachedPlayers.slice(0, 20);
             const more = cachedPlayers.length - 20;
             list.innerHTML = show.map((p, i) => `
@@ -312,9 +308,9 @@
 
         function renderLiveStatus() {
             const isLive = cachedSignal?.is_live;
-            document.getElementById('live-dot').className  = isLive ? 'live-dot on' : 'live-dot';
-            document.getElementById('live-label').innerText = isLive ? 'LIVE' : 'OFFLINE';
-            document.getElementById('live-label').className = isLive
+            document.getElementById('live-dot').className   = isLive ? 'live-dot on' : 'live-dot';
+            document.getElementById('live-label').innerText  = isLive ? 'LIVE' : 'OFFLINE';
+            document.getElementById('live-label').className  = isLive
                 ? 'text-[9px] orbitron font-bold text-green-400'
                 : 'text-[9px] orbitron font-bold text-zinc-500';
         }
@@ -328,10 +324,10 @@
                 moreEl.innerText = ''; return;
             }
             const medals = ['🥇','🥈','🥉'];
-            const top = complete.slice(0, TOP_W);
+            const top  = complete.slice(0, TOP_W);
             const rest = complete.length - TOP_W;
             list.innerHTML = top.map((s, i) => `
-                <div class="player-row ${i < TOP_W ? 'winner-row' : ''} justify-between">
+                <div class="player-row winner-row justify-between">
                     <span class="text-sm">${medals[i] || `#${i+1}`}</span>
                     <span class="orbitron text-[10px] font-bold flex-1 ml-2">${s.player_username}</span>
                     <span class="orbitron font-black text-sm" style="color:var(--green);">${s.score} PTS</span>
@@ -345,11 +341,10 @@
 
         function renderCodes(codes) {
             const available = codes.filter(c => !c.is_used).length;
-            const used      = codes.filter(c => c.is_used).length;
+            const used      = codes.filter(c =>  c.is_used).length;
             document.getElementById('codes-available').innerText = available;
             document.getElementById('codes-used').innerText      = used;
             document.getElementById('codes-total').innerText     = codes.length;
-
             const list    = document.getElementById('codes-list');
             const copyBtn = document.getElementById('copy-all-btn');
             if (!codes.length) {
@@ -357,23 +352,25 @@
                 copyBtn.style.display = 'none'; return;
             }
             copyBtn.style.display = 'block';
-            // Show first 50 to avoid UI overload
             const show = codes.slice(0, 50);
             const more = codes.length - 50;
             list.innerHTML = show.map((c, i) => `
                 <div class="code-row ${c.is_used ? 'code-used' : ''} justify-between">
                     <span class="text-zinc-600 orbitron text-[8px] w-6">#${i+1}</span>
-                    <span class="orbitron text-[11px] font-black tracking-widest flex-1 ml-1 ${c.is_used ? 'text-zinc-600 line-through' : ''}" style="${!c.is_used ? 'color:var(--green-lt);' : ''}">${c.code}</span>
+                    <span class="orbitron text-[11px] font-black tracking-widest flex-1 ml-1 ${c.is_used ? 'text-zinc-600 line-through' : ''}"
+                          style="${!c.is_used ? 'color:var(--green-lt);' : ''}">${c.code}</span>
                     <span class="text-[7px] px-2 py-0.5 rounded-full orbitron ml-1"
                           style="${c.is_used ? 'background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);' : 'background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2);'}">
                         ${c.is_used ? (c.claimed_by ? c.claimed_by.substring(0,8) : 'USED') : 'FREE'}
                     </span>
                 </div>`).join('') +
-                (more > 0 ? `<div class="text-zinc-700 text-[8px] orbitron text-center py-2">+${more} MORE (SCROLL TO VIEW)</div>` : '');
+                (more > 0 ? `<div class="text-zinc-700 text-[8px] orbitron text-center py-2">+${more} MORE CODES</div>` : '');
         }
 
+        // ── COUNTDOWN ── (auto-flips leagues_registry when timer hits zero) ─
         function startLiveCountdown() {
             clearInterval(countdownInterval);
+            arenaAlreadyMarkedOpen = false;
             const openAt = cachedSignal?.open_at ? new Date(cachedSignal.open_at) : null;
             if (!openAt) {
                 document.getElementById('live-countdown').innerText  = '--:--';
@@ -386,7 +383,13 @@
                 if (diff <= 0) {
                     clearInterval(countdownInterval);
                     document.getElementById('live-countdown').innerText  = '00:00';
-                    document.getElementById('open-at-display').innerText = '🔓 ARENA IS OPEN'; return;
+                    document.getElementById('open-at-display').innerText = '🔓 ARENA IS OPEN';
+                    // ── AUTO-FLIP leagues_registry when countdown elapses ──
+                    if (!arenaAlreadyMarkedOpen) {
+                        arenaAlreadyMarkedOpen = true;
+                        markArenaOpen();
+                    }
+                    return;
                 }
                 const m = String(Math.floor(diff/60000)).padStart(2,'0');
                 const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
@@ -395,12 +398,20 @@
             tick(); countdownInterval = setInterval(tick, 1000);
         }
 
-        /* ── Codes ── */
+        // ── Mark arena open in leagues_registry ─────────────────────────────
+        async function markArenaOpen() {
+            await sb.from('leagues_registry').update({
+                is_active:  true,
+                start_time: new Date().toISOString()
+            }).eq('id', LOBBY);
+        }
+
+        /* ── CODES ─────────────────────────────────────────────────────────── */
         async function generatePlayerCodes() {
-            if (!confirm(`Generate 200 fresh codes? Existing unused codes will be deleted. Continue?`)) return;
+            if (!confirm('Generate 200 fresh codes? Existing unused codes will be deleted. Continue?')) return;
             showToast('GENERATING 200 CODES...', 'info');
 
-            await sb.from('lobby_codes').delete().eq('lobby_id', LOBBY).eq('is_used', false);
+            await sb.from(TBL_CODES).delete().eq('lobby_id', LOBBY).eq('is_used', false);
 
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             const generated = new Set();
@@ -409,25 +420,27 @@
                 for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
                 generated.add(code);
             }
-
             const rows = [...generated].map(code => ({ lobby_id: LOBBY, code, is_used: false }));
-
-            // Insert in batches of 50 (Supabase row limit per request)
             const batches = [];
             for (let i = 0; i < rows.length; i += 50) batches.push(rows.slice(i, i + 50));
+
             let failed = false;
             for (const batch of batches) {
-                const { error } = await sb.from('lobby_codes').insert(batch);
+                const { error } = await sb.from(TBL_CODES).insert(batch);
                 if (error) { failed = true; break; }
             }
 
-            if (failed) { showToast('BATCH FAILED — TRY AGAIN', 'error'); }
-            else { showToast('✓ 200 CODES GENERATED', 'success'); }
+            if (failed) { showToast('BATCH FAILED — TRY AGAIN', 'error'); return; }
+
+            // ── Flag lobby as ready in leagues_registry (lobby hub will see this) ──
+            await sb.from('leagues_registry').update({ lobby_ready: true }).eq('id', LOBBY);
+
+            showToast('✓ 200 CODES GENERATED — LOBBY NOW VISIBLE', 'success');
             await syncAll();
         }
 
         async function copyAllCodes() {
-            const { data: codes } = await sb.from('lobby_codes')
+            const { data: codes } = await sb.from(TBL_CODES)
                 .select('code, is_used').eq('lobby_id', LOBBY).eq('is_used', false);
             if (!codes?.length) { showToast('NO AVAILABLE CODES', 'error'); return; }
             const text = codes.map((c, i) => `Player ${i+1}: ${c.code}`).join('\n');
@@ -435,7 +448,7 @@
             showToast(`✓ ${codes.length} CODES COPIED`, 'success');
         }
 
-        /* ── Timer ── */
+        /* ── TIMER ─────────────────────────────────────────────────────────── */
         function selectPreset(mins, el) {
             selectedMinutes = mins;
             document.getElementById('custom-minutes').value = mins;
@@ -448,21 +461,37 @@
             if (!mins || mins < 1) { showToast('SELECT A TIME FIRST', 'error'); return; }
             const openAt     = new Date(Date.now() + mins * 60 * 1000).toISOString();
             const timerSetAt = new Date().toISOString();
-            const { error } = await sb.from('lobby_signals')
+
+            const { error } = await sb.from(TBL_SIGNALS)
                 .update({ open_at: openAt, timer_set_at: timerSetAt, is_live: true, updated_at: timerSetAt })
                 .eq('lobby_id', LOBBY);
             if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
+
+            // ── Set start_time in leagues_registry so leaderboard hub can auto-detect ──
+            await sb.from('leagues_registry').update({
+                start_time:  openAt,
+                lobby_ready: true
+            }).eq('id', LOBBY);
+
             showToast(`✓ ARENA OPENS IN ${mins} MINUTE${mins > 1 ? 'S' : ''}`, 'success');
             await syncAll();
         }
 
         async function openArenaNow() {
             const now = new Date().toISOString();
-            const { error } = await sb.from('lobby_signals')
+            const { error } = await sb.from(TBL_SIGNALS)
                 .update({ open_at: now, timer_set_at: now, is_live: true, updated_at: now })
                 .eq('lobby_id', LOBBY);
             if (error) { showToast('FAILED: ' + error.message, 'error'); return; }
-            showToast('🔓 ARENA OPENED IMMEDIATELY', 'success');
+
+            // ── Immediately flip both flags in leagues_registry ──
+            await sb.from('leagues_registry').update({
+                is_active:   true,
+                start_time:  now,
+                lobby_ready: true
+            }).eq('id', LOBBY);
+
+            showToast('🔓 ARENA OPENED — LEADERBOARD NOW LIVE', 'success');
             await syncAll();
         }
 
@@ -470,30 +499,39 @@
             if (!confirm('FULL RESET: Clears all 200 players, scores, codes, and timer. This cannot be undone. Continue?')) return;
             showToast('RESETTING...', 'info');
             await Promise.all([
-                sb.from('lobby_players').delete().eq('lobby_id', LOBBY),
-                sb.from('game_sessions').delete().eq('lobby_id', LOBBY),
-                sb.from('lobby_codes').delete().eq('lobby_id', LOBBY),
-                sb.from('lobby_signals').update({
+                sb.from(TBL_PLAYERS).delete().eq('lobby_id', LOBBY),
+                sb.from(TBL_SESSIONS).delete().eq('lobby_id', LOBBY),
+                sb.from(TBL_CODES).delete().eq('lobby_id', LOBBY),
+                sb.from(TBL_SIGNALS).update({
                     is_live: false, open_at: null, timer_set_at: null,
                     secret_code: null, updated_at: new Date().toISOString()
-                }).eq('lobby_id', LOBBY)
+                }).eq('lobby_id', LOBBY),
+                // ── Reset leagues_registry flags ──
+                sb.from('leagues_registry').update({
+                    is_active:   false,
+                    lobby_ready: false,
+                    start_time:  null,
+                    closing_time: null
+                }).eq('id', LOBBY)
             ]);
+            arenaAlreadyMarkedOpen = false;
             showToast('✓ RESET COMPLETE — GENERATE NEW CODES FOR NEXT ROUND', 'success');
             await syncAll();
         }
 
         async function removePlayer(username) {
-            await sb.from('lobby_players').delete().eq('lobby_id', LOBBY).eq('player_username', username);
+            await sb.from(TBL_PLAYERS).delete().eq('lobby_id', LOBBY).eq('player_username', username);
             showToast(`✓ REMOVED ${username}`, 'info');
             await syncAll();
         }
 
+        /* ── REALTIME ───────────────────────────────────────────────────────── */
         function startRealtime() {
             sb.channel('10in200_admin_watch')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players' }, syncAll)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals' }, syncAll)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, syncAll)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_codes' }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: TBL_PLAYERS  }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: TBL_SIGNALS  }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: TBL_SESSIONS }, syncAll)
+                .on('postgres_changes', { event: '*', schema: 'public', table: TBL_CODES    }, syncAll)
                 .subscribe();
         }
 
