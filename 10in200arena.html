@@ -2,263 +2,349 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>10in200 — Live Leaderboard | Chicken League</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>10in200 Arena | Chicken League</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #070A0F; --surface: #0D1117; --card: #111820; --border: #1E2A38;
-            --green: #10b981; --green-lt: #34d399; --green-glow: rgba(16,185,129,0.3);
-            --gold: #F5A623; --silver: #A8B8C8; --bronze: #CD7F50;
-            --red: #FF3D5A; --text: #E8EFF8; --muted: #5A7080;
-            --font-head: 'Bebas Neue', sans-serif;
-            --font-body: 'DM Sans', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --green:    #10b981; --green-lt: #34d399;
+            --green-glow: rgba(16,185,129,0.4);
+            --bg: #050505; --surface: #111111; --border: #222222;
         }
-        body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
-        body::before {
-            content:""; position:fixed; inset:0;
-            background-image: linear-gradient(rgba(16,185,129,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,.02) 1px, transparent 1px);
-            background-size: 60px 60px; pointer-events:none; z-index:0;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); color: white;
+            font-family: 'Orbitron', monospace;
+            min-height: 100dvh; overflow: hidden;
+            user-select: none; -webkit-user-select: none; touch-action: none;
         }
-        .page-wrap { position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:32px 20px 120px; }
-        header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:16px; }
-        .brand { display:flex; align-items:center; gap:16px; }
-        .logo-mark { width:52px; height:52px; background: linear-gradient(135deg, var(--green), #059669); border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:14px; color:#fff; letter-spacing:0.5px; box-shadow: 0 0 24px var(--green-glow); }
-        .brand-text h1 { font-family:var(--font-head); font-size:clamp(28px,5vw,46px); letter-spacing:3px; line-height:1; }
-        .brand-text .sub { font-size:12px; text-transform:uppercase; letter-spacing:4px; color:var(--green); font-weight:600; margin-top:4px; }
-        .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
-        .season-badge { background:linear-gradient(135deg,var(--green),#059669); color:#000; font-family:var(--font-head); font-size:13px; letter-spacing:2px; padding:4px 14px; border-radius:20px; }
-        .live-dot { width:8px; height:8px; background:var(--green); border-radius:50%; box-shadow:0 0 6px var(--green); position:relative; }
-        #pulse-ring { position:absolute; inset:-4px; border:2px solid var(--green); border-radius:50%; opacity:0; }
-        #pulse-ring.live { animation:pulseOut .6s ease-out; }
-        @keyframes pulseOut { 0%{opacity:.8;transform:scale(1)} 100%{opacity:0;transform:scale(2.5)} }
-        .live-indicator { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; }
-        #winner-banner { background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(52,211,153,0.04)); border: 1px solid rgba(16,185,129,0.2); border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .winner-label { font-family:var(--font-head); font-size:22px; color:var(--green); letter-spacing:2px; }
-        .winner-sub { font-size:11px; color:var(--muted); letter-spacing:1px; margin-top:2px; }
-        .prize-chip { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius:100px; padding: 6px 16px; font-family:var(--font-mono); font-size:12px; color:var(--green-lt); }
-        .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
-        @media(max-width:600px){ .stats-grid{grid-template-columns:repeat(2,1fr);} }
-        .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; transition:border-color .2s; }
-        .stat-card:hover { border-color:var(--green); }
-        .stat-label { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:6px; }
-        .stat-val { font-family:var(--font-mono); font-size:20px; font-weight:700; color:var(--green); }
-        .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
-        table { width:100%; border-collapse:collapse; }
-        thead tr { background:var(--surface); border-bottom:1px solid var(--border); }
-        thead th { padding:14px 16px; font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); font-weight:600; text-align:left; }
-        tbody tr { border-bottom:1px solid rgba(30,42,56,.5); }
-        tbody tr:last-child { border-bottom:none; }
-        .row-entry { transition:background .2s; animation:fadeSlideIn .3s ease-out both; }
-        @keyframes fadeSlideIn { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
-        .row-entry:hover { background:rgba(16,185,129,.03); }
-        .row-entry.winner-row { background: rgba(16,185,129,0.04) !important; border-left: 3px solid var(--green); }
-        .row-entry.top-1 { background:rgba(245,166,35,.05) !important; border-left:3px solid var(--gold); }
-        .row-entry.top-2 { background:rgba(168,184,200,.03) !important; border-left:3px solid var(--silver); }
-        .row-entry.top-3 { background:rgba(205,127,80,.03) !important; border-left:3px solid var(--bronze); }
-        td { padding:14px 16px; }
-        .rank-badge { font-family:var(--font-mono); font-size:18px; font-weight:700; }
-        .rank-gold   { color:var(--gold);   text-shadow:0 0 12px rgba(245,166,35,.5); }
-        .rank-silver { color:var(--silver); text-shadow:0 0 12px rgba(168,184,200,.4); }
-        .rank-bronze { color:var(--bronze); text-shadow:0 0 12px rgba(205,127,80,.4); }
-        .rank-num    { font-size:13px; color:var(--muted); }
-        .rank-winner { font-size:13px; color:var(--green); font-weight:700; }
-        .player-name { font-weight:600; font-size:15px; }
-        .winner-badge { display:inline-block; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:var(--green-lt); font-size:9px; font-family:var(--font-mono); letter-spacing:1px; padding:2px 8px; border-radius:100px; margin-left:8px; }
-        .pts { font-family:var(--font-mono); font-size:17px; font-weight:700; color:var(--green); }
-        .stat-cell { font-family:var(--font-mono); font-size:14px; text-align:center; }
-        .controls { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
-        .search-wrap { margin-left:auto; position:relative; }
-        .search-wrap svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.4; pointer-events:none; }
-        #search-input { background:var(--card); border:1px solid var(--border); border-radius:20px; color:var(--text); font-family:var(--font-body); font-size:13px; padding:8px 16px 8px 36px; outline:none; width:220px; transition:border-color .2s; }
-        #search-input:focus { border-color:var(--green); }
-        #search-input::placeholder { color:var(--muted); }
-        .filter-btn { background:var(--card); border:1px solid var(--border); color:var(--muted); font-family:var(--font-body); font-size:12px; font-weight:600; padding:7px 16px; border-radius:20px; cursor:pointer; transition:all .2s; }
-        .filter-btn:hover { border-color:var(--green); color:var(--text); }
-        .filter-btn.active { background:var(--green); border-color:var(--green); color:#000; }
-        #empty-state { display:none; flex-direction:column; align-items:center; justify-content:center; padding:64px 20px; gap:16px; color:var(--muted); }
-        #loading-state { display:flex; flex-direction:column; align-items:center; padding:64px 20px; gap:16px; color:var(--muted); }
-        .spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite; }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        footer { margin-top:40px; text-align:center; font-size:12px; color:var(--muted); letter-spacing:1px; }
-        footer span { color:var(--green); }
-        @media(max-width:640px){
-            thead th:nth-child(4), td:nth-child(4) { display:none; }
-            .search-wrap { width:100%; margin-left:0; }
-            #search-input { width:100%; }
+        #hud {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+            background: rgba(5,5,5,0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
         }
+        .hud-score { font-size: 1.5rem; font-weight: 900; color: var(--green); text-shadow: 0 0 16px var(--green-glow); letter-spacing: 0.05em; line-height: 1; }
+        .hud-label { font-size: 0.5rem; letter-spacing: 0.2em; color: #555; margin-top: 2px; }
+        .hud-timer-wrap { display: flex; flex-direction: column; align-items: center; }
+        #timer-ring { position: relative; width: 52px; height: 52px; }
+        #timer-ring svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
+        .tr-bg   { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+        .tr-fill { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 138; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.5s; filter: drop-shadow(0 0 4px var(--green)); }
+        #timer-ring .ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 900; }
+        #combo-display { font-size: 0.6rem; letter-spacing: 0.15em; color: #444; transition: color 0.2s; }
+        #combo-display.active { color: var(--green-lt); text-shadow: 0 0 8px var(--green-glow); }
+        #board-wrap { position: fixed; top: 74px; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; padding: 8px; }
+        #game-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; width: 100%; max-width: 360px; touch-action: none; }
+        .tile { aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; color: rgba(255,255,255,0.9); transition: transform 0.1s, opacity 0.15s; cursor: pointer; position: relative; border: 1px solid rgba(255,255,255,0.06); }
+        .tile.clearing { animation: popOut 0.18s ease-out forwards; }
+        .tile.selected { transform: scale(0.88); box-shadow: 0 0 0 2px white; }
+        .tile.empty { background: rgba(255,255,255,0.03) !important; }
+        @keyframes popOut { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.2);opacity:0.7} 100%{transform:scale(0);opacity:0} }
+        @keyframes dropIn { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .tile.drop-in { animation: dropIn 0.2s ease-out; }
+        .score-pop { position: fixed; pointer-events: none; z-index: 50; font-family: 'Orbitron', monospace; font-weight: 900; font-size: 1rem; color: var(--green-lt); text-shadow: 0 0 10px var(--green-glow); animation: scoreRise 0.7s ease-out forwards; }
+        @keyframes scoreRise { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(1.2)} }
+        .overlay { position: fixed; inset: 0; z-index: 80; background: rgba(5,5,5,0.96); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+        .overlay h2 { font-size: 2rem; font-weight: 900; letter-spacing: 0.1em; margin-bottom: 8px; }
+        .overlay p  { font-size: 0.65rem; letter-spacing: 0.2em; color: #555; margin-bottom: 24px; }
+        .overlay .big-score { font-size: 3.5rem; font-weight: 900; color: var(--green); text-shadow: 0 0 30px var(--green-glow); margin: 16px 0; }
+        .btn-green { background: var(--green); color: #000; border: none; font-family: 'Orbitron', monospace; font-weight: 900; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 16px 32px; border-radius: 16px; cursor: pointer; transition: all 0.15s; width: 100%; max-width: 300px; }
+        .btn-green:hover { filter: brightness(1.1); }
+        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); font-family: 'Orbitron', monospace; font-size: 0.65rem; letter-spacing: 0.1em; padding: 14px 24px; border-radius: 14px; cursor: pointer; width: 100%; max-width: 300px; transition: all 0.15s; margin-top: 10px; }
+        .btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.25); }
+        #submitting-msg { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--green); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
     </style>
 </head>
 <body>
-<div class="page-wrap">
-    <header>
-        <div class="brand">
-            <div class="logo-mark">10:200</div>
-            <div class="brand-text">
-                <h1>10in200 Arena</h1>
-                <div class="sub">Live Leaderboard</div>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="season-badge">Chicken League</div>
-            <div class="live-indicator">
-                <div class="live-dot"><div id="pulse-ring"></div></div>
-                Live · Updated <span id="last-updated">—</span>
-            </div>
-        </div>
-    </header>
 
-    <div id="winner-banner">
-        <div>
-            <div class="winner-label">🏆 TOP 10 WIN BROILER CHICKENS</div>
-            <div class="winner-sub">HIGHEST SCORES CLAIM THE PRIZE</div>
-        </div>
-        <div class="prize-chip">🐔 × 10 BROILERS</div>
+<div id="hud">
+    <div>
+        <div class="hud-score" id="score-display">0</div>
+        <div class="hud-label">SCORE</div>
     </div>
-
-    <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Top Player</div><div class="stat-val" id="stat-top">—</div></div>
-        <div class="stat-card"><div class="stat-label">Top Score</div><div class="stat-val" id="stat-score">—</div></div>
-        <div class="stat-card"><div class="stat-label">Total Games</div><div class="stat-val" id="stat-games">—</div></div>
-        <div class="stat-card"><div class="stat-label">Players</div><div class="stat-val" id="stat-players">—</div></div>
+    <div style="text-align:center;">
+        <div class="hud-label" style="margin-bottom:2px;">10IN200</div>
+        <div id="combo-display">COMBO ×1</div>
     </div>
-
-    <div class="controls">
-        <button class="filter-btn active" id="filter-all" onclick="setFilter('all', this)">All Players</button>
-        <button class="filter-btn" id="filter-winners" onclick="setFilter('winners', this)">🏆 Top 10 Only</button>
-        <div class="search-wrap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <div class="hud-timer-wrap">
+        <div id="timer-ring">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle class="tr-bg" cx="26" cy="26" r="22"/>
+                <circle class="tr-fill" id="tr-fill" cx="26" cy="26" r="22"/>
             </svg>
-            <input id="search-input" type="text" placeholder="Search player…" />
+            <div class="ring-center" id="timer-display">60</div>
         </div>
     </div>
-
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Games</th></tr></thead>
-            <tbody id="lb-body">
-                <tr><td colspan="4"><div id="loading-state"><div class="spinner"></div><p>Loading leaderboard…</p></div></td></tr>
-            </tbody>
-        </table>
-        <div id="empty-state"><div style="font-size:48px;opacity:.4;">🏆</div><p>No scores yet — be the first to compete!</p></div>
-    </div>
-
-    <footer><p>10in200 Arena &nbsp;·&nbsp; <span>Chicken League</span> &nbsp;·&nbsp; Top 10 scorers win a broiler chicken</p></footer>
 </div>
 
-<script src="nav.js"></script>
+<div id="board-wrap">
+    <div id="game-grid"></div>
+</div>
+
+<div class="overlay" id="start-overlay">
+    <div style="font-size:3rem; margin-bottom:16px;">🐔</div>
+    <h2 style="color:var(--green);">READY?</h2>
+    <p>10IN200 ARENA · TOP 10 SCORES WIN A BROILER CHICKEN</p>
+    <div style="font-size:0.65rem; letter-spacing:0.12em; color:#444; margin-bottom:24px;">
+        SWIPE TILES TO MATCH 3 OR MORE · 60 SECONDS
+    </div>
+    <button class="btn-green" onclick="startGame()">START GAME →</button>
+    <button class="btn-ghost" onclick="window.location.href='10in200lobby.html'">← BACK TO LOBBY</button>
+</div>
+
+<div class="overlay" id="end-overlay" style="display:none;">
+    <div style="font-size:0.65rem; letter-spacing:0.25em; color:var(--green); margin-bottom:4px;">10IN200 ARENA</div>
+    <h2>TIME'S UP!</h2>
+    <p>YOUR FINAL SCORE</p>
+    <div class="big-score" id="final-score">0</div>
+    <div id="submitting-msg">SUBMITTING SCORE...</div>
+    <div id="result-msg" style="display:none; font-size:0.65rem; letter-spacing:0.12em; color:#555; margin-top:8px; margin-bottom:20px;"></div>
+    <button class="btn-green" id="result-btn" onclick="goToLeaderboard()" style="display:none;">VIEW LEADERBOARD →</button>
+    <button class="btn-ghost" onclick="window.location.href='10in200lobby.html'" style="display:none;" id="back-btn">← BACK TO LOBBY</button>
+</div>
+
 <script>
-    const SUPABASE_URL      = "https://tbvmgcknkwsucstedigd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q";
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SB_URL = 'https://tbvmgcknkwsucstedigd.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
+    const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+    const params = new URLSearchParams(location.search);
+    const PLAYER = params.get('user') || localStorage.getItem('league_user') || 'GUEST';
+    const LEAGUE = params.get('league') || '10in200';
 
     // ── DEDICATED sessions table ──────────────────────────────────────────
     const TBL_SESSIONS = 'game_10in200_sessions';
-    const LOBBY_ID     = '10in200';
-    const TOP_WINNERS  = 10;
 
-    let allRows = [], filterMode = 'all', searchTerm = '';
+    const COLS = 6, ROWS = 9, TYPES = 5, GAME_SECS = 60;
+    const COLORS  = ['#ef4444','#3b82f6','#10b981','#f59e0b','#a855f7'];
+    const SYMBOLS = ['●','■','▲','◆','★'];
+    const ringMax = 138;
 
-    function esc(str){ return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    let board = [], score = 0, timeLeft = GAME_SECS;
+    let gameActive = false, processing = false;
+    let watchdog = null, gameTimer = null, comboCount = 1;
+    let touchStart = null;
 
-    function rankHtml(i, isWinner) {
-        if (i===0) return `<span class="rank-badge rank-gold">🥇</span>`;
-        if (i===1) return `<span class="rank-badge rank-silver">🥈</span>`;
-        if (i===2) return `<span class="rank-badge rank-bronze">🥉</span>`;
-        if (isWinner) return `<span class="rank-badge rank-winner">#${i+1}</span>`;
-        return `<span class="rank-badge rank-num">#${i+1}</span>`;
+    /* ── Guard: check if already played ── */
+    (async function guardAlreadyPlayed() {
+        const { data } = await sb.from(TBL_SESSIONS)
+            .select('is_complete')
+            .eq('lobby_id', LEAGUE)
+            .eq('player_username', PLAYER)
+            .eq('is_complete', true)
+            .maybeSingle();
+        if (data) {
+            document.getElementById('start-overlay').innerHTML = `
+                <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+                <h2 style="color:var(--green);font-size:1.2rem;">SCORE SUBMITTED</h2>
+                <p style="margin-bottom:24px;">YOUR SCORE HAS BEEN RECORDED.<br>AWAIT THE LEADERBOARD RESULTS.</p>
+                <button class="btn-green" onclick="goToLeaderboard()">VIEW LEADERBOARD →</button>
+                <button class="btn-ghost" onclick="window.location.href='10in200lobby.html'" style="margin-top:10px;">← BACK TO LOBBY</button>`;
+        }
+    })();
+
+    function safeTile(r, c) {
+        const bad = new Set();
+        if (c >= 2 && board[r][c-1] === board[r][c-2]) bad.add(board[r][c-1]);
+        if (r >= 2 && board[r-1][c] === board[r-2][c]) bad.add(board[r-1][c]);
+        let t;
+        do { t = Math.floor(Math.random() * TYPES); } while (bad.has(t));
+        return t;
     }
 
-    function pulse() {
-        const r = document.getElementById('pulse-ring');
-        r.classList.remove('live'); void r.offsetWidth; r.classList.add('live');
+    function initBoard() {
+        board = [];
+        for (let r = 0; r < ROWS; r++) {
+            board[r] = [];
+            for (let c = 0; c < COLS; c++) board[r][c] = safeTile(r, c);
+        }
     }
 
-    async function fetchLeaderboard() {
-        const { data: sessions, error } = await db
-            .from(TBL_SESSIONS)
-            .select('player_username, score, is_complete')
-            .eq('lobby_id', LOBBY_ID)
-            .eq('is_complete', true);
-
-        if (error || !sessions?.length) { allRows = []; renderTable(); return; }
-
-        const map = {};
-        sessions.forEach(s => {
-            if (!map[s.player_username]) map[s.player_username] = { player_username: s.player_username, total_score: 0, games: 0 };
-            map[s.player_username].total_score += (s.score || 0);
-            map[s.player_username].games++;
-        });
-        allRows = Object.values(map).sort((a, b) => b.total_score - a.total_score);
-        renderTable(); renderStats(); pulse();
-        document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+    function renderBoard() {
+        const grid = document.getElementById('game-grid');
+        grid.innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.row = r; tile.dataset.col = c;
+                if (board[r][c] === -1) {
+                    tile.className += ' empty';
+                    tile.style.background = 'rgba(255,255,255,0.03)';
+                } else {
+                    tile.style.background = COLORS[board[r][c]];
+                    tile.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 8px rgba(0,0,0,0.4)`;
+                    tile.textContent = SYMBOLS[board[r][c]];
+                }
+                grid.appendChild(tile);
+            }
+        }
     }
 
-    function renderTable() {
-        const tbody = document.getElementById('lb-body');
-        const empty = document.getElementById('empty-state');
-        let rows = [...allRows];
-        if (filterMode === 'winners') rows = rows.slice(0, TOP_WINNERS);
-        if (searchTerm) rows = rows.filter(r => r.player_username.toLowerCase().includes(searchTerm));
-        tbody.innerHTML = ''; empty.style.display = 'none';
-        if (!rows.length) { empty.style.display = 'flex'; return; }
+    const grid = document.getElementById('game-grid');
+    grid.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (!gameActive || processing) return;
+        const touch = e.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!el?.dataset?.row) return;
+        touchStart = { r: +el.dataset.row, c: +el.dataset.col, x: touch.clientX, y: touch.clientY };
+    }, { passive: false });
 
-        rows.forEach((p, i) => {
-            const origRank = allRows.findIndex(r => r.player_username === p.player_username);
-            const isWinner = origRank < TOP_WINNERS;
-            const tr = document.createElement('tr');
-            let rowClass = 'row-entry';
-            if (origRank === 0) rowClass += ' top-1';
-            else if (origRank === 1) rowClass += ' top-2';
-            else if (origRank === 2) rowClass += ' top-3';
-            else if (isWinner) rowClass += ' winner-row';
-            tr.className = rowClass;
-            tr.style.animationDelay = `${i * 30}ms`;
-            tr.innerHTML = `
-                <td style="width:64px;text-align:center;">${rankHtml(origRank, isWinner)}</td>
-                <td>
-                    <div class="player-name">
-                        ${esc(p.player_username)}
-                        ${isWinner ? '<span class="winner-badge">WINNER</span>' : ''}
-                    </div>
-                </td>
-                <td style="text-align:center;"><span class="pts">${Number(p.total_score).toLocaleString()}</span></td>
-                <td class="stat-cell">${p.games}</td>`;
-            tbody.appendChild(tr);
-        });
+    grid.addEventListener('touchend', e => {
+        e.preventDefault();
+        if (!touchStart || !gameActive || processing) { touchStart = null; return; }
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStart.x;
+        const dy = touch.clientY - touchStart.y;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) { touchStart = null; return; }
+        let r2 = touchStart.r, c2 = touchStart.c;
+        if (Math.abs(dx) > Math.abs(dy)) { c2 += dx > 0 ? 1 : -1; }
+        else { r2 += dy > 0 ? 1 : -1; }
+        if (r2 >= 0 && r2 < ROWS && c2 >= 0 && c2 < COLS) trySwap(touchStart.r, touchStart.c, r2, c2);
+        touchStart = null;
+    }, { passive: false });
+
+    grid.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
+
+    async function trySwap(r1, c1, r2, c2) {
+        processing = true; resetWatchdog(); comboCount = 1; updateComboDisplay();
+        [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+        renderBoard(); await sleep(80);
+        let matches = findMatches();
+        if (!matches.length) {
+            [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+            renderBoard();
+        } else {
+            while (matches.length > 0) {
+                const pts = calcScore(matches.length, comboCount);
+                score += pts; updateScoreDisplay(); showScorePop(pts, r1, c1);
+                clearMatchedTiles(matches); await sleep(180);
+                dropTiles(); renderBoard(); await sleep(150);
+                matches = findMatches();
+                if (matches.length > 0) { comboCount++; updateComboDisplay(); }
+            }
+            comboCount = 1; updateComboDisplay();
+        }
+        processing = false; clearWatchdog();
     }
 
-    function renderStats() {
-        const leader = allRows[0];
-        const totalGames = allRows.reduce((a, r) => a + r.games, 0);
-        document.getElementById('stat-top').textContent     = leader ? leader.player_username : '—';
-        document.getElementById('stat-score').textContent   = leader ? Number(leader.total_score).toLocaleString() : '—';
-        document.getElementById('stat-games').textContent   = totalGames;
-        document.getElementById('stat-players').textContent = allRows.length;
+    function findMatches() {
+        const matched = new Set();
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS - 2; c++) {
+                const t = board[r][c]; if (t < 0) continue;
+                if (t === board[r][c+1] && t === board[r][c+2]) {
+                    let e = c+3; while (e < COLS && board[r][e] === t) e++;
+                    for (let i = c; i < e; i++) matched.add(`${r},${i}`);
+                }
+            }
+        }
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS - 2; r++) {
+                const t = board[r][c]; if (t < 0) continue;
+                if (t === board[r+1][c] && t === board[r+2][c]) {
+                    let e = r+3; while (e < ROWS && board[e][c] === t) e++;
+                    for (let i = r; i < e; i++) matched.add(`${i},${c}`);
+                }
+            }
+        }
+        return [...matched].map(k => k.split(',').map(Number));
     }
 
-    function setFilter(mode, el) {
-        filterMode = mode;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-        renderTable();
+    function calcScore(count, combo) {
+        let base = count === 3 ? 30 : count === 4 ? 80 : count >= 5 ? 150 + (count-5)*30 : 30;
+        return base * combo;
     }
 
-    document.getElementById('search-input').addEventListener('input', e => {
-        searchTerm = e.target.value.toLowerCase().trim();
-        renderTable();
-    });
+    function clearMatchedTiles(matches) { matches.forEach(([r, c]) => { board[r][c] = -1; }); renderBoard(); }
 
-    // ── Real-time: watch the dedicated sessions table ─────────────────────
-    db.channel('10in200-leaderboard-watch')
-        .on('postgres_changes', { event: '*', schema: 'public', table: TBL_SESSIONS }, fetchLeaderboard)
-        .subscribe();
+    function dropTiles() {
+        for (let c = 0; c < COLS; c++) {
+            let empty = ROWS - 1;
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (board[r][c] !== -1) { board[empty][c] = board[r][c]; if (empty !== r) board[r][c] = -1; empty--; }
+            }
+            for (let r = empty; r >= 0; r--) board[r][c] = Math.floor(Math.random() * TYPES);
+        }
+    }
 
-    fetchLeaderboard();
+    function updateScoreDisplay() {
+        document.getElementById('score-display').textContent = score.toLocaleString();
+        document.getElementById('final-score').textContent   = score.toLocaleString();
+    }
+    function updateComboDisplay() {
+        const el = document.getElementById('combo-display');
+        el.textContent = `COMBO ×${comboCount}`;
+        el.className   = comboCount > 1 ? 'active' : '';
+    }
+    function showScorePop(pts, r, c) {
+        const gridEl = document.getElementById('game-grid');
+        const rect   = gridEl.getBoundingClientRect();
+        const pop = document.createElement('div');
+        pop.className   = 'score-pop';
+        pop.textContent = `+${pts}`;
+        pop.style.left  = (rect.left + rect.width * 0.5) + 'px';
+        pop.style.top   = (rect.top + rect.height * (r / ROWS)) + 'px';
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 700);
+    }
+    function setTimerRing(pct) {
+        document.getElementById('tr-fill').style.strokeDashoffset = ringMax * (1 - pct);
+        const fill = document.getElementById('tr-fill');
+        if (pct < 0.25) fill.style.stroke = '#ef4444';
+        else if (pct < 0.5) fill.style.stroke = '#f59e0b';
+        else fill.style.stroke = 'var(--green)';
+    }
+    function resetWatchdog() { clearWatchdog(); watchdog = setTimeout(() => { processing = false; }, 4000); }
+    function clearWatchdog() { clearTimeout(watchdog); watchdog = null; }
+    function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+    function startGame() {
+        initBoard(); renderBoard();
+        document.getElementById('start-overlay').style.display = 'none';
+        timeLeft = GAME_SECS; score = 0; comboCount = 1; gameActive = true;
+        updateScoreDisplay(); updateComboDisplay(); setTimerRing(1);
+        gameTimer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer-display').textContent = timeLeft;
+            setTimerRing(timeLeft / GAME_SECS);
+            if (timeLeft <= 0) { clearInterval(gameTimer); gameActive = false; endGame(); }
+        }, 1000);
+    }
+
+    async function endGame() {
+        processing = true;
+        document.getElementById('final-score').textContent = score.toLocaleString();
+        document.getElementById('end-overlay').style.display = 'flex';
+        document.getElementById('submitting-msg').style.display = 'block';
+
+        try {
+            // ── Write to dedicated 10in200 sessions table ──────────────────
+            const { error } = await sb.from(TBL_SESSIONS).insert([{
+                lobby_id:        LEAGUE,
+                player_username: PLAYER,
+                score:           score,
+                is_complete:     true,
+                finished_at:     new Date().toISOString()
+            }]);
+            document.getElementById('submitting-msg').style.display = 'none';
+            if (error) throw error;
+            document.getElementById('result-msg').textContent = 'SCORE RECORDED — CHECK THE LEADERBOARD';
+        } catch (e) {
+            document.getElementById('submitting-msg').style.display = 'none';
+            document.getElementById('result-msg').textContent = 'SUBMIT ERROR — CONTACT ADMIN WITH YOUR SCORE';
+        }
+        document.getElementById('result-msg').style.display = 'block';
+        document.getElementById('result-btn').style.display  = 'block';
+        document.getElementById('back-btn').style.display    = 'block';
+    }
+
+    function goToLeaderboard() { window.location.href = '10in200leaderboard.html'; }
 </script>
 </body>
 </html>
