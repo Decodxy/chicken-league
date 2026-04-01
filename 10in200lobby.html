@@ -81,16 +81,6 @@
         }
         .arena-open { animation: arena-unlock 1s ease-out 3; }
 
-        /* Code gate */
-        .code-input {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: white;
-            letter-spacing: 0.3em; text-align: center; font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem; text-transform: uppercase; outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .code-input:focus { border-color: var(--green); box-shadow: 0 0 20px rgba(16,185,129,0.2); }
-        .code-input::placeholder { color: rgba(255,255,255,0.2); letter-spacing: 0.2em; }
-
         main { padding-bottom: 100px; }
     </style>
 </head>
@@ -101,32 +91,8 @@
     </div>
     <div id="toast"></div>
 
-    <!-- CODE GATE (fallback if landed here directly) -->
-    <div id="code-gate" class="fixed inset-0 z-40 flex items-center justify-center p-6" style="background: rgba(5,5,5,0.97);">
-        <div class="glass-panel rounded-[2rem] p-8 w-full max-w-sm text-center">
-            <div class="w-16 h-16 rounded-full border flex items-center justify-center mx-auto mb-5"
-                 style="border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.07);">
-                <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
-                    <rect x="5" y="11" width="14" height="10" rx="2" stroke="#34d399" stroke-width="1.5"/>
-                    <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <h2 class="orbitron text-lg font-black uppercase tracking-tighter mb-1">10in200 Access</h2>
-            <p class="text-zinc-500 text-[10px] orbitron tracking-widest mb-6">ENTER YOUR CODE TO JOIN</p>
-            <input id="secret-code-input" type="text" maxlength="10" placeholder="XXXXXXXXXX"
-                class="code-input w-full px-4 py-4 rounded-xl mb-4"
-                onkeydown="if(event.key==='Enter') verifySecretCode()" />
-            <button id="code-submit-btn" onclick="verifySecretCode()"
-                class="w-full py-4 text-black rounded-2xl font-black uppercase italic tracking-tighter text-sm transition-all active:scale-95 orbitron"
-                style="background: var(--green);">
-                VERIFY & ENTER
-            </button>
-            <p class="text-zinc-600 text-[9px] orbitron mt-4 tracking-widest">YOUR CODE WAS SENT BY THE ORGANIZER</p>
-        </div>
-    </div>
-
     <!-- MAIN LOBBY -->
-    <main class="max-w-md mx-auto p-5" id="main-lobby" style="display:none;">
+    <main class="max-w-md mx-auto p-5" id="main-lobby">
 
         <!-- Top bar -->
         <div class="mt-4 mb-5 flex items-center justify-between">
@@ -218,7 +184,7 @@
 
         let currentUser = localStorage.getItem('league_user');
         if (!currentUser) {
-            currentUser = "PLR_" + Math.random().toString(36).substring(2, 8).toUpperCase();
+            currentUser = 'PLR_' + Math.random().toString(36).substring(2, 8).toUpperCase();
             localStorage.setItem('league_user', currentUser);
         }
 
@@ -234,56 +200,53 @@
             t.textContent = msg; t.className = `show ${type}`;
             setTimeout(() => { t.className = ''; }, 3500);
         }
-        function openLobby() {
-            document.getElementById('code-gate').style.display = 'none';
-            document.getElementById('main-lobby').style.display = 'block';
-        }
 
-        async function checkCodeGate() {
-            const savedCode = localStorage.getItem('league_code_' + LOBBY_ID);
-            if (!savedCode) return;
-            const { data } = await sb.from('lobby_codes')
-                .select('*').eq('lobby_id', LOBBY_ID).eq('code', savedCode)
-                .eq('claimed_by', currentUser).eq('is_used', true).maybeSingle();
-            if (data) { log('SESSION RESTORED'); openLobby(); syncLobby(); }
-            else { localStorage.removeItem('league_code_' + LOBBY_ID); log('SESSION EXPIRED — RE-ENTER CODE'); }
-        }
+        // ── Validate session: check localStorage for claimed code ──
+        async function validateSessionAndSync() {
+            try {
+                const savedCode = localStorage.getItem('league_code_' + LOBBY_ID);
+                if (!savedCode) {
+                    log('NO SESSION CODE — REDIRECTING TO PORTAL');
+                    window.location.href = '10in200portal.html';
+                    return;
+                }
 
-        async function verifySecretCode() {
-            const input = document.getElementById('secret-code-input').value.trim().toUpperCase();
-            if (!input || input.length < 4) { showToast('ENTER YOUR CODE', 'error'); return; }
-            const btn = document.getElementById('code-submit-btn');
-            btn.classList.add('btn-loading'); btn.innerText = '';
-            log('VERIFYING CODE...');
+                // Verify code is still valid (claimed by this user, marked as used)
+                const { data: codeRecord, error: codeErr } = await sb.from('lobby_10in200_codes')
+                    .select('*')
+                    .eq('code', savedCode)
+                    .eq('claimed_by', currentUser)
+                    .eq('is_used', true)
+                    .maybeSingle();
 
-            const { data: codeRow, error } = await sb.from('lobby_codes')
-                .select('*').eq('lobby_id', LOBBY_ID).eq('code', input).maybeSingle();
-            btn.classList.remove('btn-loading'); btn.innerText = 'VERIFY & ENTER';
+                if (codeErr) {
+                    log(`CODE VALIDATION ERROR: ${codeErr.message}`);
+                    localStorage.removeItem('league_code_' + LOBBY_ID);
+                    window.location.href = '10in200portal.html';
+                    return;
+                }
 
-            if (error || !codeRow) { showToast('INVALID CODE — CHECK WITH ORGANIZER', 'error'); log('CODE NOT FOUND'); return; }
-            if (codeRow.is_used && codeRow.claimed_by !== currentUser) { showToast('CODE ALREADY USED — GET A NEW ONE', 'error'); log('CLAIMED BY ANOTHER PLAYER'); return; }
-            if (codeRow.is_used && codeRow.claimed_by === currentUser) {
-                localStorage.setItem('league_code_' + LOBBY_ID, input);
-                log('SESSION RESTORED'); openLobby(); syncLobby(); return;
+                if (!codeRecord) {
+                    log('SESSION EXPIRED — RETURNING TO PORTAL');
+                    localStorage.removeItem('league_code_' + LOBBY_ID);
+                    window.location.href = '10in200portal.html';
+                    return;
+                }
+
+                log('SESSION RESTORED FROM CODE');
+                await syncLobby();
+            } catch (e) {
+                log(`VALIDATION ERROR: ${e.message}`);
+                window.location.href = '10in200portal.html';
             }
-
-            const { data: players } = await sb.from('lobby_players').select('id').eq('lobby_id', LOBBY_ID);
-            if (players && players.length >= MAX_SLOTS) { showToast('LOBBY IS FULL — NEXT ROUND', 'error'); log('LOBBY FULL'); return; }
-
-            const { error: claimErr } = await sb.from('lobby_codes')
-                .update({ is_used: true, claimed_by: currentUser, claimed_at: new Date().toISOString() })
-                .eq('id', codeRow.id).eq('is_used', false);
-            if (claimErr) { showToast('CODE ALREADY TAKEN — TRY AGAIN', 'error'); log('CLAIM RACE LOST'); return; }
-
-            localStorage.setItem('league_code_' + LOBBY_ID, input);
-            log('CODE CLAIMED'); openLobby(); syncLobby();
         }
 
+        // ── Sync lobby state from Supabase ──
         async function syncLobby() {
             try {
                 const [{ data: players, error: pErr }, { data: signal, error: sErr }] = await Promise.all([
-                    sb.from('lobby_players').select('*').eq('lobby_id', LOBBY_ID).order('joined_at', { ascending: true }),
-                    sb.from('lobby_signals').select('*').eq('lobby_id', LOBBY_ID).maybeSingle()
+                    sb.from('lobby_10in200_players').select('*').eq('lobby_id', LOBBY_ID).order('joined_at', { ascending: true }),
+                    sb.from('lobby_10in200_signals').select('*').eq('lobby_id', LOBBY_ID).maybeSingle()
                 ]);
                 if (pErr || sErr) throw (pErr || sErr);
                 cachedPlayers = players || [];
@@ -297,6 +260,7 @@
             } catch(e) { log(`SYNC ERROR: ${e.message}`); }
         }
 
+        // ── Update UI based on lobby state ──
         async function updateUI() {
             const total  = cachedPlayers.length;
             const isIn   = cachedPlayers.some(p => p.player_username === currentUser);
@@ -314,7 +278,6 @@
             // Dot grid (200 dots)
             const grid = document.getElementById('slots-dot-grid');
             grid.innerHTML = '';
-            // Find position of current user
             const myIndex = cachedPlayers.findIndex(p => p.player_username === currentUser);
             for (let i = 0; i < MAX_SLOTS; i++) {
                 const dot = document.createElement('div');
@@ -337,7 +300,8 @@
             const arenaOpen = isLive && openAt && new Date() >= openAt;
 
             if (arenaOpen && isIn) {
-                const { data: played } = await sb.from('game_sessions')
+                // Check if user already played
+                const { data: played } = await sb.from('game_10in200_sessions')
                     .select('is_complete').eq('lobby_id', LOBBY_ID)
                     .eq('player_username', currentUser).eq('is_complete', true).maybeSingle();
                 if (played) {
@@ -384,16 +348,19 @@
                     document.getElementById('countdown-display').innerText = '00:00';
                     setRing(totalMs, totalMs);
                     document.getElementById('timer-label').innerText = '🔓 ARENA IS OPEN!';
-                    syncLobby(); return;
+                    syncLobby();
+                    return;
                 }
                 const mins = String(Math.floor(diff / 60000)).padStart(2, '0');
                 const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
                 document.getElementById('countdown-display').innerText = `${mins}:${secs}`;
                 setRing(totalMs - diff, totalMs);
             }
-            tick(); countdownTimer = setInterval(tick, 1000);
+            tick();
+            countdownTimer = setInterval(tick, 1000);
         }
 
+        // ── Main action: join arena or enter game ──
         async function handleMainAction() {
             if (isProcessing) return;
             const isIn   = cachedPlayers.some(p => p.player_username === currentUser);
@@ -411,7 +378,7 @@
                 btn.innerText = 'REGISTERING...';
                 btn.classList.add('btn-loading');
                 log(`REGISTERING ${currentUser}...`);
-                const { error } = await sb.from('lobby_players').insert([{ lobby_id: LOBBY_ID, player_username: currentUser }]);
+                const { error } = await sb.from('lobby_10in200_players').insert([{ lobby_id: LOBBY_ID, player_username: currentUser }]);
                 isProcessing = false;
                 btn.classList.remove('btn-loading');
                 if (error) { log(`FAILED: ${error.message}`); showToast('JOIN FAILED — TRY AGAIN', 'error'); }
@@ -419,20 +386,23 @@
             }
         }
 
+        // ── Exit lobby and return to dashboard ──
         async function exitLobby() {
             log('REMOVING PLAYER...');
-            await sb.from('lobby_players').delete().eq('lobby_id', LOBBY_ID).eq('player_username', currentUser);
+            await sb.from('lobby_10in200_players').delete().eq('lobby_id', LOBBY_ID).eq('player_username', currentUser);
             localStorage.removeItem('league_code_' + LOBBY_ID);
             window.location.href = 'dashboard.html';
         }
 
+        // ── Realtime subscriptions (10in200-specific tables only) ──
         sb.channel('10in200_lobby')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_players', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_signals', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_10in200_players', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_10in200_signals', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'game_10in200_sessions', filter: `lobby_id=eq.${LOBBY_ID}` }, syncLobby)
             .subscribe();
 
-        checkCodeGate();
+        // ── Initialize: validate session and sync ──
+        validateSessionAndSync();
     </script>
 </body>
 </html>
