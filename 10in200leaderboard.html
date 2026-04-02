@@ -156,17 +156,17 @@
     </header>
 
     <!-- Winner banner -->
-    <div id="winner-banner">
+    <div id="winner-banner" style="display:none;">
         <div>
-            <div class="winner-label">🏆 TOP 10 WIN BROILER CHICKENS</div>
-            <div class="winner-sub">HIGHEST SCORES CLAIM THE PRIZE</div>
+            <div class="winner-label">🏆 TOP 10 COMPETE</div>
+            <div class="winner-sub">Final rankings below</div>
         </div>
-        <div class="prize-chip">🐔 × 10 BROILERS</div>
+        <div class="prize-chip">BROILER CHICKEN 🐔</div>
     </div>
 
     <!-- Stats -->
     <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Top Player</div><div class="stat-val" id="stat-top">—</div></div>
+        <div class="stat-card"><div class="stat-label">Leader</div><div class="stat-val" id="stat-top">—</div></div>
         <div class="stat-card"><div class="stat-label">Top Score</div><div class="stat-val" id="stat-score">—</div></div>
         <div class="stat-card"><div class="stat-label">Total Games</div><div class="stat-val" id="stat-games">—</div></div>
         <div class="stat-card"><div class="stat-label">Players</div><div class="stat-val" id="stat-players">—</div></div>
@@ -224,8 +224,9 @@
     }
 
     async function fetchLeaderboard() {
+        // ─── FIX: Read from game_10in200_sessions (not game_sessions) ───
         const { data: sessions, error } = await db
-            .from('game_sessions')
+            .from('game_10in200_sessions')
             .select('player_username,score,is_complete')
             .eq('lobby_id', LOBBY_ID)
             .eq('is_complete', true);
@@ -300,9 +301,9 @@
         renderTable();
     });
 
-    // Real-time
+    // ─── FIX: Subscribe to game_10in200_sessions (not game_sessions) ───
     db.channel('10in200-leaderboard-watch')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, fetchLeaderboard)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_10in200_sessions' }, fetchLeaderboard)
         .subscribe();
 
     fetchLeaderboard();
