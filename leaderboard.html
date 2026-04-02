@@ -15,6 +15,8 @@
       background-image: radial-gradient(circle at 50% 20%, rgba(251,191,36,0.04) 0%, transparent 60%);
     }
     .orbitron { font-family: 'Orbitron', sans-serif; }
+    
+    /* Card styling with status awareness */
     .league-card {
       display: flex; align-items: center; justify-content: space-between;
       background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
@@ -26,18 +28,38 @@
     @keyframes cardIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     .league-card:hover  { border-color: rgba(251,191,36,0.35); background: rgba(251,191,36,0.04); }
     .league-card:active { transform: scale(0.97); }
+    
+    /* Arena open = gold border */
+    .league-card.is-live { border-color: rgba(251,191,36,0.2); }
+    
+    /* League icon */
     .league-icon {
       width: 48px; height: 48px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
       font-size: 22px; flex-shrink: 0;
       background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25);
     }
+    
+    /* Status badge colors */
+    .badge-live    { color: #4ade80; }
+    .badge-waiting { color: #fbbf24; }
+    .badge-ready   { color: #60a5fa; }
+    
+    /* Loading skeleton */
     .skeleton {
       background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
       background-size: 200% 100%; animation: shimmer 1.4s infinite;
       border-radius: 20px; height: 84px;
     }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    
+    /* New arena flash animation */
+    @keyframes newFlash {
+      0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 3px rgba(251,191,36,0.4)}
+    }
+    .league-card.new-flash { animation: cardIn 0.3s ease-out both, newFlash 0.8s ease 0.3s 2; }
+    
+    /* Bottom navigation */
     #bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
       display: flex; justify-content: space-around; align-items: center;
@@ -63,15 +85,21 @@
     <div class="mb-8">
       <p class="orbitron text-[9px] text-yellow-400 tracking-widest font-bold mb-1">CHICKEN LEAGUE</p>
       <h1 class="orbitron text-3xl font-black uppercase tracking-tighter">Leaderboards</h1>
-      <p class="text-zinc-500 text-[10px] mt-1">Live rankings — auto-updates when arenas go live</p>
+      <p class="text-zinc-500 text-[10px] mt-1">All active arenas — auto updates in real time</p>
     </div>
 
-    <div id="league-list" class="flex flex-col gap-3">
+    <div id="skeleton-wrap" class="flex flex-col gap-3">
       <div class="skeleton"></div>
       <div class="skeleton" style="opacity:0.5"></div>
     </div>
 
-    <p id="empty-msg" class="hidden text-center text-zinc-600 orbitron text-[10px] tracking-widest mt-16">NO ACTIVE LEAGUES RIGHT NOW</p>
+    <div id="league-list" class="flex flex-col gap-3" style="display:none!important"></div>
+
+    <div id="empty-msg" class="hidden text-center mt-16">
+      <div class="text-4xl mb-3 opacity-30">🏆</div>
+      <p class="orbitron text-zinc-600 text-[10px] tracking-widest">NO ACTIVE ARENAS RIGHT NOW</p>
+      <p class="text-zinc-700 text-[9px] mt-2">Check back soon — arenas will start shortly</p>
+    </div>
   </div>
 
   <nav id="bottom-nav">
@@ -94,95 +122,150 @@
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidm1nY2tua3dzdWNzdGVkaWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODgwMjQsImV4cCI6MjA4MzU2NDAyNH0.OhfvqWaGLwNvIJq8TBDomdtKWDII5MvC6zhKKJBUD9Q';
     const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-    // ── League display config — add new leagues here ──────────────────────
-    const LEAGUE_META = {
+    // ── League metadata — maps league ID to display info and leaderboard file ──────────
+    const LEADERBOARD_CONFIG = {
       '1in15': {
+        name:     '1in15 Arena',
         emoji:    '🐔',
-        file:     '1in15leaderboard.html',
-        subtitle: '15 PLAYERS · 1 WINNER',
         prize:    '🐔 1 BROILER CHICKEN',
+        subtitle: 'CHICKEN LEAGUE · 15 PLAYERS',
+        file:     '1in15leaderboard.html',
       },
       '10in200': {
+        name:     '10in200 Arena',
         emoji:    '🏆',
+        prize:    '🐔 TOP 10 WIN',
+        subtitle: 'CHICKEN LEAGUE · 200 PLAYERS',
         file:     '10in200leaderboard.html',
-        subtitle: '200 PLAYERS · TOP 10 WIN',
-        prize:    '🐔 × 10 BROILER CHICKENS',
       },
     };
 
-    function getMeta(id, field, fallback) {
-      return LEAGUE_META[id]?.[field] ?? fallback;
-    }
+    let knownArenas = {};
+    let firstLoad = true;
 
-    function renderLeagues(leagues) {
-      const list  = document.getElementById('league-list');
-      const empty = document.getElementById('empty-msg');
-      list.innerHTML = '';
-
-      if (!leagues.length) {
-        empty.classList.remove('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-
-      leagues.forEach((league, idx) => {
-        const card = document.createElement('a');
-        card.href      = getMeta(league.id, 'file', `${league.id}leaderboard.html`);
-        card.className = 'league-card';
-        card.style.animationDelay = `${idx * 60}ms`;
-        card.innerHTML = `
-          <div class="flex items-center gap-4">
-            <div class="league-icon">${getMeta(league.id, 'emoji', '🏆')}</div>
-            <div>
-              <p class="orbitron font-black text-sm tracking-tight">${league.league_name}</p>
-              <p class="text-zinc-500 text-[9px] orbitron tracking-widest mt-0.5">
-                CHICKEN LEAGUE · ${getMeta(league.id, 'subtitle', 'LEAGUE')}
-              </p>
-              <p class="text-yellow-400/70 text-[8px] orbitron mt-0.5">
-                PRIZE: ${getMeta(league.id, 'prize', '—')}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-            <span class="text-[9px] orbitron text-green-400 font-bold">LIVE</span>
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.3)" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>`;
-        list.appendChild(card);
-      });
-    }
-
-    async function loadLeagues() {
+    // ── Fetch all active arenas from leagues_registry ──────────────────────────────────
+    // Strategy: Show leaderboard links when:
+    // 1. is_active = true (arena is currently open, leaderboard has live scores)
+    // 2. start_time has passed (timer-based activation for future support)
+    async function fetchArenas() {
       const { data, error } = await sb
         .from('leagues_registry')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) return;
+      if (error) {
+        console.error('Error fetching leagues:', error);
+        return;
+      }
 
+      const fresh = {};
       const now = new Date();
-      // Show leagues that are either:
-      // (a) explicitly marked is_active = true by admin   — "open arena now" or countdown auto-flip
-      // (b) have a start_time that has already passed      — timer-based auto-detection (even if admin's browser closed)
-      const active = (data || []).filter(l =>
-        l.is_active || (l.start_time && new Date(l.start_time) <= now)
-      );
 
-      renderLeagues(active);
+      (data || []).forEach(league => {
+        // Show if:
+        // (a) is_active = true (admin opened the arena)
+        // (b) start_time has passed (timer-based auto-open)
+        const isOpen = league.is_active || (league.start_time && new Date(league.start_time) <= now);
+
+        if (!isOpen) return; // Skip inactive arenas
+
+        const cfg = LEADERBOARD_CONFIG[league.id] || {};
+        fresh[league.id] = {
+          id:       league.id,
+          name:     cfg.name || league.league_name || league.id.toUpperCase(),
+          emoji:    cfg.emoji || '🏆',
+          prize:    cfg.prize || '—',
+          subtitle: cfg.subtitle || 'CHICKEN LEAGUE',
+          file:     cfg.file || `${league.id}leaderboard.html`,
+          isNew:    !knownArenas[league.id],
+          start_time: league.start_time,
+        };
+      });
+
+      const prevIds = Object.keys(knownArenas);
+      knownArenas = fresh;
+      renderArenas(prevIds);
+      firstLoad = false;
     }
 
-    // ── Realtime: re-render on any leagues_registry change ─────────────────
+    // ── Render all leaderboard cards ───────────────────────────────────────────────────
+    function renderArenas(prevIds = []) {
+      const list = document.getElementById('league-list');
+      const empty = document.getElementById('empty-msg');
+      const skelWrap = document.getElementById('skeleton-wrap');
+
+      skelWrap.style.display = 'none';
+      list.style.display = 'flex';
+      list.style.flexDirection = 'column';
+      list.style.gap = '12px';
+
+      const arenas = Object.values(knownArenas);
+
+      // Sort: by creation order (or add more sophisticated sorting if needed)
+      arenas.sort((a, b) => {
+        const aTime = a.start_time ? new Date(a.start_time) : new Date(0);
+        const bTime = b.start_time ? new Date(b.start_time) : new Date(0);
+        return aTime - bTime;
+      });
+
+      if (arenas.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      list.innerHTML = '';
+      arenas.forEach((arena, idx) => {
+        const card = buildArenaCard(arena, !prevIds.includes(arena.id) && !firstLoad);
+        card.style.animationDelay = `${idx * 60}ms`;
+        list.appendChild(card);
+      });
+    }
+
+    // ── Build a single leaderboard card ────────────────────────────────────────────────
+    function buildArenaCard(arena, isNewArrival) {
+      const card = document.createElement('a');
+      card.href = arena.file;
+      card.className = `league-card is-live ${isNewArrival ? 'new-flash' : ''}`;
+      card.innerHTML = `
+        <div class="flex items-center gap-4">
+          <div class="league-icon">${arena.emoji}</div>
+          <div>
+            <p class="orbitron font-black text-sm tracking-tight">${arena.name}</p>
+            <p class="text-zinc-500 text-[9px] orbitron tracking-widest mt-0.5">
+              ${arena.subtitle}
+            </p>
+            <p class="text-yellow-400 text-[9px] orbitron mt-0.5 font-bold">
+              PRIZE: ${arena.prize}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+          <span class="text-[9px] orbitron badge-live font-bold">LIVE</span>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.3)" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>`;
+      return card;
+    }
+
+    // ── Realtime: watch leagues_registry for changes ────────────────────────────────────
+    // This will trigger whenever:
+    // - Admin marks is_active = true (opening the arena)
+    // - Admin updates start_time (timer-based opening)
+    // - Any league configuration changes
     sb.channel('leaderboard-hub')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leagues_registry' }, loadLeagues)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leagues_registry' }, fetchArenas)
       .subscribe();
 
-    // ── Poll every 30s to auto-detect timer-based start_time passing ───────
-    // (handles case where admin's browser was closed before timer fired)
-    setInterval(loadLeagues, 30_000);
+    // ── Poll every 30s to auto-detect timer-based start_time passing ─────────────────
+    // (handles case where user's browser was open but leagues_registry realtime didn't fire)
+    setInterval(fetchArenas, 30_000);
 
-    loadLeagues();
+    // Initial load
+    fetchArenas();
 
     // Active page highlight
     (function() {
