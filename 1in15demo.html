@@ -13,186 +13,85 @@
             background: var(--bg); color: white; font-family: 'Inter', sans-serif;
             min-height: 100dvh; overflow: hidden; touch-action: none;
             background-image: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59,130,246,0.07) 0%, transparent 60%);
+            display: flex; flex-direction: column;
         }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-
-        /* ── Demo badge ── */
-        #demo-badge {
-            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-            z-index: 40; background: rgba(59,130,246,0.12);
-            border: 1px solid rgba(59,130,246,0.3); border-radius: 99px;
-            padding: 4px 14px;
-            font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
-            font-weight: 700; letter-spacing: 0.2em; color: var(--blue);
-        }
-
-        /* ── HUD ── */
-        #hud {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 16px 10px; max-width: 400px; margin: 0 auto;
-        }
-        .hud-pill {
-            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 999px; padding: 6px 14px;
-            display: flex; flex-direction: column; align-items: center; min-width: 72px;
-        }
-        #timer-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+        #hud { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+        .hud-pill { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 6px 12px; display: flex; flex-direction: column; align-items: center; min-width: 65px; }
+        #timer-wrap { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
         #timer-wrap svg { transform: rotate(-90deg); position: absolute; top: 0; left: 0; }
-        .arc-bg  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
-        .arc-fill {
-            fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round;
-            stroke-dasharray: 176; stroke-dashoffset: 0;
-            transition: stroke-dashoffset 1s linear, stroke 0.5s;
-            filter: drop-shadow(0 0 5px var(--gold));
-        }
+        .arc-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 3; }
+        .arc-fill { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 150; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.5s; filter: drop-shadow(0 0 5px var(--gold)); }
         .arc-fill.danger { stroke: #ef4444; filter: drop-shadow(0 0 5px #ef4444); }
-        #timer-text {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: var(--gold);
-        }
+        #timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 900; color: var(--gold); }
         #timer-text.danger { color: #ef4444; }
-
-        /* ── Board ── */
-        #board-wrap { max-width: 400px; margin: 4px auto 0; padding: 0 12px; }
-        #arena-container {
-            position: relative; border-radius: 1.5rem;
-            background: #050505; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;
-        }
-        #grid-bg { position: absolute; top: 0; left: 0; display: grid; z-index: 1; pointer-events: none; }
+        #board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; min-height: 0; }
+        #arena-container { position: relative; border-radius: 1.5rem; background: #050505; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; width: 100%; height: 100%; max-width: 600px; max-height: 600px; }
+        #grid-bg { position: absolute; top: 0; left: 0; display: grid; z-index: 1; pointer-events: none; width: 100%; height: 100%; }
         .grid-cell { border: 0.5px dotted rgba(255,255,255,0.07); }
-        #item-layer { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+        #item-layer { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; width: 100%; height: 100%; }
         #touch-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; touch-action: none; }
-        .item {
-            position: absolute; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.12s cubic-bezier(0.4,0,0.2,1);
-            pointer-events: none; user-select: none;
-        }
+        .item { position: absolute; display: flex; align-items: center; justify-content: center; transition: transform 0.12s cubic-bezier(0.4,0,0.2,1); pointer-events: none; user-select: none; }
         .match-vanish { transform: scale(0) !important; opacity: 0; transition: transform 0.15s ease, opacity 0.15s ease !important; }
-        .score-pop {
-            position: fixed; font-family: 'Orbitron', sans-serif; font-weight: 900;
-            color: var(--gold); font-size: 1.1rem; pointer-events: none; z-index: 99;
-            animation: score-float 0.9s ease forwards;
-        }
-        @keyframes score-float {
-            0%   { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-55px) scale(1.3); }
-        }
-
-        /* ── Intro ── */
-        #intro {
-            position: fixed; inset: 0; z-index: 60; background: rgba(5,5,5,0.97);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        #intro-number {
-            font-family: 'Orbitron', sans-serif; font-size: 7rem; font-weight: 900;
-            color: var(--gold); text-shadow: 0 0 60px var(--glow); animation: intro-pop 0.8s ease;
-        }
-        @keyframes intro-pop {
-            0%   { transform: scale(2); opacity: 0; }
-            50%  { transform: scale(0.9); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
-        /* ── Game over ── */
-        #gameover {
-            position: fixed; inset: 0; z-index: 50; background: rgba(5,5,5,0.95);
-            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
-        }
+        .score-pop { position: fixed; font-family: 'Orbitron', sans-serif; font-weight: 900; color: var(--gold); font-size: 1.1rem; pointer-events: none; z-index: 99; animation: score-float 0.9s ease forwards; }
+        @keyframes score-float { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-55px) scale(1.3); } }
+        #intro { position: fixed; inset: 0; z-index: 60; background: rgba(5,5,5,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #intro-number { font-family: 'Orbitron', sans-serif; font-size: 7rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 60px var(--glow); animation: intro-pop 0.8s ease; }
+        @keyframes intro-pop { 0% { transform: scale(2); opacity: 0; } 50% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1); } }
+        #gameover { position: fixed; inset: 0; z-index: 50; background: rgba(5,5,5,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
         #gameover.show { display: flex; }
         .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-
-        /* ── Personal best badge ── */
-        .best-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);
-            border-radius: 99px; padding: 4px 14px;
-            font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700;
-            color: var(--gold); margin-bottom: 18px;
-        }
-        .new-best {
-            background: rgba(251,191,36,0.18) !important;
-            border-color: rgba(251,191,36,0.5) !important;
-            animation: best-pulse 1s ease 3;
-        }
-        @keyframes best-pulse {
-            0%,100% { box-shadow: none; }
-            50%      { box-shadow: 0 0 18px rgba(251,191,36,0.4); }
-        }
+        .best-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 99px; padding: 4px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700; color: var(--gold); margin-bottom: 18px; }
+        .new-best { background: rgba(251,191,36,0.18) !important; border-color: rgba(251,191,36,0.5) !important; animation: best-pulse 1s ease 3; }
+        @keyframes best-pulse { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 18px rgba(251,191,36,0.4); } }
     </style>
 </head>
 <body>
 
-<!-- ── DEMO MODE BADGE ── -->
-
-
-<!-- ── INTRO ── -->
 <div id="intro">
     <p class="orbitron text-[10px] text-zinc-500 tracking-widest mb-6">ARENA STARTING IN</p>
     <div id="intro-number">3</div>
     <p class="orbitron text-sm text-zinc-400 mt-6 tracking-widest" id="intro-label">GET READY</p>
 </div>
 
-<!-- ── GAME OVER ── -->
 <div id="gameover">
     <div class="glass rounded-[2rem] p-7 w-full max-w-sm text-center">
         <div class="text-5xl mb-3">🐔</div>
         <h2 class="orbitron text-xl font-black uppercase tracking-tighter mb-1">Time's Up!</h2>
         <p class="text-zinc-500 text-[9px] orbitron tracking-widest mb-5">PRACTICE SESSION COMPLETE</p>
-
-        <!-- Final score -->
         <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-2xl p-4 mb-4">
             <p class="text-[9px] orbitron text-zinc-500 mb-1">FINAL SCORE</p>
             <p id="final-score" class="orbitron text-4xl font-black text-yellow-400">0</p>
         </div>
-
-        <!-- Personal best -->
         <div id="best-row" class="best-badge">
             <span>🏆</span>
             <span>BEST: <span id="best-score-display">0</span></span>
         </div>
-        <p id="new-best-label" class="text-[9px] orbitron text-yellow-400 tracking-widest mb-4" style="display:none;">
-            ✨ NEW PERSONAL BEST!
-        </p>
-
-        <!-- Replay tip -->
-        <p class="text-[9px] orbitron text-zinc-600 mb-4 tracking-widest">
-            UNLIMITED REPLAYS · NO ACCOUNT NEEDED
-        </p>
-
-        <!-- Actions -->
-        <button id="play-again-btn" onclick="replayGame()"
-            class="w-full py-4 mb-3 rounded-2xl font-black uppercase italic orbitron tracking-tighter"
-            style="background:var(--blue); color:#fff; border:none; box-shadow:0 0 18px var(--blue-glow); font-size:0.82rem; cursor:pointer;">
-            PLAY AGAIN →
-        </button>
-        <button onclick="window.location.href='1in15access.html'"
-            class="w-full py-3 rounded-2xl font-black uppercase orbitron tracking-tighter cursor-pointer"
-            style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#666; font-size:0.7rem;">
-            ← BACK TO LOBBY
-        </button>
+        <p id="new-best-label" class="text-[9px] orbitron text-yellow-400 tracking-widest mb-4" style="display:none;">✨ NEW PERSONAL BEST!</p>
+        <p class="text-[9px] orbitron text-zinc-600 mb-4 tracking-widest">UNLIMITED REPLAYS · NO ACCOUNT NEEDED</p>
+        <button id="play-again-btn" onclick="replayGame()" class="w-full py-4 mb-3 rounded-2xl font-black uppercase italic orbitron tracking-tighter" style="background:var(--blue); color:#fff; border:none; box-shadow:0 0 18px var(--blue-glow); font-size:0.82rem; cursor:pointer;">PLAY AGAIN →</button>
+        <button onclick="window.location.href='1in15portal.html'" class="w-full py-3 rounded-2xl font-black uppercase orbitron tracking-tighter cursor-pointer" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#666; font-size:0.7rem;">← BACK TO PORTAL</button>
     </div>
 </div>
 
-<!-- ── HUD ── -->
 <div id="hud">
     <div class="hud-pill">
-        <span class="text-[8px] orbitron text-zinc-500 tracking-widest">SCORE</span>
-        <span id="score-display" class="orbitron text-lg font-black text-yellow-400">0</span>
+        <span class="text-[7px] orbitron text-zinc-500 tracking-widest">SCORE</span>
+        <span id="score-display" class="orbitron text-base font-black text-yellow-400">0</span>
     </div>
     <div id="timer-wrap">
-        <svg width="64" height="64" viewBox="0 0 64 64">
-            <circle class="arc-bg"   cx="32" cy="32" r="28"/>
-            <circle class="arc-fill" id="arc" cx="32" cy="32" r="28"/>
+        <svg width="56" height="56" viewBox="0 0 56 56">
+            <circle class="arc-bg" cx="28" cy="28" r="24"/>
+            <circle class="arc-fill" id="arc" cx="28" cy="28" r="24"/>
         </svg>
         <div id="timer-text">60</div>
     </div>
     <div class="hud-pill">
-        <span class="text-[8px] orbitron text-zinc-500 tracking-widest">COMBO</span>
-        <span id="combo-display" class="orbitron text-lg font-black text-white">x1</span>
+        <span class="text-[7px] orbitron text-zinc-500 tracking-widest">COMBO</span>
+        <span id="combo-display" class="orbitron text-base font-black text-white">x1</span>
     </div>
 </div>
 
-<!-- ── BOARD ── -->
 <div id="board-wrap">
     <div id="arena-container">
         <div id="grid-bg"></div>
@@ -201,347 +100,256 @@
     </div>
 </div>
 
-
 <script>
-    /* ─────────────────────────────────────────
-       CONSTANTS — identical to the real arena
-    ───────────────────────────────────────── */
-    const COLS       = 6;
-    const ROWS       = 9;
-    const GAME_SECS  = 60;
-    const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
-    const ITEM_COUNT = ITEMS.length;
-    const SWAP_MS    = 120;
-    const VANISH_MS  = 150;
-    const GRAVITY_MS = 160;
+const COLS = 6, ROWS = 6, GAME_SECS = 60, ITEMS = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'], ITEM_COUNT = ITEMS.length;
+const SWAP_MS = 120, VANISH_MS = 150, GRAVITY_MS = 160;
+const BEST_KEY = 'chicken_league_demo_best_1in15';
+function loadBest() { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10); }
+function saveBest(val) { localStorage.setItem(BEST_KEY, val); }
 
-    /* ─────────────────────────────────────────
-       PERSONAL BEST — stored locally per device
-    ───────────────────────────────────────── */
-    const BEST_KEY = 'chicken_league_demo_best';
-    function loadBest()    { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10); }
-    function saveBest(val) { localStorage.setItem(BEST_KEY, val); }
+let board = [], score = 0, combo = 1, timeLeft = GAME_SECS, gameTimer = null, gameLive = false, isProcessing = false, CELL = 48, watchdogTimer = null;
 
-    /* ─────────────────────────────────────────
-       GAME STATE
-    ───────────────────────────────────────── */
-    let board = [], score = 0, combo = 1, timeLeft = GAME_SECS;
-    let gameTimer = null, gameLive = false, isProcessing = false, CELL = 48;
+function armWatchdog() { clearTimeout(watchdogTimer); watchdogTimer = setTimeout(() => { if (isProcessing && gameLive) isProcessing = false; }, 2000); }
+function disarmWatchdog() { clearTimeout(watchdogTimer); }
 
-    let watchdogTimer = null;
-    function armWatchdog() {
-        clearTimeout(watchdogTimer);
-        watchdogTimer = setTimeout(() => {
-            if (isProcessing && gameLive) { console.warn('[WATCHDOG] force releasing'); isProcessing = false; }
-        }, 2000);
+function computeLayout() {
+    const wrap = document.getElementById('board-wrap'), container = document.getElementById('arena-container');
+    const maxDim = Math.min(wrap.clientHeight, wrap.clientWidth);
+    CELL = Math.floor((maxDim - 30) / COLS);
+    const boardSize = CELL * COLS;
+    container.style.width = boardSize + 'px'; container.style.height = boardSize + 'px';
+    const gridBg = document.getElementById('grid-bg');
+    gridBg.style.gridTemplateColumns = `repeat(${COLS}, ${CELL}px)`;
+    gridBg.innerHTML = '';
+    for (let i = 0; i < ROWS * COLS; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell'; cell.style.width = CELL + 'px'; cell.style.height = CELL + 'px';
+        gridBg.appendChild(cell);
     }
-    function disarmWatchdog() { clearTimeout(watchdogTimer); }
+}
 
-    /* ─────────────────────────────────────────
-       LAYOUT
-    ───────────────────────────────────────── */
-    function computeLayout() {
-        const wrap = document.getElementById('board-wrap');
-        const containerW = wrap.clientWidth - 24;
-        CELL = Math.floor((containerW - 30) / COLS);
-        const container = document.getElementById('arena-container');
-        container.style.width  = (CELL * COLS) + 'px';
-        container.style.height = (CELL * ROWS) + 'px';
-        const gridBg = document.getElementById('grid-bg');
-        gridBg.style.gridTemplateColumns = `repeat(${COLS}, ${CELL}px)`;
-        gridBg.innerHTML = '';
-        for (let i = 0; i < ROWS * COLS; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.style.width = CELL + 'px'; cell.style.height = CELL + 'px';
-            gridBg.appendChild(cell);
+function typeAt(r, c) { if (r < 0 || r >= ROWS || c < 0 || c >= COLS || !board[r] || !board[r][c]) return -1; return board[r][c].type; }
+function randItem() { return Math.floor(Math.random() * ITEM_COUNT); }
+
+function initBoard() {
+    board = [];
+    document.getElementById('item-layer').innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+        board[r] = [];
+        for (let c = 0; c < COLS; c++) {
+            let type, attempts = 0;
+            do { type = randItem(); attempts++; if (attempts > 50) break; }
+            while ((typeAt(r,c-1)===type && typeAt(r,c-2)===type) || (typeAt(r-1,c)===type && typeAt(r-2,c)===type));
+            board[r][c] = makeEl(r, c, type, false);
         }
     }
+}
 
-    /* ─────────────────────────────────────────
-       BOARD LOGIC — identical to arena
-    ───────────────────────────────────────── */
-    function typeAt(r, c) {
-        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return -1;
-        if (!board[r] || !board[r][c]) return -1;
-        return board[r][c].type;
-    }
-    function randItem() { return Math.floor(Math.random() * ITEM_COUNT); }
-
-    function initBoard() {
-        board = [];
-        document.getElementById('item-layer').innerHTML = '';
-        for (let r = 0; r < ROWS; r++) {
-            board[r] = [];
-            for (let c = 0; c < COLS; c++) {
-                let type, attempts = 0;
-                do { type = randItem(); attempts++; if (attempts > 50) break; }
-                while ((typeAt(r,c-1)===type && typeAt(r,c-2)===type) || (typeAt(r-1,c)===type && typeAt(r-2,c)===type));
-                board[r][c] = makeEl(r, c, type, false);
-            }
-        }
-    }
-
-    function makeEl(r, c, type, fromAbove) {
-        const el = document.createElement('div');
-        el.className = 'item';
-        el.innerHTML = ITEMS[type];
-        el.style.width = CELL + 'px'; el.style.height = CELL + 'px';
-        el.style.fontSize = Math.floor(CELL * 0.52) + 'px';
-        if (fromAbove) {
-            el.style.transition = 'none';
-            el.style.transform  = `translate(${c * CELL}px, ${-CELL}px)`;
-            document.getElementById('item-layer').appendChild(el);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                el.style.transition = `transform ${GRAVITY_MS}ms cubic-bezier(0.4,0,0.2,1)`;
-                el.style.transform  = `translate(${c * CELL}px, ${r * CELL}px)`;
-            }));
-        } else {
+function makeEl(r, c, type, fromAbove) {
+    const el = document.createElement('div');
+    el.className = 'item'; el.innerHTML = ITEMS[type]; el.style.width = CELL + 'px'; el.style.height = CELL + 'px';
+    el.style.fontSize = Math.floor(CELL * 0.52) + 'px';
+    if (fromAbove) {
+        el.style.transition = 'none'; el.style.transform = `translate(${c * CELL}px, ${-CELL}px)`;
+        document.getElementById('item-layer').appendChild(el);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            el.style.transition = `transform ${GRAVITY_MS}ms cubic-bezier(0.4,0,0.2,1)`;
             el.style.transform = `translate(${c * CELL}px, ${r * CELL}px)`;
-            document.getElementById('item-layer').appendChild(el);
-        }
-        return { type, el };
+        }));
+    } else {
+        el.style.transform = `translate(${c * CELL}px, ${r * CELL}px)`;
+        document.getElementById('item-layer').appendChild(el);
     }
+    return { type, el };
+}
 
-    function findMatches() {
-        const matched = new Set();
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS - 2; c++) {
-                const t = typeAt(r,c); if (t < 0) continue;
-                if (typeAt(r,c+1)===t && typeAt(r,c+2)===t) {
-                    let end = c+2; while (end+1 < COLS && typeAt(r,end+1)===t) end++;
-                    for (let x = c; x <= end; x++) matched.add(`${r},${x}`);
-                }
+function findMatches() {
+    const matched = new Set();
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS - 2; c++) {
+            const t = typeAt(r,c); if (t < 0) continue;
+            if (typeAt(r,c+1)===t && typeAt(r,c+2)===t) {
+                let end = c+2; while (end+1 < COLS && typeAt(r,end+1)===t) end++;
+                for (let x = c; x <= end; x++) matched.add(`${r},${x}`);
             }
         }
-        for (let c = 0; c < COLS; c++) {
-            for (let r = 0; r < ROWS - 2; r++) {
-                const t = typeAt(r,c); if (t < 0) continue;
-                if (typeAt(r+1,c)===t && typeAt(r+2,c)===t) {
-                    let end = r+2; while (end+1 < ROWS && typeAt(end+1,c)===t) end++;
-                    for (let x = r; x <= end; x++) matched.add(`${x},${c}`);
-                }
+    }
+    for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS - 2; r++) {
+            const t = typeAt(r,c); if (t < 0) continue;
+            if (typeAt(r+1,c)===t && typeAt(r+2,c)===t) {
+                let end = r+2; while (end+1 < ROWS && typeAt(end+1,c)===t) end++;
+                for (let x = r; x <= end; x++) matched.add(`${x},${c}`);
             }
         }
-        return matched;
     }
+    return matched;
+}
 
-    async function processMatches() {
-        const matched = findMatches();
-        if (matched.size === 0) { combo = 1; updateCombo(); isProcessing = false; disarmWatchdog(); return; }
-        const base  = matched.size * 10;
-        const bonus = matched.size >= 5 ? 3 : matched.size === 4 ? 2 : 1;
-        const gained = base * bonus * combo;
-        score += gained; updateScore(); showScorePop(gained);
-        combo = Math.min(combo + 1, 8); updateCombo();
-        matched.forEach(key => {
-            const [r,c] = key.split(',').map(Number);
-            if (board[r][c]?.el) board[r][c].el.classList.add('match-vanish');
-        });
-        await delay(VANISH_MS);
-        matched.forEach(key => {
-            const [r,c] = key.split(',').map(Number);
-            if (board[r][c]?.el) board[r][c].el.remove();
-            board[r][c] = null;
-        });
-        for (let c = 0; c < COLS; c++) {
-            let empty = 0;
-            for (let r = ROWS-1; r >= 0; r--) {
-                if (board[r][c] === null) { empty++; }
-                else if (empty > 0) {
-                    const item = board[r][c]; board[r+empty][c] = item; board[r][c] = null;
-                    item.el.style.transition = `transform ${GRAVITY_MS}ms cubic-bezier(0.4,0,0.2,1)`;
-                    item.el.style.transform  = `translate(${c*CELL}px, ${(r+empty)*CELL}px)`;
-                }
+async function processMatches() {
+    const matched = findMatches();
+    if (matched.size === 0) { combo = 1; updateCombo(); isProcessing = false; disarmWatchdog(); return; }
+    const base = matched.size * 10, bonus = matched.size >= 5 ? 3 : matched.size === 4 ? 2 : 1;
+    const gained = base * bonus * combo;
+    score += gained; updateScore(); showScorePop(gained); combo = Math.min(combo + 1, 8); updateCombo();
+    matched.forEach(key => { const [r,c] = key.split(',').map(Number); if (board[r][c]?.el) board[r][c].el.classList.add('match-vanish'); });
+    await delay(VANISH_MS);
+    matched.forEach(key => { const [r,c] = key.split(',').map(Number); if (board[r][c]?.el) board[r][c].el.remove(); board[r][c] = null; });
+    for (let c = 0; c < COLS; c++) {
+        let empty = 0;
+        for (let r = ROWS-1; r >= 0; r--) {
+            if (board[r][c] === null) empty++;
+            else if (empty > 0) {
+                const item = board[r][c]; board[r+empty][c] = item; board[r][c] = null;
+                item.el.style.transition = `transform ${GRAVITY_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+                item.el.style.transform = `translate(${c*CELL}px, ${(r+empty)*CELL}px)`;
             }
-            for (let i = 0; i < empty; i++) board[i][c] = makeEl(i, c, randItem(), true);
         }
-        await delay(GRAVITY_MS + 20);
-        await processMatches();
+        for (let i = 0; i < empty; i++) board[i][c] = makeEl(i, c, randItem(), true);
     }
+    await delay(GRAVITY_MS + 20);
+    await processMatches();
+}
 
-    async function trySwap(r1,c1,r2,c2) {
-        if (isProcessing || !gameLive) return;
-        if (Math.abs(r1-r2) + Math.abs(c1-c2) !== 1) return;
-        isProcessing = true; armWatchdog();
-        const item1 = board[r1][c1], item2 = board[r2][c2];
-        item1.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
-        item2.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
-        item1.el.style.transform = `translate(${c2*CELL}px, ${r2*CELL}px)`;
-        item2.el.style.transform = `translate(${c1*CELL}px, ${r1*CELL}px)`;
-        board[r1][c1] = item2; board[r2][c2] = item1;
-        await delay(SWAP_MS);
-        if (findMatches().size === 0) {
-            item1.el.style.transform = `translate(${c1*CELL}px, ${r1*CELL}px)`;
-            item2.el.style.transform = `translate(${c2*CELL}px, ${r2*CELL}px)`;
-            board[r1][c1] = item1; board[r2][c2] = item2;
-            await delay(SWAP_MS); isProcessing = false; disarmWatchdog();
-        } else { await processMatches(); }
+async function trySwap(r1,c1,r2,c2) {
+    if (isProcessing || !gameLive) return;
+    if (Math.abs(r1-r2) + Math.abs(c1-c2) !== 1) return;
+    isProcessing = true; armWatchdog();
+    const item1 = board[r1][c1], item2 = board[r2][c2];
+    item1.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+    item2.el.style.transition = `transform ${SWAP_MS}ms cubic-bezier(0.4,0,0.2,1)`;
+    item1.el.style.transform = `translate(${c2*CELL}px, ${r2*CELL}px)`;
+    item2.el.style.transform = `translate(${c1*CELL}px, ${r1*CELL}px)`;
+    board[r1][c1] = item2; board[r2][c2] = item1;
+    await delay(SWAP_MS);
+    if (findMatches().size === 0) {
+        item1.el.style.transform = `translate(${c1*CELL}px, ${r1*CELL}px)`;
+        item2.el.style.transform = `translate(${c2*CELL}px, ${r2*CELL}px)`;
+        board[r1][c1] = item1; board[r2][c2] = item2;
+        await delay(SWAP_MS); isProcessing = false; disarmWatchdog();
+    } else { await processMatches(); }
+}
+
+let tStartX, tStartY, tStartR, tStartC;
+document.getElementById('touch-mask').addEventListener('touchstart', e => {
+    if (!gameLive || isProcessing) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    tStartX = e.touches[0].clientX - rect.left; tStartY = e.touches[0].clientY - rect.top;
+    tStartC = Math.floor(tStartX / CELL); tStartR = Math.floor(tStartY / CELL);
+}, { passive: true });
+
+document.getElementById('touch-mask').addEventListener('touchend', e => {
+    if (!gameLive || isProcessing || tStartR === undefined) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = (e.changedTouches[0].clientX - rect.left) - tStartX;
+    const dy = (e.changedTouches[0].clientY - rect.top) - tStartY;
+    const THR = 18;
+    let tr = tStartR, tc = tStartC;
+    if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > THR) tc += dx > 0 ? 1 : -1; }
+    else { if (Math.abs(dy) > THR) tr += dy > 0 ? 1 : -1; }
+    if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS && (tr !== tStartR || tc !== tStartC)) trySwap(tStartR, tStartC, tr, tc);
+    tStartR = undefined;
+}, { passive: true });
+
+let mStartX, mStartY, mStartR, mStartC, mouseDown = false;
+document.getElementById('touch-mask').addEventListener('mousedown', e => {
+    if (!gameLive || isProcessing) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    mStartX = e.clientX - rect.left; mStartY = e.clientY - rect.top;
+    mStartC = Math.floor(mStartX / CELL); mStartR = Math.floor(mStartY / CELL); mouseDown = true;
+});
+
+document.getElementById('touch-mask').addEventListener('mouseup', e => {
+    if (!gameLive || isProcessing || !mouseDown) return;
+    mouseDown = false;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = (e.clientX - rect.left) - mStartX, dy = (e.clientY - rect.top) - mStartY;
+    const THR = 18;
+    let tr = mStartR, tc = mStartC;
+    if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > THR) tc += dx > 0 ? 1 : -1; }
+    else { if (Math.abs(dy) > THR) tr += dy > 0 ? 1 : -1; }
+    if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS && (tr !== mStartR || tc !== mStartC)) trySwap(mStartR, mStartC, tr, tc);
+});
+
+function updateScore() { document.getElementById('score-display').innerText = score; }
+function updateCombo() {
+    const el = document.getElementById('combo-display');
+    el.innerText = `x${combo}`;
+    el.style.color = combo >= 4 ? '#fbbf24' : combo >= 2 ? '#a78bfa' : 'white';
+}
+function showScorePop(pts) {
+    const pop = document.createElement('div');
+    pop.className = 'score-pop'; pop.innerText = `+${pts}`;
+    pop.style.left = (Math.random() * 55 + 20) + '%'; pop.style.top = '110px';
+    document.body.appendChild(pop); setTimeout(() => pop.remove(), 950);
+}
+
+function startGameTimer() {
+    const arc = document.getElementById('arc'), timerText = document.getElementById('timer-text');
+    gameTimer = setInterval(() => {
+        timeLeft--;
+        arc.style.strokeDashoffset = 150 * (1 - timeLeft / GAME_SECS);
+        timerText.innerText = timeLeft;
+        if (timeLeft <= 10) { arc.classList.add('danger'); timerText.classList.add('danger'); }
+        if (timeLeft <= 0) { clearInterval(gameTimer); gameLive = false; isProcessing = true; endGame(); }
+    }, 1000);
+}
+
+function endGame() {
+    disarmWatchdog();
+    const prev = loadBest();
+    const isNewBest = score > prev;
+    if (isNewBest) saveBest(score);
+    const displayBest = isNewBest ? score : prev;
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('best-score-display').innerText = displayBest;
+    const bestRow = document.getElementById('best-row'), newBestLabel = document.getElementById('new-best-label');
+    if (isNewBest) {
+        bestRow.classList.add('new-best'); newBestLabel.style.display = 'block';
+    } else {
+        bestRow.classList.remove('new-best'); newBestLabel.style.display = 'none';
     }
+    document.getElementById('gameover').classList.add('show');
+}
 
-    /* ─────────────────────────────────────────
-       TOUCH / MOUSE INPUT — identical to arena
-    ───────────────────────────────────────── */
-    let tStartX, tStartY, tStartR, tStartC;
-    document.getElementById('touch-mask').addEventListener('touchstart', e => {
-        if (!gameLive || isProcessing) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        tStartX = e.touches[0].clientX - rect.left; tStartY = e.touches[0].clientY - rect.top;
-        tStartC = Math.floor(tStartX / CELL); tStartR = Math.floor(tStartY / CELL);
-    }, { passive: true });
-    document.getElementById('touch-mask').addEventListener('touchend', e => {
-        if (!gameLive || isProcessing || tStartR === undefined) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const dx = (e.changedTouches[0].clientX - rect.left) - tStartX;
-        const dy = (e.changedTouches[0].clientY - rect.top)  - tStartY;
-        const THR = 18;
-        let tr = tStartR, tc = tStartC;
-        if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > THR) tc += dx > 0 ? 1 : -1; }
-        else { if (Math.abs(dy) > THR) tr += dy > 0 ? 1 : -1; }
-        if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS && (tr !== tStartR || tc !== tStartC)) trySwap(tStartR, tStartC, tr, tc);
-        tStartR = undefined;
-    }, { passive: true });
+function replayGame() {
+    score = 0; combo = 1; timeLeft = GAME_SECS; gameLive = false;
+    isProcessing = false; clearInterval(gameTimer); gameTimer = null;
+    updateScore(); updateCombo();
+    const arc = document.getElementById('arc'), timerText = document.getElementById('timer-text');
+    arc.style.strokeDashoffset = 0; arc.classList.remove('danger');
+    timerText.innerText = GAME_SECS; timerText.classList.remove('danger');
+    document.getElementById('gameover').classList.remove('show');
+    initBoard(); runIntro();
+}
 
-    let mStartX, mStartY, mStartR, mStartC, mouseDown = false;
-    document.getElementById('touch-mask').addEventListener('mousedown', e => {
-        if (!gameLive || isProcessing) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        mStartX = e.clientX - rect.left; mStartY = e.clientY - rect.top;
-        mStartC = Math.floor(mStartX / CELL); mStartR = Math.floor(mStartY / CELL); mouseDown = true;
-    });
-    document.getElementById('touch-mask').addEventListener('mouseup', e => {
-        if (!gameLive || isProcessing || !mouseDown) return;
-        mouseDown = false;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const dx = (e.clientX - rect.left) - mStartX, dy = (e.clientY - rect.top) - mStartY;
-        const THR = 18;
-        let tr = mStartR, tc = mStartC;
-        if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > THR) tc += dx > 0 ? 1 : -1; }
-        else { if (Math.abs(dy) > THR) tr += dy > 0 ? 1 : -1; }
-        if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS && (tr !== mStartR || tc !== mStartC)) trySwap(mStartR, mStartC, tr, tc);
-    });
-
-    /* ─────────────────────────────────────────
-       HUD UPDATES — identical to arena
-    ───────────────────────────────────────── */
-    function updateScore() { document.getElementById('score-display').innerText = score; }
-    function updateCombo() {
-        const el = document.getElementById('combo-display');
-        el.innerText = `x${combo}`;
-        el.style.color = combo >= 4 ? '#fbbf24' : combo >= 2 ? '#a78bfa' : 'white';
-    }
-    function showScorePop(pts) {
-        const pop = document.createElement('div');
-        pop.className = 'score-pop'; pop.innerText = `+${pts}`;
-        pop.style.left = (Math.random() * 55 + 20) + '%'; pop.style.top = '110px';
-        document.body.appendChild(pop); setTimeout(() => pop.remove(), 950);
-    }
-
-    /* ─────────────────────────────────────────
-       TIMER — identical to arena
-    ───────────────────────────────────────── */
-    function startGameTimer() {
-        const arc = document.getElementById('arc'), timerText = document.getElementById('timer-text');
-        gameTimer = setInterval(async () => {
-            timeLeft--;
-            arc.style.strokeDashoffset = 176 * (1 - timeLeft / GAME_SECS);
-            timerText.innerText = timeLeft;
-            if (timeLeft <= 10) { arc.classList.add('danger'); timerText.classList.add('danger'); }
-            if (timeLeft <= 0)  { clearInterval(gameTimer); gameLive = false; isProcessing = true; endGame(); }
-        }, 1000);
-    }
-
-    /* ─────────────────────────────────────────
-       END GAME — no Supabase, local best only
-    ───────────────────────────────────────── */
-    function endGame() {
-        disarmWatchdog();
-
-        // Personal best check
-        const prev = loadBest();
-        const isNewBest = score > prev;
-        if (isNewBest) saveBest(score);
-        const displayBest = isNewBest ? score : prev;
-
-        document.getElementById('final-score').innerText = score;
-        document.getElementById('best-score-display').innerText = displayBest;
-
-        const bestRow = document.getElementById('best-row');
-        const newBestLabel = document.getElementById('new-best-label');
-        if (isNewBest) {
-            bestRow.classList.add('new-best');
-            newBestLabel.style.display = 'block';
-        } else {
-            bestRow.classList.remove('new-best');
-            newBestLabel.style.display = 'none';
+function runIntro() {
+    const intro = document.getElementById('intro'), numEl = document.getElementById('intro-number');
+    const labelEl = document.getElementById('intro-label');
+    intro.style.display = 'flex';
+    const steps = [
+        { text: '3', label: 'GET READY', ms: 900 },
+        { text: '2', label: 'STEADY...', ms: 900 },
+        { text: '1', label: 'ALMOST...', ms: 900 },
+        { text: 'GO', label: '🐔 MATCH TO WIN!', ms: 700 },
+    ];
+    let i = 0;
+    function next() {
+        if (i >= steps.length) {
+            intro.style.display = 'none'; gameLive = true; startGameTimer(); return;
         }
-
-        document.getElementById('gameover').classList.add('show');
+        const s = steps[i++];
+        numEl.style.animation = 'none'; void numEl.offsetWidth; numEl.style.animation = 'intro-pop 0.8s ease';
+        numEl.innerText = s.text; labelEl.innerText = s.label;
+        setTimeout(next, s.ms);
     }
+    next();
+}
 
-    /* ─────────────────────────────────────────
-       REPLAY — reset everything and go again
-    ───────────────────────────────────────── */
-    function replayGame() {
-        // Reset state
-        score = 0; combo = 1; timeLeft = GAME_SECS; gameLive = false;
-        isProcessing = false; clearInterval(gameTimer); gameTimer = null;
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-        // Reset HUD
-        updateScore(); updateCombo();
-        const arc = document.getElementById('arc');
-        const timerText = document.getElementById('timer-text');
-        arc.style.strokeDashoffset = 0;
-        arc.classList.remove('danger');
-        timerText.innerText = GAME_SECS;
-        timerText.classList.remove('danger');
-
-        // Hide game over
-        document.getElementById('gameover').classList.remove('show');
-
-        // Rebuild board and show intro again
-        initBoard();
-        runIntro();
-    }
-
-    /* ─────────────────────────────────────────
-       INTRO COUNTDOWN — identical to arena
-    ───────────────────────────────────────── */
-    function runIntro() {
-        const intro   = document.getElementById('intro');
-        const numEl   = document.getElementById('intro-number');
-        const labelEl = document.getElementById('intro-label');
-        intro.style.display = 'flex';
-        const steps = [
-            { text: '3', label: 'GET READY',        ms: 900 },
-            { text: '2', label: 'STEADY...',         ms: 900 },
-            { text: '1', label: 'ALMOST...',         ms: 900 },
-            { text: 'GO', label: '🐔 MATCH TO WIN!', ms: 700 },
-        ];
-        let i = 0;
-        function next() {
-            if (i >= steps.length) {
-                intro.style.display = 'none';
-                gameLive = true;
-                startGameTimer();
-                return;
-            }
-            const s = steps[i++];
-            numEl.style.animation = 'none'; void numEl.offsetWidth; numEl.style.animation = 'intro-pop 0.8s ease';
-            numEl.innerText = s.text; labelEl.innerText = s.label;
-            setTimeout(next, s.ms);
-        }
-        next();
-    }
-
-    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-    /* ─────────────────────────────────────────
-       BOOT
-    ───────────────────────────────────────── */
-    computeLayout();
-    initBoard();
-    runIntro();
+window.addEventListener('resize', computeLayout);
+computeLayout(); initBoard(); runIntro();
 </script>
 </body>
 </html>
