@@ -97,7 +97,6 @@
 </head>
 <body>
 
-    <!-- ALREADY PLAYED BLOCKER -->
     <div id="already-played">
         <div class="glass rounded-[2rem] p-8 w-full max-w-sm text-center">
             <div class="text-6xl mb-4">🐔</div>
@@ -110,14 +109,12 @@
         </div>
     </div>
 
-    <!-- INTRO -->
     <div id="intro">
         <p class="orbitron text-[10px] text-zinc-500 tracking-widest mb-6">ARENA STARTING IN</p>
         <div id="intro-number">3</div>
         <p class="orbitron text-sm text-zinc-400 mt-6 tracking-widest" id="intro-label">GET READY</p>
     </div>
 
-    <!-- GAME OVER -->
     <div id="gameover">
         <div class="glass rounded-[2rem] p-7 w-full max-w-sm text-center">
             <div class="text-5xl mb-3">🐔</div>
@@ -138,7 +135,6 @@
         </div>
     </div>
 
-    <!-- HUD -->
     <div id="hud">
         <div class="hud-pill">
             <span class="text-[8px] orbitron text-zinc-500 tracking-widest">SCORE</span>
@@ -157,7 +153,6 @@
         </div>
     </div>
 
-    <!-- BOARD -->
     <div id="board-wrap">
         <div id="arena-container">
             <div id="grid-bg"></div>
@@ -174,7 +169,7 @@
 
     const LOBBY_ID   = '1in15';
     const COLS       = 6;
-    const ROWS       = 9;
+    const ROWS       = 6;
     const GAME_SECS  = 60;
     const ITEMS      = ['🌽','🍗','🥚','🐔','🌾','👩🏻‍🌾'];
     const ITEM_COUNT = ITEMS.length;
