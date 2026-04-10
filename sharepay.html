@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SharePay | Chicken League</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #050505;
+      --accent-gold: #fbbf24;
+    }
+    
+    body {
+      background: var(--bg-dark);
+      color: white;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 90px;
+      background-image: radial-gradient(circle at 50% 20%, rgba(251,191,36,0.04) 0%, transparent 60%);
+    }
+    
+    .orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+    
+    /* Video container with glass effect */
+    .video-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 20px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
+    }
+    
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Slot container grid */
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin: 28px 0;
+    }
+    
+    /* Individual slot */
+    .slot {
+      aspect-ratio: 1;
+      border-radius: 16px;
+      border: 2px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    
+    .slot.active {
+      border-color: rgba(251,191,36,0.6);
+      background: rgba(251,191,36,0.1);
+      color: var(--accent-gold);
+      box-shadow: 0 0 20px rgba(251,191,36,0.3), inset 0 0 20px rgba(251,191,36,0.1);
+    }
+    
+    .slot-number {
+      font-size: 10px;
+      opacity: 0.5;
+      orbitron;
+    }
+    
+    .slot.active .slot-number {
+      opacity: 1;
+    }
+    
+    .slot-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(251,191,36,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    
+    .slot.active .slot-avatar {
+      background: rgba(251,191,36,0.4);
+    }
+    
+    /* Main CTA Button */
+    .cta-button {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: 2px solid var(--accent-gold);
+      background: rgba(251,191,36,0.1);
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      tracking-letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(251,191,36,0.1);
+    }
+    
+    .cta-button:hover {
+      background: rgba(251,191,36,0.2);
+      box-shadow: 0 0 30px rgba(251,191,36,0.3);
+      transform: translateY(-2px);
+    }
+    
+    .cta-button:active {
+      transform: scale(0.98);
+    }
+    
+    /* Modal popup */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-50;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: rgba(5,5,5,0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 320px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--accent-gold);
+    }
+    
+    .modal-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    
+    .modal-opaycopy {
+      background: rgba(251,191,36,0.1);
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-gold);
+      word-break: break-all;
+    }
+    
+    .modal-button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent-gold);
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .modal-button:hover {
+      box-shadow: 0 0 20px rgba(251,191,36,0.4);
+    }
+    
+    .modal-button:active {
+      transform: scale(0.95);
+    }
+    
+    /* Animations for slot glow on payment */
+    @keyframes slotGlow {
+      0%, 100% { box-shadow: 0 0 0 rgba(251,191,36,0.3); }
+      50% { box-shadow: 0 0 20px rgba(251,191,36,0.6), inset 0 0 20px rgba(251,191,36,0.2); }
+    }
+    
+    .slot.paid {
+      animation: slotGlow 0.6s ease-out;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="max-w-md mx-auto px-5 pt-10">
+    
+    <!-- Header -->
+    <div class="mb-8">
+      <p class="orbitron text-[9px] text-yellow-400 tracking-widest font-bold mb-1">CHICKEN LEAGUE</p>
+      <h1 class="orbitron text-3xl font-black uppercase tracking-tighter">SharePay</h1>
+      <p class="text-zinc-500 text-[10px] mt-1">Pooled ownership — split the cost, share the chicken</p>
+    </div>
+
+    <!-- Video Placeholder -->
+    <div class="video-container mb-8">
+      <video autoplay muted loop playsinline>
+        <source src="https://media.giphy.com/media/g9GhRuGNachc87dji6/giphy.mp4" type="video/mp4">
+        <div style="width: 100%; height: 100%; background: rgba(251,191,36,0.1); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5);">
+          🐔 Chicken Video
+        </div>
+      </video>
+    </div>
+
+    <!-- Slots Grid -->
+    <div class="mb-4">
+      <p class="orbitron text-[10px] text-zinc-500 tracking-widest font-bold mb-3">SHARE HOLDERS (10 SLOTS)</p>
+      <div class="slots-grid" id="slots-container">
+        <!-- Slots generated by JS -->
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="mb-6">
+      <div class="h-1 bg-zinc-800 rounded-full overflow-hidden">
+        <div id="progress-bar" class="h-full bg-yellow-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <p class="text-[8px] text-zinc-600 mt-2 text-center"><span id="active-count">0</span>/10 slots filled</p>
+    </div>
+
+    <!-- CTA Button -->
+    <button id="share-btn" class="cta-button mb-8" onclick="openPaymentModal()">
+      GET A SHARE
+    </button>
+
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="payment-modal" class="modal" onclick="event.target === this && closePaymentModal()">
+    <div class="modal-content">
+      <div class="modal-title">💳 PAY FOR YOUR SHARE</div>
+      <div class="modal-text">Send payment to:</div>
+      <div class="modal-opaycopy">₦1,000<br>to<br>9134682266<br>via Opay</div>
+      <div class="modal-text" style="font-size: 12px; color: rgba(255,255,255,0.6);">
+        After payment, your slot will activate instantly
+      </div>
+      <button class="modal-button" onclick="closePaymentModal()">CLOSE</button>
+    </div>
+  </div>
+
+  <script src="ui-bridge.js"></script>
+  <script>
+    // ── Initialize 10 slots ──────────────────────────────────────────────────
+    function initSlots() {
+      const container = document.getElementById('slots-container');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= 10; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.id = `slot-${i}`;
+        slot.innerHTML = `
+          <div class="slot-number">#${i}</div>
+          <div class="slot-avatar">🐔</div>
+        `;
+        container.appendChild(slot);
+      }
+      updateProgress();
+    }
+
+    // ── Update progress bar and count ────────────────────────────────────────
+    function updateProgress() {
+      const activeSlots = document.querySelectorAll('.slot.active').length;
+      const progressBar = document.getElementById('progress-bar');
+      const activeCount = document.getElementById('active-count');
+      
+      progressBar.style.width = `${(activeSlots / 10) * 100}%`;
+      activeCount.textContent = activeSlots;
+    }
+
+    // ── Activate a random slot (simulates payment) ────────────────────────────
+    function activateRandomSlot() {
+      const slots = Array.from(document.querySelectorAll('.slot:not(.active)'));
+      if (slots.length === 0) return;
+      
+      const randomSlot = slots[Math.floor(Math.random() * slots.length)];
+      randomSlot.classList.add('active', 'paid');
+      
+      // Remove animation class after it plays
+      setTimeout(() => {
+        randomSlot.classList.remove('paid');
+      }, 600);
+      
+      updateProgress();
+    }
+
+    // ── Payment modal ────────────────────────────────────────────────────────
+    window.openPaymentModal = () => {
+      document.getElementById('payment-modal').classList.add('active');
+    };
+
+    window.closePaymentModal = () => {
+      document.getElementById('payment-modal').classList.remove('active');
+      // Simulate a payment by activating a random slot
+      setTimeout(() => {
+        activateRandomSlot();
+      }, 300);
+    };
+
+    // ── Bootstrap ────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', initSlots);
+
+    // ── Demo: Activate a few slots on load for visual effect ──────────────────
+    setTimeout(() => {
+      activateRandomSlot();
+      setTimeout(() => activateRandomSlot(), 400);
+      setTimeout(() => activateRandomSlot(), 800);
+    }, 500);
+  </script>
+</body>
+</html>
