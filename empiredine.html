@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Empire Diner | Chicken League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --eerie-black: #131314;
+            --white: #ffffff;
+            --blue: #4285F4;
+            --gold: #fbbf24;
+        }
+
+        body {
+            background: var(--eerie-black);
+            color: var(--white);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 90px;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            margin-top: 32px;
+        }
+
+        .header h1 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            color: var(--white);
+            margin: 0;
+        }
+
+        .video-wrapper {
+            margin-bottom: 24px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            border-radius: 20px;
+            display: block;
+            background: #000;
+        }
+
+        .button-wrapper {
+            margin-bottom: 24px;
+        }
+
+        .btn-host {
+            width: 100%;
+            padding: 18px 24px;
+            background: var(--blue);
+            color: var(--white);
+            border: none;
+            border-radius: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(66, 133, 244, 0.25);
+        }
+
+        .btn-host:hover {
+            background: #3a7bdb;
+            box-shadow: 0 12px 32px rgba(66, 133, 244, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .btn-host:active {
+            transform: scale(0.98);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 420px) {
+            .header h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Empire Diner</h1>
+        </div>
+
+        <div class="video-wrapper">
+            <video autoplay muted loop>
+                <source src="chicken-showcase.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div class="button-wrapper">
+            <button class="btn-host" onclick="hostDiner()">Host a Diner</button>
+        </div>
+    </div>
+
+    <script src="nav.js"></script>
+    <script>
+        function hostDiner() {
+            window.location.href = 'diner.html';
+        }
+    </script>
+</body>
+</html>
