@@ -9,7 +9,7 @@ const injectGlobalUI = () => {
         </button>
         <div class="flex items-center gap-2" onclick="location.href='dashboard.html'" style="cursor: pointer;">
             <div class="w-7 h-7 bg-white rounded-sm flex items-center justify-center font-black orbitron italic text-[10px] text-black">CL</div>
-            <span class="font-black text-[12px] tracking-tighter uppercase text-white">CHICKEN <span class="text-zinc-500 italic">LEAGUE</span></span>
+
         </div>
         <div class="w-8"></div>
         <div id="side-menu" class="fixed inset-0 bg-black z-[2000] -translate-x-full transition-transform duration-300 flex flex-col p-10">
