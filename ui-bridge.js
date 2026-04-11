@@ -8,7 +8,7 @@ const injectGlobalUI = () => {
             <div class="w-6 h-0.5 bg-white"></div>
         </button>
         <div class="flex items-center gap-2" onclick="location.href='dashboard.html'" style="cursor: pointer;">
-            <div class="w-7 h-7 bg-white rounded-sm flex items-center justify-center font-black orbitron italic text-[10px] text-black">CL</div>
+
 
         </div>
         <div class="w-8"></div>
