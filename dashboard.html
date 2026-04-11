@@ -71,6 +71,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            overflow: hidden;
         }
         
         .feature-block:active .feature-icon-wrapper {
@@ -79,11 +80,12 @@
         }
         
         .feature-icon {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 3.5rem;
         }
         
         .feature-label {
@@ -102,40 +104,30 @@
         
         .text-blue { color: var(--gemini-blue); }
         .bg-blue { background-color: var(--gemini-blue); }
+        
+        header {
+            margin-bottom: 3rem;
+        }
     </style>
 </head>
 <body class="pt-16">
     <main class="px-6 pb-20">
         <!-- Header -->
-        <div class="flex justify-between items-start mb-12">
+        <header class="flex justify-between items-start">
             <div>
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-blue">System: Ready</p>
-                <h1 class="text-4xl font-heading uppercase tracking-tighter leading-tight">Dashboard</h1>
             </div>
             <div class="h-12 w-12 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-blue-500/10">
                 <span id="user_initial" class="font-black text-black text-xl">?</span>
             </div>
-        </div>
+        </header>
 
         <!-- Feature Grid -->
         <div class="grid-container">
             <!-- Gaming -->
             <a href="tryyourluck.html" class="feature-block">
                 <div class="feature-icon-wrapper">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Game Controller Icon -->
-                            <rect x="8" y="18" width="48" height="28" rx="6" fill="#4285F4"/>
-                            <circle cx="18" cy="26" r="2.5" fill="#131314"/>
-                            <circle cx="18" cy="34" r="2.5" fill="#131314"/>
-                            <circle cx="12" cy="30" r="2.5" fill="#131314"/>
-                            <circle cx="24" cy="30" r="2.5" fill="#131314"/>
-                            <circle cx="46" cy="26" r="2.5" fill="#131314"/>
-                            <circle cx="46" cy="34" r="2.5" fill="#131314"/>
-                            <circle cx="52" cy="30" r="2.5" fill="#131314"/>
-                            <circle cx="40" cy="30" r="2.5" fill="#131314"/>
-                        </svg>
-                    </div>
+                    <div class="feature-icon">🎮</div>
                 </div>
                 <span class="feature-label">Gaming</span>
             </a>
@@ -143,15 +135,7 @@
             <!-- Empire Dine -->
             <a href="empiredine.html" class="feature-block">
                 <div class="feature-icon-wrapper">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Restaurant Icon -->
-                            <path d="M20 12C20 10 21.8 8 24 8C26.2 8 28 10 28 12V44C28 46.2 26.2 48 24 48C21.8 48 20 46.2 20 44V12Z" fill="#4285F4"/>
-                            <path d="M36 14C36 12 37.8 10 40 10C42.2 10 44 12 44 14V44C44 46.2 42.2 48 40 48C37.8 48 36 46.2 36 44V14Z" fill="#4285F4"/>
-                            <rect x="12" y="24" width="8" height="20" rx="1" fill="#4285F4" opacity="0.7"/>
-                            <rect x="44" y="26" width="8" height="18" rx="1" fill="#4285F4" opacity="0.7"/>
-                        </svg>
-                    </div>
+                    <div class="feature-icon">🍽️</div>
                 </div>
                 <span class="feature-label">Empire Dine</span>
             </a>
