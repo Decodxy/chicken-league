@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThrotCapital · private brokerage</title>
+  <!-- Font & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #000000;
+      color: #eaeaea;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* brand colors */
+    :root {
+      --throt-black: #000000;
+      --throt-rose: #c98273;
+      --throt-rose-light: #e0b0a4;
+      --throt-rose-glow: rgba(201, 130, 115, 0.15);
+    }
+
+    /* buttons & accents */
+    .btn-primary {
+      background: var(--throt-rose);
+      color: #000;
+      font-weight: 600;
+      padding: 12px 32px;
+      border: none;
+      border-radius: 40px;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+      display: inline-block;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .btn-primary i {
+      margin-right: 8px;
+    }
+
+    .btn-primary:hover {
+      background: #d99a8a;
+      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(201, 130, 115, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--throt-rose);
+      color: #fff;
+      font-weight: 500;
+      padding: 12px 32px;
+      border-radius: 40px;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-outline:hover {
+      background: var(--throt-rose);
+      color: #000;
+    }
+
+    /* HEADER */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0;
+      border-bottom: 1px solid rgba(201, 130, 115, 0.2);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .logo span {
+      color: var(--throt-rose);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a {
+      color: #ccc;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--throt-rose);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-actions .btn-outline {
+      padding: 8px 20px;
+      font-size: 0.85rem;
+    }
+
+    /* HERO */
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 60px 0 40px;
+      gap: 40px;
+    }
+
+    .hero-content {
+      flex: 1 1 480px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(201, 130, 115, 0.12);
+      color: var(--throt-rose);
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(201, 130, 115, 0.2);
+    }
+
+    .hero h1 {
+      font-size: 3.4rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .highlight {
+      color: var(--throt-rose);
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: #b0b0b0;
+      max-width: 520px;
+      margin-bottom: 32px;
+    }
+
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid rgba(201, 130, 115, 0.15);
+    }
+
+    .stat-item h3 {
+      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-item h3 span {
+      color: var(--throt-rose);
+    }
+
+    .stat-item p {
+      color: #888;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .hero-visual {
+      flex: 1 1 380px;
+      background: radial-gradient(circle at 70% 40%, #1c1c1c, #000000);
+      border-radius: 32px;
+      padding: 40px 30px;
+      border: 1px solid rgba(201, 130, 115, 0.2);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+
+    .hero-visual i {
+      font-size: 4rem;
+      color: var(--throt-rose);
+      opacity: 0.7;
+      margin-bottom: 16px;
+    }
+
+    .hero-visual .chart-line {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .chart-line .bar {
+      width: 18px;
+      height: 60px;
+      background: #222;
+      border-radius: 20px 20px 4px 4px;
+      transition: 0.3s;
+    }
+
+    .chart-line .bar.active {
+      background: var(--throt-rose);
+      height: 90px;
+    }
+
+    .chart-line .bar.active2 {
+      background: var(--throt-rose);
+      height: 70px;
+      opacity: 0.7;
+    }
+
+    /* pillars / cards */
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      color: #999;
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 28px;
+      margin: 40px 0 60px;
+    }
+
+    .pillar-card {
+      background: #0c0c0c;
+      border: 1px solid #1f1f1f;
+      border-radius: 28px;
+      padding: 32px 24px;
+      transition: border 0.2s, background 0.2s;
+    }
+
+    .pillar-card:hover {
+      border-color: var(--throt-rose);
+      background: #111;
+    }
+
+    .pillar-card .icon {
+      display: inline-flex;
+      background: rgba(201, 130, 115, 0.08);
+      padding: 14px;
+      border-radius: 18px;
+      color: var(--throt-rose);
+      font-size: 1.8rem;
+      margin-bottom: 18px;
+    }
+
+    .pillar-card h3 {
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .pillar-card p {
+      color: #b0b0b0;
+      font-size: 0.95rem;
+    }
+
+    /* plans */
+    .plans {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+      margin: 40px 0 60px;
+    }
+
+    .plan-card {
+      background: #0b0b0b;
+      border: 1px solid #222;
+      border-radius: 32px;
+      padding: 36px 32px;
+      flex: 1 1 260px;
+      max-width: 320px;
+      transition: 0.25s;
+    }
+
+    .plan-card:hover {
+      border-color: var(--throt-rose);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    }
+
+    .plan-card.featured {
+      border-color: var(--throt-rose);
+      background: #0f0f0f;
+    }
+
+    .plan-card .plan-name {
+      color: #aaa;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+    }
+
+    .plan-card .rate {
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 12px 0 4px;
+    }
+
+    .plan-card .rate span {
+      color: var(--throt-rose);
+    }
+
+    .plan-card .detail {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .plan-card ul {
+      list-style: none;
+      margin: 20px 0 28px;
+    }
+
+    .plan-card ul li {
+      padding: 6px 0;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+
+    .plan-card ul li i {
+      color: var(--throt-rose);
+      width: 22px;
+    }
+
+    /* steps */
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin: 40px 0 60px;
+      justify-content: center;
+    }
+
+    .step {
+      background: #0c0c0c;
+      border-radius: 24px;
+      padding: 28px 24px;
+      flex: 1 1 200px;
+      border: 1px solid #1a1a1a;
+      text-align: center;
+    }
+
+    .step .num {
+      display: inline-block;
+      background: var(--throt-rose);
+      color: #000;
+      font-weight: 700;
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      border-radius: 40px;
+      margin-bottom: 16px;
+    }
+
+    .step h4 {
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    /* management */
+    .management {
+      background: #0a0a0a;
+      border-radius: 32px;
+      padding: 48px 40px;
+      border: 1px solid #1c1c1c;
+      margin: 40px 0 60px;
+    }
+
+    .management-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 28px;
+      margin-top: 28px;
+    }
+
+    .mgmt-item i {
+      color: var(--throt-rose);
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+
+    .mgmt-item h4 {
+      color: #fff;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .mgmt-item p {
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    /* footer */
+    .footer {
+      border-top: 1px solid rgba(201, 130, 115, 0.15);
+      padding: 40px 0 28px;
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-brand {
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .footer-brand span {
+      color: var(--throt-rose);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .footer-links a {
+      color: #aaa;
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: var(--throt-rose);
+    }
+
+    /* responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.6rem;
+      }
+      .navbar {
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .nav-links {
+        order: 3;
+        flex-basis: 100%;
+        justify-content: center;
+        gap: 20px;
+      }
+      .hero-stats {
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- header -->
+  <header class="navbar">
+    <div class="logo">Throt<span>Capital</span></div>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Mining</a>
+      <a href="#">Wealth</a>
+      <a href="#">Plans</a>
+    </div>
+    <div class="nav-actions">
+      <a href="#" class="btn-outline"><i class="fas fa-user"></i> Client</a>
+      <a href="#" class="btn-primary"><i class="fas fa-arrow-right"></i> Invest</a>
+    </div>
+  </header>
+
+  <!-- hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge"><i class="fas fa-shield-alt"></i>  private brokerage · institutional</div>
+      <h1>Where <span class="highlight">capital</span> meets <br />institutional precision.</h1>
+      <p>ThrotCapital is a private investment institution built on mining stability, quantitative trading, and long-term member enrichment.</p>
+      <div class="hero-cta">
+        <a href="#" class="btn-primary"><i class="fas fa-rocket"></i> Deploy capital</a>
+        <a href="#" class="btn-outline"><i class="fas fa-file-alt"></i> White paper</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <h3>$<span>2.4B</span></h3>
+          <p>managed volume</p>
+        </div>
+        <div class="stat-item">
+          <h3><span>12</span>y</h3>
+          <p>track record</p>
+        </div>
+        <div class="stat-item">
+          <h3><span>98.7</span>%</h3>
+          <p>uptime · mining</p>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <i class="fas fa-chart-line"></i>
+      <div class="chart-line">
+        <div class="bar"></div>
+        <div class="bar active"></div>
+        <div class="bar"></div>
+        <div class="bar active2"></div>
+        <div class="bar active"></div>
+        <div class="bar"></div>
+      </div>
+      <p style="color:#aaa; font-size:0.85rem; margin-top:20px;">institutional-grade · 24/7 execution</p>
+      <div style="display:flex; justify-content:center; gap:24px; margin-top:22px;">
+        <div><span style="color:var(--throt-rose);">●</span> mining</div>
+        <div><span style="color:var(--throt-rose);">●</span> trading</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- pillars -->
+  <div>
+    <h2 class="section-title">Three pillars of <span style="color:var(--throt-rose);">Throt</span></h2>
+    <p class="section-sub">Mining, strategic wealth management, and consistent return engine — integrated for performance.</p>
+  </div>
+  <div class="pillars-grid">
+    <div class="pillar-card">
+      <div class="icon"><i class="fas fa-microchip"></i></div>
+      <h3>Industrial mining</h3>
+      <p>State-of-the-art ASIC facilities, climate-controlled, low-cost Bitcoin acquisition. The foundation of our portfolio.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="icon"><i class="fas fa-arrow-trend-up"></i></div>
+      <h3>Quantitative trading</h3>
+      <p>Proprietary algorithms + elite advisors. Managed capital deployed across crypto & traditional markets.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="icon"><i class="fas fa-cubes"></i></div>
+      <h3>Consistent returns</h3>
+      <p>Compounding block rewards and precision trades deliver predictable, daily performance for our members.</p>
+    </div>
+  </div>
+
+  <!-- plans -->
+  <div style="text-align:center; margin: 40px 0 10px;">
+    <h2 class="section-title">Investment <span style="color:var(--throt-rose);">plans</span></h2>
+    <p class="section-sub" style="margin-left:auto; margin-right:auto;">High-performance daily returns, structured for capital growth.</p>
+  </div>
+  <div class="plans">
+    <div class="plan-card">
+      <div class="plan-name"><i class="fas fa-flag"></i> Plan A</div>
+      <div class="rate"><span>7%</span></div>
+      <div class="detail">daily return · $100 – $99,999</div>
+      <ul>
+        <li><i class="fas fa-check"></i> daily compounding</li>
+        <li><i class="fas fa-check"></i> mining + trading</li>
+      </ul>
+      <a href="#" class="btn-primary" style="width:100%; text-align:center;">Select</a>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-name"><i class="fas fa-star" style="color:var(--throt-rose);"></i> Plan B</div>
+      <div class="rate"><span>9%</span></div>
+      <div class="detail">daily for 7 days · $500+</div>
+      <ul>
+        <li><i class="fas fa-check"></i> enhanced allocation</li>
+        <li><i class="fas fa-check"></i> priority execution</li>
+      </ul>
+      <a href="#" class="btn-primary" style="width:100%; text-align:center;">Select</a>
+    </div>
+  </div>
+
+  <!-- steps -->
+  <div style="text-align:center;">
+    <h2 class="section-title">Your path to <span style="color:var(--throt-rose);">secured returns</span></h2>
+    <p class="section-sub" style="margin-left:auto; margin-right:auto;">Simple, transparent, and highly effective in 3 steps.</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h4>Select & fund</h4>
+      <p>Choose your plan and fund via crypto or wire.</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h4>Expert deployment</h4>
+      <p>Capital allocated to mining + quantitative trading.</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h4>Collect daily</h4>
+      <p>Returns credited every 24h — compound or withdraw.</p>
+    </div>
+  </div>
+
+  <!-- management -->
+  <div class="management">
+    <h3 style="color:#fff; font-size:1.8rem; font-weight:600;">Expert management & <span style="color:var(--throt-rose);">proven reliability</span></h3>
+    <p style="color:#aaa; max-width:600px; margin-top:6px;">Institutional discipline, veteran advisors, and data‑driven decisions.</p>
+    <div class="management-grid">
+      <div class="mgmt-item">
+        <i class="fas fa-calendar-check"></i>
+        <h4>Consistent returns</h4>
+        <p>Dual‑pillar model mitigates volatility.</p>
+      </div>
+      <div class="mgmt-item">
+        <i class="fas fa-shield"></i>
+        <h4>Risk management</h4>
+        <p>Hedge‑fund style protocols, capital preservation.</p>
+      </div>
+      <div class="mgmt-item">
+        <i class="fas fa-brain"></i>
+        <h4>Proprietary intelligence</h4>
+        <p>Algorithms process massive data in real time.</p>
+      </div>
+      <div class="mgmt-item">
+        <i class="fas fa-eye"></i>
+        <h4>Transparency</h4>
+        <p>Open performance metrics and strategy reporting.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <footer class="footer">
+    <div class="footer-brand">Throt<span>Capital</span> · private brokerage</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Disclosures</a>
+      <a href="#"><i class="fab fa-app-store"></i> App</a>
+      <span style="color:#555;">© 2026</span>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>
